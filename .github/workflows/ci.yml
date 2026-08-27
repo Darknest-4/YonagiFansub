@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes an in-flight run on the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  quality:
+    name: Típusok, lint, tesztek
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Függőségek telepítése
+        run: npm ci
+
+      - name: Prisma kliens generálása
+        run: npx prisma generate
+
+      - name: Típusellenőrzés
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Egységtesztek
+        run: npm test
+
+  build:
+    name: Build és migrációs próba
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: yonagi
+          POSTGRES_PASSWORD: yonagi
+          POSTGRES_DB: yonagi_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U yonagi"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://yonagi:yonagi@localhost:5432/yonagi_ci?schema=public
+      DIRECT_DATABASE_URL: postgresql://yonagi:yonagi@localhost:5432/yonagi_ci?schema=public
+      AUTH_SECRET: ci-only-secret-value-long-enough-for-validation-abcdef
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      MAIL_DRIVER: noop
+      LOG_LEVEL: error
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Séma alkalmazása
+        run: npx prisma db push --skip-generate
+
+      - name: SQL kiegészítők (indexek, megszorítások)
+        run: |
+          psql "$DATABASE_URL" -f prisma/sql/01-extensions.sql
+          psql "$DATABASE_URL" -f prisma/sql/02-search-indexes.sql
+          psql "$DATABASE_URL" -f prisma/sql/03-constraints.sql
+
+      - name: Seed
+        run: npx tsx prisma/seed.ts
+        env:
+          SEED_OWNER_PASSWORD: ci-owner-password-not-used
+
+      - name: Next build
+        run: npm run build
+
+      # A green build is not proof the app boots: the two fail in different ways.
+      - name: Indítási és útvonal-ellenőrzés
+        run: |
+          npm start &
+          APP_PID=$!
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 && break
+            sleep 2
+          done
+
+          fail=0
+          for path in / /projektek /kiadasok /hirek /csapat /gyik /kapcsolat /belepes /robots.txt /sitemap.xml /rss.xml; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")
+            printf '%-24s %s\n' "$path" "$code"
+            [ "$code" = "200" ] || fail=1
+          done
+
+          # The admin panel must bounce an anonymous visitor.
+          code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000/admin")
+          printf '%-24s %s\n' "/admin (anon)" "$code"
+          [ "$code" = "307" ] || [ "$code" = "302" ] || fail=1
+
+          kill $APP_PID
+          exit $fail
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only on main: the image is not needed to review a pull request.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: yonagi-fansub:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

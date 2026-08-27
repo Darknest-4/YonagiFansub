@@ -7,7 +7,7 @@ import { isAppError } from '@/lib/errors';
 import { getAdminNews } from '@/server/admin/news';
 import { listNewsCategories } from '@/server/news';
 import { NewsForm } from '@/components/admin/news-form';
-import { EMPTY_NEWS, toLocalDateTimeValue, type NewsFormValues } from '@/lib/forms/defaults';
+import { toLocalDateTimeValue, type NewsFormValues } from '@/lib/forms/defaults';
 
 export const metadata: Metadata = { title: 'Hír szerkesztése' };
 export const dynamic = 'force-dynamic';

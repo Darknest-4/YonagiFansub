@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { CommentStatus } from '@prisma/client';
+import type { CommentStatus } from '@prisma/client';
 import { Check, EyeOff, Trash2 } from 'lucide-react';
 import { cn, formatRelative } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';

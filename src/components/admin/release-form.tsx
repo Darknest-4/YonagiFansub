@@ -13,7 +13,7 @@ import { GripVertical, Plus, Save, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
-import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/field';
+import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { InlineError } from '@/components/ui/feedback';
 import { useToast } from '@/components/ui/toast';

@@ -127,19 +127,19 @@ class RedisDriver implements RateLimitDriver {
       return this.client as never;
     }
     try {
-      const module = await optionalImport<{
+      const redis = await optionalImport<{
         createClient: (options: { url: string }) => {
           connect(): Promise<unknown>;
           on(event: string, handler: (error: unknown) => void): unknown;
         };
       }>('redis');
 
-      if (!module) {
+      if (!redis) {
         logger.error('RATE_LIMIT_DRIVER=redis but the `redis` package is not installed.');
         return null;
       }
 
-      const client = module.createClient({ url: env.REDIS_URL! });
+      const client = redis.createClient({ url: env.REDIS_URL! });
       client.on('error', (error) => logger.error('Redis error', error));
       await client.connect();
       this.client = client;

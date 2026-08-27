@@ -172,7 +172,7 @@ export function Dropdown({
               <div className="border-b border-border-subtle px-3 py-2.5">{header}</div>
             )}
 
-            {items.map((item, index) => {
+            {items.map((item) => {
               const itemClasses = cn(
                 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm',
                 'transition-colors duration-instant',
