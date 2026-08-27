@@ -1,0 +1,898 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Yonagi Fansub – data model
+//
+// Conventions used throughout this schema:
+//   • cuid() primary keys – sortable-ish, safe to expose in URLs, no enumeration.
+//   • `createdAt` / `updatedAt` on every mutable entity.
+//   • `deletedAt` (soft delete) on entities that are referenced by history or by
+//     public URLs: users, projects, episodes, releases, news, team members.
+//     Everything else is hard-deleted; the audit log preserves the trail.
+//   • Explicit @@index on every column used for filtering, sorting or joining.
+//   • Money-like / large integers use BigInt (file sizes) to avoid 2GB overflow.
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  IDENTITY & ACCESS
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum UserStatus {
+  ACTIVE
+  PENDING // registered, email not yet verified
+  SUSPENDED
+  BANNED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  displayName  String
+  passwordHash String
+  avatarUrl    String?
+  bannerUrl    String?
+  bio          String?    @db.VarChar(500)
+  status       UserStatus @default(PENDING)
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  lastSeenAt      DateTime?
+  failedLogins    Int       @default(0)
+  lockedUntil     DateTime?
+
+  // Per-user preferences (notification channels, locale, motion, theme).
+  preferences Json @default("{}")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  sessions           Session[]
+  passwordResets     PasswordResetToken[]
+  verifications      EmailVerificationToken[]
+  notifications      Notification[]
+  comments           Comment[]
+  favorites          Favorite[]
+  downloadEvents     DownloadEvent[]
+  auditLogs          AuditLog[]              @relation("AuditActor")
+  authoredNews       NewsPost[]              @relation("NewsAuthor")
+  createdProjects    Project[]               @relation("ProjectCreator")
+  createdReleases    Release[]               @relation("ReleaseCreator")
+  uploadedMedia      MediaAsset[]
+  teamMember         TeamMember?
+  handledMessages    ContactMessage[]        @relation("ContactHandler")
+  updatedSettings    SiteSetting[]
+  moderatedComments  Comment[]               @relation("CommentModerator")
+
+  @@index([roleId])
+  @@index([status, deletedAt])
+  @@index([createdAt])
+  @@map("users")
+}
+
+/// A named bundle of permissions. Roles are data, not code, so the permission
+/// matrix can be tuned from the admin panel without a deploy. `isSystem` roles
+/// cannot be deleted and their `key` cannot change.
+model Role {
+  id          String  @id @default(cuid())
+  key         String  @unique // owner, admin, editor, staff, moderator, member
+  name        String
+  description String?
+  /// Lower rank = more powerful. Used to prevent privilege escalation: an actor
+  /// may never grant or edit a role whose rank is <= their own.
+  rank        Int     @default(100)
+  isSystem    Boolean @default(false)
+  color       String? // hex, for badges in the admin UI
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@index([rank])
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique // e.g. "project:write"
+  group       String // e.g. "project" – used to group checkboxes in the UI
+  description String
+
+  roles RolePermission[]
+
+  @@index([group])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+/// Opaque, database-backed sessions. The cookie carries a random 256-bit token;
+/// only its SHA-256 hash is stored, so a database leak cannot be replayed.
+model Session {
+  id        String @id @default(cuid())
+  userId    String
+  tokenHash String @unique
+
+  userAgent String? @db.VarChar(400)
+  ipHash    String? // salted hash – we never store raw IPs
+
+  expiresAt   DateTime
+  absoluteEnd DateTime // sliding refresh may never push past this
+  revokedAt   DateTime?
+  lastUsedAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  email     String // the address being verified (supports email changes)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CATALOGUE – PROJECTS, EPISODES, RELEASES
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum ProjectType {
+  TV
+  MOVIE
+  OVA
+  ONA
+  SPECIAL
+  MUSIC
+}
+
+enum ProjectStatus {
+  ANNOUNCED
+  ONGOING
+  COMPLETED
+  ON_HOLD
+  DROPPED
+}
+
+enum PublishStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AnimeSeason {
+  WINTER
+  SPRING
+  SUMMER
+  FALL
+}
+
+enum AgeRating {
+  G
+  PG
+  PG13
+  R17
+  R18
+}
+
+model Project {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  title       String // primary display title (Hungarian/romaji as used by the team)
+  titleRomaji String?
+  titleNative String? // 日本語
+  titleEnglish String?
+  /// Alternative titles / abbreviations, used by search. Stored as a string array
+  /// so a single GIN index covers all of them.
+  synonyms    String[] @default([])
+
+  synopsis    String? @db.Text
+  type        ProjectType   @default(TV)
+  status      ProjectStatus @default(ANNOUNCED)
+  publishStatus PublishStatus @default(DRAFT)
+
+  season     AnimeSeason?
+  seasonYear Int?
+  totalEpisodes Int?
+  ageRating  AgeRating?
+  studio     String?
+  source     String? // manga, light novel, original…
+  durationMin Int?
+
+  coverImageUrl  String?
+  bannerImageUrl String?
+  trailerUrl     String?
+  accentColor    String? // hex, drives the per-project theming on the detail page
+
+  malId     Int?
+  anilistId Int?
+
+  isFeatured  Boolean   @default(false)
+  publishedAt DateTime?
+  viewCount   Int       @default(0)
+
+  createdById String?
+  createdBy   User?   @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  genres    ProjectGenre[]
+  episodes  Episode[]
+  releases  Release[]
+  staff     ProjectStaff[]
+  favorites Favorite[]
+  comments  Comment[]
+
+  @@index([publishStatus, deletedAt, publishedAt])
+  @@index([status])
+  @@index([type])
+  @@index([seasonYear, season])
+  @@index([isFeatured, publishedAt])
+  @@index([updatedAt])
+  @@map("projects")
+}
+
+model Genre {
+  id     String  @id @default(cuid())
+  slug   String  @unique
+  name   String  @unique
+  nameEn String?
+  color  String?
+
+  projects ProjectGenre[]
+
+  @@map("genres")
+}
+
+model ProjectGenre {
+  projectId String
+  genreId   String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  genre   Genre   @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, genreId])
+  @@index([genreId])
+  @@map("project_genres")
+}
+
+enum EpisodeStatus {
+  PLANNED
+  IN_PROGRESS
+  QC
+  RELEASED
+  CANCELLED
+}
+
+model Episode {
+  id        String @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Decimal so that recap/special numbering (12.5) is representable and sorts
+  /// correctly at the database level.
+  number      Decimal @db.Decimal(6, 2)
+  title       String?
+  titleNative String?
+  synopsis    String? @db.Text
+  thumbnailUrl String?
+  durationSec Int?
+  airedAt     DateTime?
+
+  status EpisodeStatus @default(PLANNED)
+
+  /// Fansub workflow progress, 0–100 per stage. Rendered as the progress bar on
+  /// the project page — the single most-requested piece of information from
+  /// followers, so it is a first-class column rather than a JSON blob.
+  progressTranslation Int @default(0)
+  progressTiming      Int @default(0)
+  progressTypesetting Int @default(0)
+  progressEditing     Int @default(0)
+  progressEncoding    Int @default(0)
+  progressQc          Int @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  releases Release[]
+  comments Comment[]
+
+  @@unique([projectId, number])
+  @@index([projectId, status])
+  @@index([airedAt])
+  @@index([status, updatedAt])
+  @@map("episodes")
+}
+
+enum ReleaseKind {
+  EPISODE
+  BATCH
+  MOVIE
+  SPECIAL
+  PATCH
+}
+
+enum Resolution {
+  SD_480P
+  HD_720P
+  FHD_1080P
+  QHD_1440P
+  UHD_2160P
+}
+
+model ReleaseFormat {
+  id          String  @id @default(cuid())
+  key         String  @unique // "mkv-softsub", "mp4-hardsub", "mkv-remux"
+  label       String
+  container   String // mkv, mp4
+  description String?
+  isSoftsub   Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  releases Release[]
+
+  @@map("release_formats")
+}
+
+model Release {
+  id        String @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Null for batch/movie releases that are not tied to a single episode.
+  episodeId String?
+  episode   Episode? @relation(fields: [episodeId], references: [id], onDelete: SetNull)
+
+  kind    ReleaseKind @default(EPISODE)
+  /// Incremented on re-releases (v2, v3…). Unique per episode+format.
+  version Int         @default(1)
+
+  formatId String?
+  format   ReleaseFormat? @relation(fields: [formatId], references: [id], onDelete: SetNull)
+
+  resolution     Resolution @default(FHD_1080P)
+  videoCodec     String? // H.264, HEVC, AV1
+  audioCodec     String? // AAC 2.0, FLAC, Opus
+  subtitleFormat String? // ASS, SRT
+  fileSizeBytes  BigInt?
+  durationSec    Int?
+  crc32          String? @db.VarChar(8)
+  sha256         String? @db.VarChar(64)
+
+  /// Short changelog shown on v2+ releases ("javított időzítés, új karaoke").
+  changelog String? @db.Text
+  notes     String? @db.Text
+
+  status      PublishStatus @default(DRAFT)
+  releasedAt  DateTime?
+  downloadCount Int         @default(0)
+
+  createdById String?
+  createdBy   User?   @relation("ReleaseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  links          DownloadLink[]
+  downloadEvents DownloadEvent[]
+
+  @@unique([episodeId, formatId, resolution, version])
+  @@index([projectId, status, releasedAt])
+  @@index([status, releasedAt])
+  @@index([episodeId])
+  @@index([downloadCount])
+  @@map("releases")
+}
+
+enum LinkKind {
+  DIRECT
+  TORRENT
+  MAGNET
+  STREAM
+}
+
+enum LinkAvailability {
+  ONLINE
+  DEGRADED
+  OFFLINE
+  UNCHECKED
+}
+
+/// External storage providers (Nyaa, Google Drive, Mega, own CDN…). Kept as data
+/// so a dead host can be swapped or hidden site-wide from the admin panel.
+model StorageHost {
+  id       String  @id @default(cuid())
+  key      String  @unique
+  name     String
+  iconUrl  String?
+  baseUrl  String?
+  isActive Boolean @default(true)
+  sortOrder Int    @default(0)
+
+  links DownloadLink[]
+
+  @@map("storage_hosts")
+}
+
+model DownloadLink {
+  id        String  @id @default(cuid())
+  releaseId String
+  release   Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  hostId String?
+  host   StorageHost? @relation(fields: [hostId], references: [id], onDelete: SetNull)
+
+  kind  LinkKind @default(DIRECT)
+  label String?
+  /// The actual target. Never rendered directly into the page: the client hits
+  /// `/api/v1/downloads/:id/resolve`, which records the event and 302s onward.
+  url   String   @db.Text
+
+  isMirror Boolean @default(false)
+  priority Int     @default(0) // lower = preferred
+
+  availability  LinkAvailability @default(UNCHECKED)
+  lastCheckedAt DateTime?
+  downloadCount Int              @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events DownloadEvent[]
+
+  @@index([releaseId, priority])
+  @@index([hostId])
+  @@map("download_links")
+}
+
+/// One row per resolved download. Powers the statistics dashboard. IPs are stored
+/// as salted hashes only, and rows are pruned by the retention job (see runbook).
+model DownloadEvent {
+  id        String  @id @default(cuid())
+  releaseId String
+  release   Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  linkId String?
+  link   DownloadLink? @relation(fields: [linkId], references: [id], onDelete: SetNull)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  ipHash    String?
+  userAgent String? @db.VarChar(400)
+  country   String? @db.VarChar(2)
+  createdAt DateTime @default(now())
+
+  @@index([releaseId, createdAt])
+  @@index([createdAt])
+  @@map("download_events")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  TEAM
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// A fansub position (fordító, időzítő, formázó…). Data-driven so the team can
+/// invent new roles without a migration.
+model Position {
+  id        String  @id @default(cuid())
+  key       String  @unique
+  name      String
+  nameEn    String?
+  icon      String? // lucide icon name
+  color     String?
+  sortOrder Int     @default(0)
+
+  members TeamMemberPosition[]
+  staff   ProjectStaff[]
+
+  @@map("positions")
+}
+
+model TeamMember {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  /// Optional link to a login account. A member can exist without one (retired
+  /// members, guests) and an account can exist without being a team member.
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  name      String
+  tagline   String? @db.VarChar(160)
+  bio       String? @db.Text
+  avatarUrl String?
+  bannerUrl String?
+  accentColor String?
+
+  /// { "discord": "...", "x": "...", "anilist": "...", "myanimelist": "..." }
+  socials Json @default("{}")
+
+  joinedAt  DateTime?
+  leftAt    DateTime?
+  isActive  Boolean   @default(true)
+  isFounder Boolean   @default(false)
+  sortOrder Int       @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  positions TeamMemberPosition[]
+  projects  ProjectStaff[]
+
+  @@index([isActive, sortOrder])
+  @@map("team_members")
+}
+
+model TeamMemberPosition {
+  teamMemberId String
+  positionId   String
+  isPrimary    Boolean @default(false)
+
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  position   Position   @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@id([teamMemberId, positionId])
+  @@index([positionId])
+  @@map("team_member_positions")
+}
+
+/// Credits: who did what on which project.
+model ProjectStaff {
+  id           String @id @default(cuid())
+  projectId    String
+  teamMemberId String
+  positionId   String
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  position   Position   @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, teamMemberId, positionId])
+  @@index([teamMemberId])
+  @@index([positionId])
+  @@map("project_staff")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  EDITORIAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+model NewsCategory {
+  id    String  @id @default(cuid())
+  slug  String  @unique
+  name  String
+  color String?
+  description String?
+
+  posts NewsPost[]
+
+  @@map("news_categories")
+}
+
+model NewsPost {
+  id      String @id @default(cuid())
+  slug    String @unique
+  title   String
+  excerpt String? @db.VarChar(320)
+  /// Markdown. Rendered through our own escaping renderer – never raw HTML.
+  content String  @db.Text
+
+  coverImageUrl String?
+
+  categoryId String?
+  category   NewsCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  authorId String?
+  author   User?   @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  status      PublishStatus @default(DRAFT)
+  publishedAt DateTime?
+  isPinned    Boolean       @default(false)
+  viewCount   Int           @default(0)
+  readingMinutes Int        @default(1)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  comments Comment[]
+
+  @@index([status, deletedAt, publishedAt])
+  @@index([categoryId])
+  @@index([isPinned, publishedAt])
+  @@map("news_posts")
+}
+
+enum CommentStatus {
+  PUBLISHED
+  PENDING
+  HIDDEN
+  DELETED
+}
+
+/// Comments attach to exactly one target. Nullable FKs + a database-level check
+/// constraint (see prisma/sql/constraints.sql) keep that invariant honest while
+/// preserving real foreign keys and cascade behaviour.
+model Comment {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  body String @db.Text
+
+  parentId String?
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+
+  projectId  String?
+  project    Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  episodeId  String?
+  episode    Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  newsPostId String?
+  newsPost   NewsPost? @relation(fields: [newsPostId], references: [id], onDelete: Cascade)
+
+  status CommentStatus @default(PUBLISHED)
+
+  moderatedById String?
+  moderatedBy   User?   @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  moderatedAt   DateTime?
+  moderationNote String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([projectId, status, createdAt])
+  @@index([episodeId, status, createdAt])
+  @@index([newsPostId, status, createdAt])
+  @@index([userId])
+  @@index([status, createdAt])
+  @@map("comments")
+}
+
+model FaqEntry {
+  id        String  @id @default(cuid())
+  question  String
+  answer    String  @db.Text
+  category  String  @default("general")
+  sortOrder Int     @default(0)
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, sortOrder])
+  @@map("faq_entries")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  COMMUNICATION & OPERATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum ContactCategory {
+  GENERAL
+  PROJECT_REQUEST
+  BUG_REPORT
+  JOIN_TEAM
+  TAKEDOWN
+  BUSINESS
+}
+
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  ANSWERED
+  ARCHIVED
+  SPAM
+}
+
+model ContactMessage {
+  id       String          @id @default(cuid())
+  name     String
+  email    String
+  subject  String
+  body     String          @db.Text
+  category ContactCategory @default(GENERAL)
+  status   ContactStatus   @default(NEW)
+
+  ipHash    String?
+  userAgent String? @db.VarChar(400)
+
+  handledById String?
+  handledBy   User?   @relation("ContactHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  handledAt   DateTime?
+  internalNote String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([category])
+  @@map("contact_messages")
+}
+
+enum NotificationType {
+  NEW_RELEASE
+  PROJECT_UPDATE
+  NEWS_POST
+  COMMENT_REPLY
+  SYSTEM
+  MODERATION
+}
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type  NotificationType
+  title String
+  body  String?          @db.VarChar(500)
+  href  String?
+  imageUrl String?
+  /// Free-form payload (projectId, releaseId…) for client-side deep links.
+  meta  Json             @default("{}")
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Favorite {
+  userId    String
+  projectId String
+  /// Notify this user when the project gets a new release.
+  notify    Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, projectId])
+  @@index([projectId, notify])
+  @@map("favorites")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  LOGIN
+  LOGIN_FAILED
+  LOGOUT
+  PERMISSION_CHANGE
+  SETTINGS_CHANGE
+  EXPORT
+}
+
+/// Append-only. There is no update or delete path in the application code; the
+/// retention job archives rows older than the configured window.
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorId String?
+  actor   User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  /// Denormalised so the trail survives account deletion.
+  actorLabel String?
+
+  action     AuditAction
+  entityType String // "Project", "User", …
+  entityId   String?
+  summary    String
+  /// { before: {...}, after: {...} } – secrets are redacted before writing.
+  diff       Json?
+
+  ipHash    String?
+  userAgent String? @db.VarChar(400)
+  requestId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model MediaAsset {
+  id       String  @id @default(cuid())
+  key      String  @unique // storage key / path
+  url      String
+  mimeType String
+  sizeBytes BigInt
+  width    Int?
+  height   Int?
+  blurHash String?
+  alt      String?
+  checksum String? @db.VarChar(64)
+  folder   String  @default("general")
+
+  uploadedById String?
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([folder, createdAt])
+  @@map("media_assets")
+}
+
+/// Key/value site configuration edited from the admin panel. Grouped for the UI;
+/// values are JSON so a setting can be a string, a flag or a structure.
+model SiteSetting {
+  key         String  @id
+  value       Json
+  group       String  @default("general")
+  label       String
+  description String?
+  /// Public settings are exposed to the browser; private ones never leave the server.
+  isPublic    Boolean @default(false)
+
+  updatedById String?
+  updatedBy   User?   @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt
+
+  @@index([group])
+  @@map("site_settings")
+}

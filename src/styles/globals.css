@@ -1,0 +1,755 @@
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   YONAGI FANSUB — DESIGN SYSTEM
+   夜凪 · "night calm"
+
+   The visual language is built on one idea: a still sea at night, lit from
+   below. Deep desaturated ink surfaces carry a cold bioluminescent cyan and a
+   warmer orchid violet, with amber reserved for moments that matter (a fresh
+   release, a call to action). Nothing glows unless it means something.
+
+   Token layers, in order of abstraction:
+     1. Palette    — raw hues. Never used directly in components.
+     2. Semantic   — role-based aliases (surface, border, accent, danger…).
+     3. Component  — sizing, radius, shadow, motion.
+   Components only ever reference layers 2 and 3, so a re-skin touches one file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── 1. Palette ─────────────────────────────────────────────────────────── */
+
+  /* Ink — the night. Not pure black: a slight blue cast keeps it from feeling
+     dead under OLED, and gives the accents something to sit against. */
+  --color-ink-950: #04060d;
+  --color-ink-925: #06090f;
+  --color-ink-900: #080b16;
+  --color-ink-850: #0b101f;
+  --color-ink-800: #111729;
+  --color-ink-750: #161e34;
+  --color-ink-700: #1c2540;
+  --color-ink-600: #273252;
+  --color-ink-500: #384166;
+
+  /* Tide — the primary accent. Bioluminescent cyan. */
+  --color-tide-50: #ecfdff;
+  --color-tide-100: #cff8ff;
+  --color-tide-200: #a5f0ff;
+  --color-tide-300: #6ee5ff;
+  --color-tide-400: #4cd8ff;
+  --color-tide-500: #22bfef;
+  --color-tide-600: #0f99c9;
+  --color-tide-700: #117aa2;
+  --color-tide-800: #166383;
+  --color-tide-900: #17526e;
+
+  /* Orchid — the secondary accent. Used for gradients and for the "premium"
+     register: featured cards, hero sweeps, active navigation. */
+  --color-orchid-50: #f6f2ff;
+  --color-orchid-100: #ece5ff;
+  --color-orchid-200: #dbcfff;
+  --color-orchid-300: #c2acff;
+  --color-orchid-400: #9d7bff;
+  --color-orchid-500: #8656f5;
+  --color-orchid-600: #7434e3;
+  --color-orchid-700: #6326c2;
+  --color-orchid-800: #52229f;
+  --color-orchid-900: #451f80;
+
+  /* Ember — reserved. New releases, hot items, primary CTAs. Scarcity is the
+     point: if everything is amber, nothing is. */
+  --color-ember-300: #ffd89a;
+  --color-ember-400: #ffc76b;
+  --color-ember-500: #f5a623;
+  --color-ember-600: #d4850f;
+
+  /* Sakura — soft pink, used sparingly for community/social surfaces. */
+  --color-sakura-300: #ffa8c5;
+  --color-sakura-400: #f472b6;
+  --color-sakura-500: #e0509b;
+
+  /* Neutral text ramp, tuned for contrast on ink surfaces. */
+  --color-mist-50: #f2f5ff;
+  --color-mist-100: #e6ecff;
+  --color-mist-200: #ccd6f5;
+  --color-mist-300: #aab8dd;
+  --color-mist-400: #8f9bbd;
+  --color-mist-500: #6f7c9e;
+  --color-mist-600: #556182;
+  --color-mist-700: #3e4866;
+
+  /* Status */
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-900: #0d2f1c;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-900: #3a2708;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #ef4444;
+  --color-danger-900: #3d1218;
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-900: #10254a;
+
+  /* ── 2. Typography ──────────────────────────────────────────────────────── */
+
+  /* Sora carries the display voice: geometric, slightly technical, reads as
+     "engineered" rather than "playful". Inter does the reading work. JetBrains
+     Mono carries technical metadata (codecs, checksums, file sizes) — a mono
+     face makes a release spec instantly scannable. */
+  --font-display: var(--font-sora), 'Sora', system-ui, sans-serif;
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono-jb), 'JetBrains Mono', ui-monospace, monospace;
+  --font-jp: var(--font-noto-jp), 'Noto Sans JP', var(--font-sans);
+
+  /* A modular scale (1.2 minor third) — every size below is derived, not picked. */
+  --text-2xs: 0.6875rem;   /* 11px — metadata, badges */
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem;      /* 12px */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem;     /* 14px — dense UI */
+  --text-sm--line-height: 1.6;
+  --text-base: 1rem;       /* 16px — body */
+  --text-base--line-height: 1.7;
+  --text-lg: 1.125rem;     /* 18px — lead */
+  --text-lg--line-height: 1.65;
+  --text-xl: 1.375rem;     /* 22px */
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.75rem;     /* 28px — section heading */
+  --text-2xl--line-height: 1.28;
+  --text-3xl: 2.25rem;     /* 36px */
+  --text-3xl--line-height: 1.18;
+  --text-4xl: 3rem;        /* 48px — page title */
+  --text-4xl--line-height: 1.08;
+  --text-5xl: 4rem;        /* 64px — hero */
+  --text-5xl--line-height: 1.02;
+  --text-6xl: 5.25rem;     /* 84px — hero, desktop */
+  --text-6xl--line-height: 0.98;
+
+  /* ── 3. Spacing, radius, layout ─────────────────────────────────────────── */
+
+  /* 4px base grid. Every gap, pad and offset in the app is a multiple. */
+  --spacing: 0.25rem;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  --container-content: 76rem;  /* 1216px — main reading/grid column */
+  --container-wide: 90rem;     /* 1440px — hero and full-bleed sections */
+  --container-prose: 44rem;    /* 704px — article body, optimal measure */
+
+  /* ── 4. Elevation ───────────────────────────────────────────────────────── */
+
+  /* On a dark UI, elevation is light, not shadow. Each level adds a soft ambient
+     shadow *and* a hairline highlight so cards separate without looking cut out. */
+  --shadow-e1: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.03);
+  --shadow-e2: 0 4px 16px -4px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-e3: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.05);
+  --shadow-e4: 0 24px 64px -16px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-glow-tide: 0 0 0 1px rgb(76 216 255 / 0.35), 0 8px 32px -8px rgb(76 216 255 / 0.35);
+  --shadow-glow-orchid: 0 0 0 1px rgb(157 123 255 / 0.35), 0 8px 32px -8px rgb(157 123 255 / 0.35);
+  --shadow-glow-ember: 0 0 0 1px rgb(255 199 107 / 0.35), 0 8px 28px -8px rgb(255 199 107 / 0.3);
+
+  /* ── 5. Motion ──────────────────────────────────────────────────────────── */
+
+  /* Four durations and three curves, and that is the whole vocabulary. Anything
+     that needs a fifth is usually a design problem, not a timing problem. */
+  --duration-instant: 90ms;
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+  --duration-cinematic: 720ms;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-fade-up: fade-up var(--duration-slow) var(--ease-out-expo) both;
+  --animate-fade-in: fade-in var(--duration-base) var(--ease-out-quint) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-drift: drift 24s ease-in-out infinite alternate;
+  --animate-pulse-ring: pulse-ring 2.4s var(--ease-out-quint) infinite;
+
+  /* Breakpoints. `xs` exists because a 360px Android is a real, common device
+     and the release tables need an explicit target below 640px. */
+  --breakpoint-xs: 22.5rem;  /* 360 */
+  --breakpoint-sm: 40rem;    /* 640 */
+  --breakpoint-md: 48rem;    /* 768 */
+  --breakpoint-lg: 64rem;    /* 1024 */
+  --breakpoint-xl: 80rem;    /* 1280 */
+  --breakpoint-2xl: 96rem;   /* 1536 */
+}
+
+/* ── Semantic aliases ──────────────────────────────────────────────────────
+   Components reference these, never the raw palette. Swapping the brand means
+   editing this block, not 200 component files. */
+@theme inline {
+  --color-canvas: var(--color-ink-950);
+  --color-surface: var(--color-ink-900);
+  --color-surface-raised: var(--color-ink-850);
+  --color-surface-overlay: var(--color-ink-800);
+  --color-surface-hover: var(--color-ink-750);
+
+  --color-border: var(--color-ink-700);
+  --color-border-subtle: var(--color-ink-800);
+  --color-border-strong: var(--color-ink-600);
+
+  --color-content: var(--color-mist-100);
+  --color-content-muted: var(--color-mist-400);
+  --color-content-subtle: var(--color-mist-500);
+  --color-content-inverse: var(--color-ink-950);
+
+  --color-accent: var(--color-tide-400);
+  --color-accent-hover: var(--color-tide-300);
+  --color-accent-muted: var(--color-tide-900);
+  --color-accent-alt: var(--color-orchid-400);
+  --color-accent-warm: var(--color-ember-400);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border-subtle);
+  }
+
+  :root {
+    color-scheme: dark;
+    /* Consumed by the header/scroll-spy so `scroll-margin` stays in one place. */
+    --header-height: 4rem;
+    --scroll-offset: 5.5rem;
+  }
+
+  @media (min-width: 64rem) {
+    :root {
+      --header-height: 4.5rem;
+    }
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    /* Prevents the layout shift when a modal locks scrolling. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-content);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+    color: var(--color-mist-50);
+  }
+
+  p, li {
+    text-wrap: pretty;
+  }
+
+  :where(a) {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* One focus treatment for the whole app. Visible, on-brand, never removed —
+     keyboard users get the same quality of feedback as pointer users. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  :where(input, textarea, select, button):focus {
+    outline: none;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-tide-400) 32%, transparent);
+    color: var(--color-mist-50);
+  }
+
+  /* Scrollbars: present, quiet, on-brand. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-ink-925);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink-700);
+    border-radius: 999px;
+    border: 2px solid var(--color-ink-925);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-600);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-700) var(--color-ink-925);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Anchors under the sticky header. */
+  :target {
+    scroll-margin-top: var(--scroll-offset);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOTION — accessibility first
+   Every animation in the app is decorative or explanatory; none of them carry
+   information that is lost when they are switched off.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1.05); }
+  to { transform: translate3d(2%, 3%, 0) scale(1.12); }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-tide-400) 50%, transparent); }
+  70% { box-shadow: 0 0 0 12px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Layout shells */
+  .container-content {
+    width: 100%;
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 64rem) {
+    .container-content {
+      padding-inline: 2rem;
+    }
+  }
+
+  .container-wide {
+    width: 100%;
+    max-width: var(--container-wide);
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 64rem) {
+    .container-wide {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* The signature gradient. Used on headings, active states and dividers. */
+  .text-gradient {
+    background-image: linear-gradient(
+      100deg,
+      var(--color-tide-300) 0%,
+      var(--color-tide-400) 32%,
+      var(--color-orchid-400) 72%,
+      var(--color-orchid-300) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* Descenders get clipped without this on some faces. */
+    padding-bottom: 0.08em;
+  }
+
+  .text-gradient-warm {
+    background-image: linear-gradient(100deg, var(--color-ember-300), var(--color-sakura-400));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Glass surfaces — the card language of the whole product. */
+  .surface-glass {
+    background: color-mix(in oklab, var(--color-ink-850) 78%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--color-mist-100) 8%, transparent);
+  }
+
+  .surface-panel {
+    background: linear-gradient(
+      165deg,
+      color-mix(in oklab, var(--color-ink-850) 96%, var(--color-tide-400)) 0%,
+      var(--color-ink-900) 60%
+    );
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  /* Hairline gradient border used on featured cards and the header. */
+  .border-gradient {
+    position: relative;
+    isolation: isolate;
+  }
+  .border-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      140deg,
+      color-mix(in oklab, var(--color-tide-400) 55%, transparent),
+      transparent 42%,
+      transparent 58%,
+      color-mix(in oklab, var(--color-orchid-400) 45%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Ambient light behind hero sections. Purely decorative, hidden from AT. */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .aurora::before,
+  .aurora::after {
+    content: '';
+    position: absolute;
+    width: 60vw;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.28;
+    will-change: transform;
+  }
+  .aurora::before {
+    top: -22%;
+    left: -12%;
+    background: radial-gradient(circle, var(--color-tide-500), transparent 68%);
+    animation: var(--animate-drift);
+  }
+  .aurora::after {
+    bottom: -28%;
+    right: -14%;
+    background: radial-gradient(circle, var(--color-orchid-500), transparent 68%);
+    animation: var(--animate-drift);
+    animation-delay: -12s;
+    animation-direction: alternate-reverse;
+  }
+
+  /* Fine grain over dark gradients — kills banding on wide flat areas. */
+  .noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-ink-800) 25%,
+      var(--color-ink-750) 37%,
+      var(--color-ink-800) 63%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: var(--radius-md);
+  }
+
+  /* Horizontal snap rails for mobile carousels. */
+  .snap-rail {
+    display: flex;
+    gap: 0.875rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
+    padding-inline: 1.25rem;
+    padding-block: 0.25rem;
+    scrollbar-width: none;
+  }
+  .snap-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-rail > * {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+  }
+
+  /* Screen-reader-only text that becomes visible on focus (skip links). */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Masks a long list fading into the background instead of a hard cut. */
+  .mask-fade-b {
+    mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+  }
+  .mask-fade-r {
+    mask-image: linear-gradient(to right, #000 82%, transparent 100%);
+  }
+
+  /* Tabular figures for anything in a column of numbers. */
+  .nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROSE — the news article body
+   Scoped styling for the (safe, generated) HTML from lib/markdown.ts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  .prose-yonagi {
+    color: var(--color-mist-200);
+    font-size: var(--text-base);
+    line-height: 1.75;
+  }
+
+  .prose-yonagi > * + * {
+    margin-top: 1.25em;
+  }
+
+  .prose-yonagi h2 {
+    font-size: var(--text-2xl);
+    margin-top: 2.25em;
+    margin-bottom: 0.6em;
+    scroll-margin-top: var(--scroll-offset);
+  }
+
+  .prose-yonagi h3 {
+    font-size: var(--text-xl);
+    margin-top: 1.8em;
+    margin-bottom: 0.5em;
+    scroll-margin-top: var(--scroll-offset);
+  }
+
+  .prose-yonagi h4 {
+    font-size: var(--text-lg);
+    margin-top: 1.6em;
+    color: var(--color-mist-100);
+  }
+
+  .prose-yonagi a {
+    color: var(--color-tide-300);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--color-tide-400) 40%, transparent);
+    text-underline-offset: 3px;
+    transition: color var(--duration-fast) var(--ease-out-quint),
+      text-decoration-color var(--duration-fast) var(--ease-out-quint);
+  }
+
+  .prose-yonagi a:hover {
+    color: var(--color-tide-200);
+    text-decoration-color: currentColor;
+  }
+
+  .prose-yonagi strong {
+    color: var(--color-mist-50);
+    font-weight: 650;
+  }
+
+  .prose-yonagi ul,
+  .prose-yonagi ol {
+    padding-left: 1.4em;
+  }
+
+  .prose-yonagi ul {
+    list-style: none;
+  }
+
+  .prose-yonagi ul > li {
+    position: relative;
+  }
+
+  .prose-yonagi ul > li::before {
+    content: '';
+    position: absolute;
+    left: -1em;
+    top: 0.72em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-tide-400);
+  }
+
+  .prose-yonagi ol {
+    list-style: decimal;
+  }
+
+  .prose-yonagi li + li {
+    margin-top: 0.45em;
+  }
+
+  .prose-yonagi blockquote {
+    border-left: 2px solid var(--color-tide-500);
+    padding: 0.25em 0 0.25em 1.25em;
+    color: var(--color-mist-300);
+    font-style: italic;
+  }
+
+  .prose-yonagi code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--color-ink-800);
+    border: 1px solid var(--color-border-subtle);
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-xs);
+    color: var(--color-tide-200);
+  }
+
+  .prose-yonagi pre {
+    background: var(--color-ink-925);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.25rem;
+    overflow-x: auto;
+    font-size: var(--text-sm);
+  }
+
+  .prose-yonagi pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-mist-200);
+  }
+
+  .prose-yonagi img {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  .prose-yonagi hr {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-border-strong) 22%,
+      var(--color-border-strong) 78%,
+      transparent
+    );
+    margin-block: 2.5em;
+  }
+
+  /* Tables must never widen the page on mobile. */
+  .prose-yonagi .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+  }
+
+  .prose-yonagi table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .prose-yonagi th {
+    text-align: left;
+    background: var(--color-ink-850);
+    color: var(--color-mist-100);
+    font-weight: 600;
+    padding: 0.7rem 0.9rem;
+    white-space: nowrap;
+  }
+
+  .prose-yonagi td {
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid var(--color-border-subtle);
+  }
+}

@@ -1,0 +1,97 @@
+import type { NextConfig } from 'next';
+
+/**
+ * Content Security Policy.
+ *
+ * `'unsafe-inline'` for styles is required by Next's inlined critical CSS and by
+ * framer-motion's style writes. Scripts are protected with a per-request nonce in
+ * `middleware.ts`; the `strict-dynamic` fallback keeps the policy meaningful on
+ * browsers that support it while remaining functional on those that do not.
+ */
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' https:",
+  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "connect-src 'self'",
+  "upgrade-insecure-requests",
+].join('; ');
+
+const securityHeaders = [
+  { key: 'X-DNS-Prefetch-Control', value: 'on' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=()',
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload',
+  },
+  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
+];
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+
+  // Fail the production build on type or lint errors instead of shipping them.
+  typescript: { ignoreBuildErrors: false },
+  eslint: { ignoreDuringBuilds: false },
+
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'framer-motion'],
+  },
+
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [360, 480, 640, 828, 1080, 1280, 1600, 1920, 2560],
+    imageSizes: [16, 32, 48, 64, 96, 128, 192, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+    // Remote CDN hosts are configured through env in deployment; the defaults keep
+    // the surface small and explicit.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'cdn.yonagifansub.hu' },
+      { protocol: 'https', hostname: 'images.yonagifansub.hu' },
+    ],
+  },
+
+  async headers() {
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+          ...securityHeaders,
+        ],
+      },
+      {
+        source: '/fonts/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+    ];
+  },
+
+  async redirects() {
+    return [
+      { source: '/projects', destination: '/projektek', permanent: true },
+      { source: '/news', destination: '/hirek', permanent: true },
+      { source: '/team', destination: '/csapat', permanent: true },
+      { source: '/login', destination: '/belepes', permanent: true },
+    ];
+  },
+};
+
+export default nextConfig;
