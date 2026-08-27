@@ -80,7 +80,21 @@ function loadEnv(): Env {
   if (value.MEDIA_DRIVER === 's3' && !value.S3_BUCKET) {
     throw new Error('MEDIA_DRIVER=s3 requires S3_BUCKET to be set.');
   }
-  if (value.NODE_ENV === 'production' && value.NEXT_PUBLIC_SITE_URL.startsWith('http://')) {
+  /*
+   * `next build` runs with NODE_ENV=production even on a laptop or in CI, where
+   * the site URL is legitimately http://localhost. Enforcing https during the
+   * build would make every local production build fail for a reason that has
+   * nothing to do with the build. The check belongs at boot, where the value is
+   * the one the server will actually serve under.
+   */
+  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+  if (
+    value.NODE_ENV === 'production' &&
+    !isBuildPhase &&
+    value.NEXT_PUBLIC_SITE_URL.startsWith('http://') &&
+    !value.NEXT_PUBLIC_SITE_URL.startsWith('http://localhost')
+  ) {
     throw new Error('NEXT_PUBLIC_SITE_URL must use https:// in production.');
   }
 

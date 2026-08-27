@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,6 +9,13 @@ import { cn } from '@/lib/utils';
  * and crawlable, and middle-click works. The window logic always shows the
  * first and last page plus a window around the current one, so the control has
  * a stable width whether there are 3 pages or 300.
+ *
+ * Deliberately *not* marked `'use client'`. It has no state and no effects, so
+ * leaving it unmarked lets it render on the server when a server component uses
+ * it — which is what allows `buildHref` to be a plain function rather than
+ * something serialisable. (A function prop cannot cross a server→client
+ * boundary; marking this file would break every server-rendered list.) When a
+ * client component imports it, React bundles it for the client instead.
  */
 
 export interface PaginationProps {

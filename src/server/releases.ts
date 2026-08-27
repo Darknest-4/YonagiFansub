@@ -34,6 +34,9 @@ export const releaseFeedArgs = Prisma.validator<Prisma.ReleaseDefaultArgs>()({
     kind: true,
     version: true,
     resolution: true,
+    // Always PUBLISHED on the public feed, but the admin table reuses this
+    // projection and needs the real value.
+    status: true,
     videoCodec: true,
     audioCodec: true,
     fileSizeBytes: true,

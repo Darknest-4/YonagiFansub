@@ -83,6 +83,13 @@ export interface RouteDefinition<
   meta?: (result: TResult) => ApiMeta | undefined;
 }
 
+/**
+ * Next type-checks the exported handler's signature at build time and requires
+ * the context argument — and its `params` promise — to be non-optional, because
+ * it passes one on every route, dynamic segments or not (a static route simply
+ * resolves to an empty object). The runtime code still guards, since these
+ * handlers are also called directly from tests.
+ */
 type NextRouteArgs = { params: Promise<Record<string, string | string[]>> };
 
 function fieldErrorsFrom(error: z.ZodError): FieldErrors {
@@ -133,7 +140,20 @@ function assertSameOrigin(req: NextRequest) {
     throw new ForbiddenError('Érvénytelen Origin fejléc.');
   }
 
-  const allowed = new Set([new URL(env.NEXT_PUBLIC_SITE_URL).host, req.nextUrl.host]);
+  /*
+   * Same-origin means the `Origin` header matches the host the browser actually
+   * addressed — the `Host` header. Comparing only against the configured site URL
+   * breaks every legitimate deployment where the two differ: a local `next start`
+   * on another port, a preview URL, an internal hostname behind a proxy. The
+   * configured origin is accepted as well, so a proxy that rewrites `Host` still
+   * works.
+   */
+  const allowed = new Set(
+    [new URL(env.NEXT_PUBLIC_SITE_URL).host, req.headers.get('host'), req.nextUrl.host].filter(
+      (host): host is string => Boolean(host),
+    ),
+  );
+
   if (!allowed.has(originHost)) {
     throw new ForbiddenError('A kérés nem az oldalról érkezett.');
   }
@@ -145,7 +165,7 @@ export function defineRoute<
   TQuerySchema extends ZodTypeAny | undefined = undefined,
   TParamsSchema extends ZodTypeAny | undefined = undefined,
 >(definition: RouteDefinition<TBodySchema, TQuerySchema, TParamsSchema, TResult>) {
-  return async function route(req: NextRequest, args?: NextRouteArgs): Promise<NextResponse> {
+  return async function route(req: NextRequest, args: NextRouteArgs): Promise<NextResponse> {
     const requestId = req.headers.get('x-request-id') ?? randomUUID();
     const startedAt = performance.now();
     const method = req.method.toUpperCase();
@@ -227,7 +247,7 @@ export function defineRoute<
       }
 
       let params: unknown = {};
-      const rawParams = args ? await args.params : {};
+      const rawParams = args?.params ? await args.params : {};
       if (definition.params) {
         const parsed = definition.params.safeParse(rawParams);
         if (!parsed.success) throw new ValidationError(fieldErrorsFrom(parsed.error));
