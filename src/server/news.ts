@@ -102,6 +102,7 @@ export async function getNewsBySlug(slug: string, includeUnpublished = false) {
     select: {
       ...newsCardArgs.select,
       content: true,
+      categoryId: true,
       status: true,
       updatedAt: true,
       createdAt: true,
