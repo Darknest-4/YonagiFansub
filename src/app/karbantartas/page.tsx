@@ -12,9 +12,16 @@ export const dynamic = 'force-dynamic';
 /**
  * Maintenance screen.
  *
- * Rendered outside the site shell on purpose: if the database is what is being
- * worked on, the header and footer (which both read from it) are exactly the
- * parts most likely to fail. This page needs nothing but settings.
+ * Deliberately outside the `(site)` route group, for two reasons.
+ *
+ * The first is fatal if you get it wrong: the site layout redirects visitors
+ * here whenever maintenance mode is on. If this page lived inside that layout,
+ * it would redirect to itself — an infinite loop, and the maintenance screen
+ * would be the one page nobody could ever see.
+ *
+ * The second is defensive: if the database is what is being worked on, the
+ * header and footer (which both read from it) are the parts most likely to
+ * fail. This page needs nothing but the settings row.
  */
 export default async function MaintenancePage() {
   const settings = await getPublicSettings();

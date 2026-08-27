@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z, type ZodTypeAny } from 'zod';
+import '@/lib/validation/error-map';
 import { env, isProduction } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import {

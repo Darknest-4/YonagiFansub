@@ -59,7 +59,24 @@ export const releaseFeedArgs = Prisma.validator<Prisma.ReleaseDefaultArgs>()({
   },
 });
 
-export type ReleaseFeedItem = Prisma.ReleaseGetPayload<typeof releaseFeedArgs>;
+type ReleaseFeedRow = Prisma.ReleaseGetPayload<typeof releaseFeedArgs>;
+
+/**
+ * The shape callers actually receive.
+ *
+ * `fileSizeBytes` is a `BigInt` in the database and a **string** here. BigInt
+ * cannot be JSON-serialised, which means it survives neither Next's data cache
+ * nor the server→client component boundary — both fail at runtime, not at
+ * compile time. Converting once at the service boundary removes the whole class
+ * of bug instead of leaving every consumer to remember.
+ */
+export type ReleaseFeedItem = Omit<ReleaseFeedRow, 'fileSizeBytes'> & {
+  fileSizeBytes: string | null;
+};
+
+function toFeedItem(row: ReleaseFeedRow): ReleaseFeedItem {
+  return { ...row, fileSizeBytes: row.fileSizeBytes?.toString() ?? null };
+}
 
 export interface ReleaseListFilters {
   projectId?: string;
@@ -101,7 +118,7 @@ export async function listReleases(
   const where = buildWhere(filters);
   const sort = parseSort(filters.sort, RELEASE_SORTS, { field: 'releasedAt', direction: 'desc' });
 
-  const [items, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     db.release.findMany({
       where,
       ...releaseFeedArgs,
@@ -111,7 +128,7 @@ export async function listReleases(
     db.release.count({ where }),
   ]);
 
-  return { items, meta: paginationMeta(total, pagination) };
+  return { items: rows.map(toFeedItem), meta: paginationMeta(total, pagination) };
 }
 
 export const listPublicReleases = cached(
@@ -125,42 +142,18 @@ export const listPublicReleases = cached(
 );
 
 export const getLatestReleases = cached(
-  async (limit = 8) =>
-    db.release.findMany({
+  async (limit = 8): Promise<ReleaseFeedItem[]> => {
+    const rows = await db.release.findMany({
       where: publicReleaseFilter,
       ...releaseFeedArgs,
       orderBy: [{ releasedAt: 'desc' }, { id: 'desc' }],
       take: limit,
-    }),
+    });
+    return rows.map(toFeedItem);
+  },
   ['latest-releases'],
   { tags: [CACHE_TAGS.releases], revalidate: CACHE_TTL.short },
 );
-
-export async function getReleaseWithLinks(id: string) {
-  return db.release.findFirst({
-    where: { id, ...publicReleaseFilter },
-    select: {
-      ...releaseFeedArgs.select,
-      crc32: true,
-      sha256: true,
-      subtitleFormat: true,
-      durationSec: true,
-      notes: true,
-      links: {
-        orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
-        select: {
-          id: true,
-          kind: true,
-          label: true,
-          isMirror: true,
-          availability: true,
-          downloadCount: true,
-          host: { select: { key: true, name: true, iconUrl: true } },
-        },
-      },
-    },
-  });
-}
 
 /**
  * Resolves a download link.

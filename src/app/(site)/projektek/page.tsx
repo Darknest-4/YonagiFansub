@@ -5,7 +5,7 @@ import { EmptyState, ProjectGridSkeleton } from '@/components/ui/feedback';
 import { Pagination } from '@/components/ui/pagination';
 import { ProjectCard } from '@/components/site/project-card';
 import { ProjectFilters } from '@/components/site/project-filters';
-import { listProjects, listGenres, listSeasons } from '@/server/projects';
+import { listGenres, listPublicProjects, listSeasons } from '@/server/projects';
 import { paginationSchema, parseList } from '@/lib/api/pagination';
 import { projectQuerySchema } from '@/lib/validation/schemas';
 import { PageHeader } from '@/components/site/page-header';
@@ -79,8 +79,11 @@ async function ProjectResults({
   page: number;
   perPage: number;
 }) {
-  const { items, meta } = await listProjects(
-    {
+  // The cached variant takes its arguments as strings: `unstable_cache` keys on
+  // them, and a filter object that is not part of the key would produce
+  // cross-contaminated cache entries.
+  const { items, meta } = await listPublicProjects(
+    JSON.stringify({
       q: filters.q,
       status: filters.status,
       type: filters.type,
@@ -88,9 +91,8 @@ async function ProjectResults({
       year: filters.year,
       genres: parseList(filters.genre),
       sort: filters.sort,
-      includeUnpublished: false,
-    },
-    { page, perPage },
+    }),
+    JSON.stringify({ page, perPage }),
   );
 
   if (items.length === 0) {

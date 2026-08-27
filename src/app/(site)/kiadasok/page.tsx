@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/site/page-header';
 import { ReleaseRow } from '@/components/site/release-card';
 import { EmptyState, ReleaseListSkeleton } from '@/components/ui/feedback';
 import { Pagination } from '@/components/ui/pagination';
-import { listReleases } from '@/server/releases';
+import { listPublicReleases } from '@/server/releases';
 import { paginationSchema } from '@/lib/api/pagination';
 import { releaseQuerySchema } from '@/lib/validation/schemas';
 import { ReleaseFilters } from '@/components/site/release-filters';
@@ -68,15 +68,14 @@ async function ReleaseResults({
   page: number;
   perPage: number;
 }) {
-  const { items, meta } = await listReleases(
-    {
+  const { items, meta } = await listPublicReleases(
+    JSON.stringify({
       projectSlug: filters.projectSlug,
       resolution: filters.resolution,
       kind: filters.kind,
       sort: filters.sort,
-      includeUnpublished: false,
-    },
-    { page, perPage },
+    }),
+    JSON.stringify({ page, perPage }),
   );
 
   if (items.length === 0) {

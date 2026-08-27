@@ -121,9 +121,7 @@ age -d -i "$BACKUP_PRIVATE_KEY" yonagi-latest.dump.age \
   | pg_restore --dbname=yonagi --jobs=4 --no-owner
 
 # 4. A séma-kiegészítők nincsenek a dumpban, ha csak adatot mentettél.
-psql "$DIRECT_DATABASE_URL" -f prisma/sql/01-extensions.sql
-psql "$DIRECT_DATABASE_URL" -f prisma/sql/02-search-indexes.sql
-psql "$DIRECT_DATABASE_URL" -f prisma/sql/03-constraints.sql
+npm run db:sql
 
 # 5. Jogosultságok szinkronizálása (ha a kód azóta frissült).
 NODE_ENV=production npx tsx prisma/seed.ts
@@ -210,7 +208,8 @@ ORDER BY seq_scan DESC;
 ```
 
 Ha a keresés a lassú: futottak-e a trigram indexek
-(`prisma/sql/02-search-indexes.sql`)? Ez a leggyakoribb kihagyott lépés.
+(`prisma/sql/02-search-indexes.sql`)? Ez a leggyakoribb kihagyott lépés —
+`npm run db:sql` pótolja, újrafuttatása ártalmatlan.
 
 ### „Sok a spam a kapcsolati űrlapon"
 

@@ -39,11 +39,16 @@ közben.
 
 ```bash
 npx prisma migrate deploy                                  # séma
-psql "$DIRECT_DATABASE_URL" -f prisma/sql/01-extensions.sql
-psql "$DIRECT_DATABASE_URL" -f prisma/sql/02-search-indexes.sql
-psql "$DIRECT_DATABASE_URL" -f prisma/sql/03-constraints.sql
+npm run db:sql                                             # kiterjesztések, indexek, CHECK-ek
 NODE_ENV=production npx tsx prisma/seed.ts                 # szerepkörök, törzsadat
 ```
+
+A `db:sql` a `prisma/sql/` fájljait alkalmazza névsorrendben, a
+`DIRECT_DATABASE_URL`-en keresztül (DDL nem mehet tranzakciós pooleren). Minden
+utasítás idempotens, így minden deploy után újrafuttatható — és futtatandó is,
+mert ezeket a séma-kiegészítőket a Prisma migráció nem tartalmazza. `psql`
+sincs hozzá telepítve: elég a Node runtime, ami a build futtatásához amúgy is
+kell.
 
 A seed éles környezetben **idempotens és biztonságos**: jogosultságokat,
 szerepköröket, pozíciókat, formátumokat és beállítás-metaadatot szinkronizál,

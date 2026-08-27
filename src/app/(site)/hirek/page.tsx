@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/site/page-header';
 import { NewsCard } from '@/components/site/news-card';
 import { EmptyState, Skeleton } from '@/components/ui/feedback';
 import { Pagination } from '@/components/ui/pagination';
-import { listNews, listNewsCategories } from '@/server/news';
+import { listNewsCategories, listPublicNews } from '@/server/news';
 import { paginationSchema } from '@/lib/api/pagination';
 import { newsQuerySchema } from '@/lib/validation/schemas';
 import { cn } from '@/lib/utils';
@@ -89,9 +89,9 @@ async function NewsResults({
   page: number;
   perPage: number;
 }) {
-  const { items, meta } = await listNews(
-    { category, q, includeUnpublished: false },
-    { page, perPage },
+  const { items, meta } = await listPublicNews(
+    JSON.stringify({ category, q }),
+    JSON.stringify({ page, perPage }),
   );
 
   if (items.length === 0) {

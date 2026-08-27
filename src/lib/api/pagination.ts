@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import '@/lib/validation/error-map';
 import type { ApiMeta } from '@/lib/api/response';
 
 /**

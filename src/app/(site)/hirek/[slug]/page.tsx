@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock, Eye } from 'lucide-react';
 import { env } from '@/lib/env';
-import { formatDate, formatCount, truncate, stripMarkdown } from '@/lib/utils';
+import { formatDate, formatCount, truncate, stripMarkdown, toIsoString } from '@/lib/utils';
 import { renderMarkdown } from '@/lib/markdown';
 import { getPublicNewsBySlug, getRelatedNews, incrementNewsView } from '@/server/news';
 import { Breadcrumbs } from '@/components/site/page-header';
@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       title: post.title,
       description,
       url: `${env.NEXT_PUBLIC_SITE_URL}/hirek/${post.slug}`,
-      publishedTime: post.publishedAt?.toISOString(),
-      modifiedTime: post.updatedAt.toISOString(),
+      publishedTime: toIsoString(post.publishedAt),
+      modifiedTime: toIsoString(post.updatedAt),
       authors: post.author ? [post.author.displayName] : undefined,
       images: post.coverImageUrl
         ? [{ url: post.coverImageUrl, width: 1200, height: 630, alt: post.title }]
@@ -80,8 +80,8 @@ export default async function NewsPostPage({ params }: { params: Params }) {
             headline: post.title,
             description: post.excerpt ?? undefined,
             image: post.coverImageUrl ?? undefined,
-            datePublished: post.publishedAt?.toISOString(),
-            dateModified: post.updatedAt.toISOString(),
+            datePublished: toIsoString(post.publishedAt),
+            dateModified: toIsoString(post.updatedAt),
             author: post.author
               ? { '@type': 'Person', name: post.author.displayName }
               : { '@type': 'Organization', name: 'Yonagi Fansub' },
@@ -155,7 +155,7 @@ export default async function NewsPostPage({ params }: { params: Params }) {
             )}
 
             <div className="ml-auto flex items-center gap-4 text-2xs text-mist-500">
-              <time dateTime={post.publishedAt?.toISOString()}>
+              <time dateTime={toIsoString(post.publishedAt)}>
                 {formatDate(post.publishedAt)}
               </time>
               <span className="nums inline-flex items-center gap-1.5">

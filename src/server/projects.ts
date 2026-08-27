@@ -31,8 +31,17 @@ export const publicProjectFilter = {
   publishStatus: 'PUBLISHED',
 } satisfies Prisma.ProjectWhereInput;
 
+/**
+ * Returns a **fresh** filter object every call.
+ *
+ * Handing back the shared `publicProjectFilter` reference would be a live
+ * cross-request bug: `buildWhere` mutates the object it is given (`where.status
+ * = …`, `where.OR = …`), so one filtered catalogue query would permanently
+ * poison the module-level constant, and every later lookup that spread it would
+ * silently match nothing. The spread is not a micro-optimisation to skip.
+ */
 function visibilityFilter(includeUnpublished: boolean): Prisma.ProjectWhereInput {
-  return includeUnpublished ? { deletedAt: null } : publicProjectFilter;
+  return includeUnpublished ? { deletedAt: null } : { ...publicProjectFilter };
 }
 
 /** Card projection: everything the grid renders, and nothing else. */
@@ -227,10 +236,38 @@ export const episodeListArgs = Prisma.validator<Prisma.EpisodeDefaultArgs>()({
   },
 });
 
-export type EpisodeListItem = Prisma.EpisodeGetPayload<typeof episodeListArgs>;
+type EpisodeListRow = Prisma.EpisodeGetPayload<typeof episodeListArgs>;
 
-export async function listEpisodes(projectId: string, includeUnreleased = true) {
-  return db.episode.findMany({
+/**
+ * The shape callers actually receive.
+ *
+ * Same rule as `ReleaseFeedItem`: `Release.fileSizeBytes` is a `BigInt` in the
+ * database and a **string** everywhere above the service layer. BigInt is not
+ * JSON-serialisable, so it survives neither Next's data cache nor the
+ * server→client boundary — and it fails at runtime, not at compile time.
+ * `formatBytes()` reads the string form.
+ */
+export type EpisodeListItem = Omit<EpisodeListRow, 'releases'> & {
+  releases: Array<Omit<EpisodeListRow['releases'][number], 'fileSizeBytes'> & {
+    fileSizeBytes: string | null;
+  }>;
+};
+
+function toEpisodeListItem(row: EpisodeListRow): EpisodeListItem {
+  return {
+    ...row,
+    releases: row.releases.map((release) => ({
+      ...release,
+      fileSizeBytes: release.fileSizeBytes?.toString() ?? null,
+    })),
+  };
+}
+
+export async function listEpisodes(
+  projectId: string,
+  includeUnreleased = true,
+): Promise<EpisodeListItem[]> {
+  const rows = await db.episode.findMany({
     where: {
       projectId,
       deletedAt: null,
@@ -239,6 +276,8 @@ export async function listEpisodes(projectId: string, includeUnreleased = true) 
     ...episodeListArgs,
     orderBy: { number: 'asc' },
   });
+
+  return rows.map(toEpisodeListItem);
 }
 
 export const getPublicEpisodes = cached(

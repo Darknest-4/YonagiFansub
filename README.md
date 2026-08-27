@@ -39,9 +39,7 @@ cp .env.example .env.local
 
 # 3. Adatbázis
 npm run db:push                                   # séma
-psql "$DATABASE_URL" -f prisma/sql/01-extensions.sql
-psql "$DATABASE_URL" -f prisma/sql/02-search-indexes.sql
-psql "$DATABASE_URL" -f prisma/sql/03-constraints.sql
+npm run db:sql                                    # kiterjesztések, trigram indexek, CHECK-ek
 npm run db:seed                                   # szerepkörök + demó tartalom
 
 # 4. Indítás

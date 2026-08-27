@@ -23,10 +23,20 @@ export function slugify(input: string): string {
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
 
-/** Human file size. Accepts bigint because `Release.fileSizeBytes` is a BigInt. */
-export function formatBytes(bytes: number | bigint | null | undefined, decimals = 2): string {
-  if (bytes === null || bytes === undefined) return '—';
-  let value = typeof bytes === 'bigint' ? Number(bytes) : bytes;
+/**
+ * Human file size.
+ *
+ * Accepts a string as well as a number: `Release.fileSizeBytes` is a `BigInt` in
+ * the database, and BigInt survives neither `JSON.stringify` (the data cache)
+ * nor the server→client boundary. The service layer therefore hands it over as
+ * a decimal string, and this is where it is read back.
+ */
+export function formatBytes(
+  bytes: number | bigint | string | null | undefined,
+  decimals = 2,
+): string {
+  if (bytes === null || bytes === undefined || bytes === '') return '—';
+  let value = typeof bytes === 'number' ? bytes : Number(bytes);
   if (!Number.isFinite(value) || value <= 0) return '0 B';
 
   let unit = 0;
@@ -175,6 +185,24 @@ export function safeRedirectPath(candidate: string | null | undefined, fallback 
   if (!candidate.startsWith('/') || candidate.startsWith('//')) return fallback;
   if (candidate.includes('\\') || candidate.includes('\n')) return fallback;
   return candidate;
+}
+
+/**
+ * ISO string from a value that may already be one.
+ *
+ * Next's data cache serialises through JSON, so a `Date` written into
+ * `unstable_cache` comes back as a string. Calling `.toISOString()` on it throws
+ * — at runtime, in production, on the one code path (structured data, `<time>`
+ * attributes) that nobody clicks through while developing. This helper is the
+ * single place that difference is handled.
+ */
+export function toIsoString(value: Date | string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+  }
+  return value.toISOString();
 }
 
 export function absoluteUrl(path: string, base: string): string {

@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Clock, Pin } from 'lucide-react';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, toIsoString } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { NewsCard as NewsCardData } from '@/server/news';
@@ -125,7 +125,7 @@ export function NewsCard({
                 </p>
               )}
               <p className="flex items-center gap-1.5 text-2xs text-mist-600">
-                <time dateTime={post.publishedAt?.toISOString()}>
+                <time dateTime={toIsoString(post.publishedAt)}>
                   {formatDate(post.publishedAt)}
                 </time>
                 <span aria-hidden>·</span>

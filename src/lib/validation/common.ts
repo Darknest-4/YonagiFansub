@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import '@/lib/validation/error-map';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/lib/auth/password-policy';
 
 /**
@@ -8,6 +9,7 @@ import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/lib/auth/password-po
  * forms. Validating with the same schema on both sides means the browser can
  * give instant feedback without the server ever trusting it.
  */
+
 
 export const cuid = z.string().cuid({ message: 'Érvénytelen azonosító.' });
 

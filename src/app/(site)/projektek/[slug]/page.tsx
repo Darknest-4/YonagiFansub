@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { Building2, CalendarDays, Clapperboard, ExternalLink, Users } from 'lucide-react';
 import { env } from '@/lib/env';
-import { formatCount, truncate } from '@/lib/utils';
+import { formatCount, toIsoString, truncate } from '@/lib/utils';
 import { db } from '@/lib/db';
 import {
   getPublicEpisodes,
@@ -129,7 +129,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
             numberOfEpisodes: project.totalEpisodes ?? undefined,
             genre: project.genres.map(({ genre }) => genre.name),
             productionCompany: project.studio ? { '@type': 'Organization', name: project.studio } : undefined,
-            datePublished: project.publishedAt?.toISOString(),
+            datePublished: toIsoString(project.publishedAt),
             inLanguage: 'ja',
             subtitleLanguage: 'hu',
           }),

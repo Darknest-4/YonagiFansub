@@ -71,7 +71,7 @@ export default async function AdminReleasesPage({ searchParams }: { searchParams
           version: release.version,
           resolution: release.resolution,
           status: release.status,
-          fileSizeBytes: release.fileSizeBytes?.toString() ?? null,
+          fileSizeBytes: release.fileSizeBytes,
           releasedAt: release.releasedAt?.toISOString() ?? null,
           downloadCount: release.downloadCount,
           linkCount: release._count.links,

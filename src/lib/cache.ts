@@ -50,6 +50,23 @@ export const CACHE_TTL = {
  * for parameters that have defaults, and it collapses Prisma's precise payload
  * types on the way out — which turns a typo in a `select` into a runtime bug
  * instead of a compile error. Capturing `T` whole preserves both ends exactly.
+ *
+ * ## The one thing the types lie about
+ *
+ * The data cache round-trips through JSON, so what comes *out* is not always
+ * what the loader put in, even though `T` says it is:
+ *
+ * - `Date` → ISO **string**. `value.toISOString()` throws on a cache hit and
+ *   works on a miss, which is why it survives development and fails in
+ *   production. Read dates through `toIsoString()` / `formatDate()` in
+ *   `lib/utils.ts`; both accept either shape.
+ * - `BigInt` → `TypeError` at write time (`JSON.stringify` refuses it). Convert
+ *   at the service boundary — `Release.fileSizeBytes` is handed out as a
+ *   decimal string for exactly this reason.
+ * - `Decimal` → string. Already handled by `formatEpisodeNumber()`.
+ *
+ * Anything cached must therefore be plain-JSON-safe, and anything read back
+ * must tolerate the serialised shape.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see the note above.
 export function cached<T extends (...args: any[]) => Promise<unknown>>(
