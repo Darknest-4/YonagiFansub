@@ -44,6 +44,14 @@ const schema = z.object({
 
   MEDIA_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_PUBLIC_BASE_URL: z.string().default('/uploads'),
+  /**
+   * Where the local driver writes. Deliberately outside `public/`: Next builds
+   * its static-file manifest at build time, so a file dropped into `public/` at
+   * runtime is on disk but returns 404. Uploads are served by the
+   * `/uploads/[...path]` route instead, which reads this directory live — and
+   * that also keeps user content out of the build output and out of the image.
+   */
+  MEDIA_LOCAL_DIR: z.string().default('./storage/uploads'),
   S3_ENDPOINT: z.string().optional(),
   S3_REGION: z.string().optional(),
   S3_BUCKET: z.string().optional(),

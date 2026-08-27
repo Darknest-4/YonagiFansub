@@ -68,6 +68,11 @@ shred -u "$DEST/yonagi-$STAMP.dump"
 # Külső tárhely — ugyanazon a gépen tárolt mentés nem mentés.
 rclone copy "$DEST/yonagi-$STAMP.dump.age" "remote:yonagi-backups/"
 
+# Feltöltött média (csak MEDIA_DRIVER=local mellett — s3-nál a bucket
+# verziózása és életciklus-szabálya a mentés). A fájlnevek tartalomcímzettek,
+# tehát a szinkron mindig inkrementális: ami egyszer felkerült, nem változik.
+rclone sync "${MEDIA_LOCAL_DIR:-./storage/uploads}" "remote:yonagi-media/"
+
 # Helyi retenció: 7 nap. A távoli oldalon állíts be életciklus-szabályt.
 find "$DEST" -name '*.dump.age' -mtime +7 -delete
 ```

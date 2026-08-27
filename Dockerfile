@@ -73,6 +73,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+# The scripts directory carries `db:sql`, which every release runs.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
+# Upload target for MEDIA_DRIVER=local. Created and owned here so the app can
+# write without running as root; mount a volume over it to keep uploads across
+# deploys, or switch to MEDIA_DRIVER=s3 and leave it empty.
+RUN mkdir -p /app/storage/uploads && chown -R nextjs:nodejs /app/storage
+VOLUME ["/app/storage/uploads"]
 
 USER nextjs
 EXPOSE 3000

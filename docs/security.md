@@ -142,6 +142,27 @@ nincs mit elrontani egy sanitizer konfigurációban.
 A linkeknél allow-lista: `http(s)`, `mailto`, horgony és oldalon belüli útvonal.
 A `javascript:` és `data:` sémák eldobódnak, a címke sima szövegként marad.
 
+**Fájlfeltöltés.** A feltöltött bájtok az egyetlen olyan felhasználói tartalom,
+ami a saját eredetünkről jön vissza, ezért itt semmit nem hiszünk el a kérésnek:
+
+- A típust a **magic byte-ok** döntik el (`lib/media/image.ts`), nem a
+  `Content-Type` és nem a fájlnév. Öt képformátum fogadható; egy `.png`-nek
+  nevezett HTML vagy zip elutasításra kerül.
+- **SVG nincs az allow-listán.** Legitim képformátum és egyben script-futtatási
+  környezet: egy `onload`-os `<svg>` a saját domainünkről tárolt XSS lenne.
+  Biztonságos elfogadása sanitizert vagy külön asset-origint igényelne — egyik
+  sem ingyenes, és egyik sem kell borítóképhez.
+- A **kulcsot mi generáljuk** a tartalom SHA-256 lenyomatából. A feltöltő nem
+  választhatja meg, hova kerül a fájl, és a kulcs nem tartalmaz semmit a
+  beküldött névből.
+- A kiszolgáló útvonal (`/uploads/[...path]`) csak az allow-listás
+  kiterjesztéseket adja ki, mindig **explicit `Content-Type`-pal**, `nosniff`-fel
+  és `default-src 'none'; sandbox` CSP-vel — így egy elgépelt típusú válasz sem
+  válhat aktív dokumentummá. A path traversal ellen a *feloldott* útvonal
+  prefix-ellenőrzése véd, nem a szegmensek szűrése.
+- Méretkorlát 8 MB, kétszer ellenőrizve: a `Content-Length` állítás olcsón
+  elutasítható a bájtok beolvasása előtt, a puffer hossza pedig a tény.
+
 **Nyílt átirányítás.** A `?next=` paraméter a `safeRedirectPath()`-en megy át,
 ami csak azonos eredetű relatív útvonalat enged. Enélkül a belépőoldal
 adathalász eszközzé válna, ami a valódi domainen indul.

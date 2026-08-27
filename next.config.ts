@@ -81,6 +81,22 @@ const nextConfig: NextConfig = {
         source: '/fonts/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
+      {
+        /*
+         * User-uploaded media. The upload route only stores files whose magic
+         * bytes identify them as one of five image formats, and the serving
+         * route sets the type from an extension allowlist — but this is the
+         * one path where bytes a person supplied come back out over our own
+         * origin, so the policy is tightened rather than inherited: nothing
+         * loads, nothing executes, and the sandbox denies script and same-origin
+         * access even if a response were ever mistyped.
+         */
+        source: '/uploads/:path*',
+        headers: [
+          ...securityHeaders.filter((header) => header.key !== 'Content-Security-Policy'),
+          { key: 'Content-Security-Policy', value: "default-src 'none'; sandbox" },
+        ],
+      },
     ];
   },
 

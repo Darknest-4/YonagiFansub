@@ -169,8 +169,32 @@ Minden végpont a nevében szereplő jogosultságot követeli meg
 | Beállítások | `GET PUT /admin/settings` | `settings:read` / `settings:write` |
 | Üzenetek | `GET /admin/contact`, `PATCH /admin/contact/{id}` | `contact:read` / `contact:write` |
 | Hozzászólások | `GET /admin/comments`, `PATCH /admin/comments/{id}` | `comment:moderate` |
+| Médiatár | `GET POST /admin/media`, `GET PUT DELETE /admin/media/{id}` | `media:write` / `media:delete` |
 | Statisztika | `GET /admin/stats` | `stats:read` |
 | Audit napló | `GET /admin/audit` | `audit:read` |
+
+### Feltöltés
+
+`POST /admin/media` az egyetlen végpont, ami nem JSON törzset vár:
+`multipart/form-data`, `file` mezővel, opcionális `folder` és `alt` mezőkkel.
+Minden más — rate limit, CSRF, jogosultság, hibaboríték — ugyanúgy a
+`defineRoute`-ból jön.
+
+A tárolt típust **a fájl magic byte-jai** döntik el, nem a `Content-Type` és nem
+a kiterjesztés: PNG, JPEG, WebP, GIF és AVIF fogadható, fájlonként legfeljebb
+8 MB. Az SVG tudatosan nincs a listán (script-futtatási kontextus, nem csak kép).
+
+A kulcs tartalomcímzett (`{mappa}/{sha256 első 24 karaktere}.{kiterjesztés}`),
+így ugyanaz a fájl kétszer feltöltve nem készít másolatot — a válasz ilyenkor
+`deduplicated: true`, és a meglévő rekordot adja vissza.
+
+```jsonc
+// POST /api/v1/admin/media  (multipart/form-data)
+{ "data": { "asset": { "id": "…", "url": "/uploads/projects/9f2a….png",
+                       "mimeType": "image/png", "sizeBytes": "184320",
+                       "width": 1200, "height": 630 },
+            "deduplicated": false } }
+```
 
 Az admin írások mind auditálva vannak, mezőnkénti diff-fel. Az audit tábla
 kizárólag append: sehol a kódban nincs olyan út, ami módosítaná vagy törölné

@@ -18,9 +18,9 @@ dist/
 .env.*.local
 !.env.example
 
-# uploads (development local media driver)
-public/uploads/*
-!public/uploads/.gitkeep
+# uploads (local media driver) — user content, never part of the repo or image
+storage/uploads/*
+!storage/uploads/.gitkeep
 
 # testing / coverage
 coverage/

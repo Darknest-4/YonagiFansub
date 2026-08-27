@@ -17,6 +17,7 @@ import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/field'
 import { ConfirmDialog } from '@/components/ui/modal';
 import { InlineError } from '@/components/ui/feedback';
 import { useToast } from '@/components/ui/toast';
+import { ImageField } from '@/components/admin/image-field';
 import {
   AGE_RATING_LABEL,
   PROJECT_STATUS,
@@ -459,32 +460,24 @@ export function ProjectForm({
         <Card>
           <CardHeader title="Média" description="Képek és külső azonosítók." />
           <CardBody className="space-y-4">
-            <Field label="Borítókép URL" optionalLabel hint="2:3 arány ajánlott." error={fieldErrors.coverImageUrl}>
-              {({ id, describedBy, invalid }) => (
-                <Input
-                  id={id}
-                  type="url"
-                  value={values.coverImageUrl}
-                  onChange={(event) => set('coverImageUrl', event.target.value)}
-                  invalid={invalid}
-                  aria-describedby={describedBy}
-                  placeholder="https://cdn.yonagifansub.hu/…"
-                />
-              )}
-            </Field>
+            <ImageField
+              label="Borítókép"
+              hint="2:3 arány ajánlott."
+              value={values.coverImageUrl}
+              onChange={(value) => set('coverImageUrl', value)}
+              error={fieldErrors.coverImageUrl}
+              folder="projects"
+              aspect="poster"
+            />
 
-            <Field label="Banner URL" optionalLabel hint="16:9 vagy szélesebb." error={fieldErrors.bannerImageUrl}>
-              {({ id, describedBy, invalid }) => (
-                <Input
-                  id={id}
-                  type="url"
-                  value={values.bannerImageUrl}
-                  onChange={(event) => set('bannerImageUrl', event.target.value)}
-                  invalid={invalid}
-                  aria-describedby={describedBy}
-                />
-              )}
-            </Field>
+            <ImageField
+              label="Banner"
+              hint="16:9 vagy szélesebb."
+              value={values.bannerImageUrl}
+              onChange={(value) => set('bannerImageUrl', value)}
+              error={fieldErrors.bannerImageUrl}
+              folder="projects"
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Előzetes URL" optionalLabel error={fieldErrors.trailerUrl}>

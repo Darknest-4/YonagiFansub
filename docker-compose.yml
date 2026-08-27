@@ -69,7 +69,19 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MEDIA_DRIVER: ${MEDIA_DRIVER:-local}
+      MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL:-/uploads}
+      MEDIA_LOCAL_DIR: /app/storage/uploads
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      # Uploaded media outlives the container with the local driver. Unused when
+      # MEDIA_DRIVER=s3, and harmless to leave mounted.
+      - media-data:/app/storage/uploads
     ports:
       - '${APP_PORT:-3000}:3000'
     healthcheck:
@@ -111,3 +123,4 @@ services:
 volumes:
   db-data:
   redis-data:
+  media-data:

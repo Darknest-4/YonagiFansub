@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/ui/modal';
 import { InlineError } from '@/components/ui/feedback';
 import { PUBLISH_STATUS } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
+import { ImageField } from '@/components/admin/image-field';
 import { ApiError, apiFetch, type FieldErrors } from '@/lib/client/api';
 import { useFormDraft } from '@/lib/client/use-form-draft';
 import type { NewsFormValues } from '@/lib/forms/defaults';
@@ -290,17 +291,13 @@ export function NewsForm({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Borítókép URL" optionalLabel error={fieldErrors.coverImageUrl}>
-                {({ id, invalid }) => (
-                  <Input
-                    id={id}
-                    type="url"
-                    value={values.coverImageUrl}
-                    onChange={(event) => set('coverImageUrl', event.target.value)}
-                    invalid={invalid}
-                  />
-                )}
-              </Field>
+              <ImageField
+                label="Borítókép"
+                value={values.coverImageUrl}
+                onChange={(value) => set('coverImageUrl', value)}
+                error={fieldErrors.coverImageUrl}
+                folder="news"
+              />
 
               <Field
                 label="Publikálás időpontja"

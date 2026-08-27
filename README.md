@@ -21,7 +21,7 @@ A rendszer három felületre bomlik, egy kódbázisban:
 | --- | --- | --- |
 | **Nyilvános oldal** | Látogatók | Katalógus, epizódok valós munkafolyamat-állapottal, kiadások letöltési tükrökkel, hírek, csapat, keresés |
 | **Fiók** | Regisztrált tagok | Projektkövetés, értesítések, beállítások, aktív munkamenetek |
-| **Admin** | Csapat | Projekt-, epizód-, kiadás-, hír- és csapatkezelés, felhasználók, szerepkörök, statisztika, audit napló |
+| **Admin** | Csapat | Projekt-, epizód-, kiadás-, hír- és csapatkezelés, médiatár, felhasználók, szerepkörök, statisztika, audit napló |
 
 ---
 
@@ -95,6 +95,13 @@ escape-elődik, és csak az a HTML kerül a kimenetbe, amit maga a renderer ír 
 — nincs olyan kódút, ami szerzői HTML-t átengedne. Egy kompromittált szerkesztői
 fiók így sem tud scriptet injektálni.
 
+**Saját médiatár, SDK nélkül.** A feltöltött kép típusát a magic byte-jai
+döntik el, nem a `Content-Type`; a tárolási kulcs a tartalom SHA-256 lenyomata,
+így ugyanaz a fájl nem duplázódik és a URL örökre cache-elhető. A tároló driver
+mögötti S3 hívások kézzel aláírt SigV4 kérések `fetch`-csel — az AWS SDK egy
+nagy függőségi fát hozna két HTTP hívásért. Az aláírókulcs-származtatás az AWS
+dokumentációjában publikált vektorra van tesztelve.
+
 **Tailwind CSS v4, CSS-first konfigurációval.** A design tokenek egyetlen CSS
 fájlban élnek (`src/styles/globals.css`), három rétegben: paletta → szemantikus
 → komponens. Márkaváltás egy fájl átírása.
@@ -153,6 +160,7 @@ npm test
 npm run db:push      # séma szinkronizálás (fejlesztés)
 npm run db:migrate   # migráció készítése
 npm run db:deploy    # migráció alkalmazása (éles)
+npm run db:sql       # trigram indexek, kiterjesztések, CHECK megszorítások
 npm run db:seed      # szerepkörök, jogosultságok, törzsadat
 npm run db:studio    # Prisma Studio
 ```
@@ -166,6 +174,9 @@ prisma/
   schema.prisma          27 modell: RBAC, katalógus, csapat, szerkesztőség, üzemeltetés
   seed.ts                idempotens törzsadat + fejlesztői demó tartalom
   sql/                   trigram indexek, check megszorítások
+
+scripts/
+  apply-sql.ts           a prisma/sql fájlok alkalmazása (npm run db:sql)
 
 src/
   app/
@@ -181,6 +192,7 @@ src/
   lib/
     api/                 route factory, boríték, rate limit, audit, lapozás
     auth/                jelszó, session, jogosultságok, guardok
+    media/               formátum-felismerés, tároló driverek, SigV4 aláírás
     validation/          Zod sémák (kliens és szerver közösen használja)
   server/                domain szolgáltatások (olvasás)
   server/admin/          domain szolgáltatások (írás, audittal)

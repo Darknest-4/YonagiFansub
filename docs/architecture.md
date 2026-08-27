@@ -151,8 +151,9 @@ két app példány esetén azonnal helytelenné válik: a memória-driver
 példányonként számol, tehát két példánynál a limit duplázódik.
 
 **2. Vízszintes skálázás.** Az app állapotmentes (a session az adatbázisban van,
-nem memóriában), tehát több példány mögé tehető load balancer. Csak a Redis
-kell hozzá az előző pontból.
+nem memóriában), tehát több példány mögé tehető load balancer. Két dolog kell
+hozzá: a Redis az előző pontból, és `MEDIA_DRIVER=s3` — a lokális média-driver
+a saját lemezére ír, amit a többi példány nem lát. Egyik sem kódváltozás.
 
 **3. Olvasási replika.** A forgalom ~95%-a olvasás. A Prisma `DATABASE_URL` egy
 pooler mögé (PgBouncer, Neon, Supabase) mutathat, a `DIRECT_DATABASE_URL` pedig
