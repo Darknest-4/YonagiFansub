@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { ensurePermission } from '@/lib/auth/guards';
+import { hasPermission } from '@/lib/auth/permissions';
+import { toActor } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { listReleaseFormats, listStorageHosts } from '@/server/releases';
 import { ReleaseEditor } from '@/components/admin/release-editor';
@@ -11,7 +13,7 @@ export const dynamic = 'force-dynamic';
 type SearchParams = Promise<{ projekt?: string }>;
 
 export default async function NewReleasePage({ searchParams }: { searchParams: SearchParams }) {
-  await ensurePermission('release:write', '/admin/kiadasok/uj');
+  const user = await ensurePermission('release:write', '/admin/kiadasok/uj');
   const { projekt } = await searchParams;
 
   const [projects, formats, hosts] = await Promise.all([
@@ -43,6 +45,7 @@ export default async function NewReleasePage({ searchParams }: { searchParams: S
         formats={formats}
         hosts={hosts}
         canDelete={false}
+        canPublish={hasPermission(toActor(user), 'release:publish')}
       />
     </div>
   );

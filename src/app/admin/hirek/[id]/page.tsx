@@ -51,6 +51,7 @@ export default async function EditNewsPage({ params }: { params: Params }) {
         initial={initial}
         categories={categories.map((category) => ({ id: category.id, name: category.name }))}
         canDelete={hasPermission(toActor(user), 'news:delete')}
+        canPublish={hasPermission(toActor(user), 'news:publish')}
       />
     </div>
   );

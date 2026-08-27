@@ -29,6 +29,14 @@ vagy CloudWatchba. Amit érdemes figyelni:
 | `"message":"Rate limit exceeded"` | Sok egy IP-ről: bot. Sok különbözőről: valami hurokban van a kliensen |
 | `"action":"LOGIN_FAILED"` (audit) | Sorozatban egy fiókra: célzott brute force |
 
+**Hibagyűjtő.** `ERROR_REPORTING_DSN` beállításával minden `error` szintű
+naplósor egy Sentry-kompatibilis gyűjtőbe is elmegy, a `requestId` és a `route`
+címkeként. Beállítatlanul a hibák csak a naplóba kerülnek — fejlesztésben ez a
+helyes alapértelmezés. A küldés fire-and-forget, 4 mp időkorláttal: a gyűjtő
+kiesése nem lassíthat egy amúgy is hibázó kérést. A payload a **már
+maszkolt** naplókontextusból épül, tehát ami nem került a stdoutra, az harmadik
+félhez sem kerül.
+
 **Riasztás.** Minimum: egészség-végpont 2 percnél tovább nem 200; hibaarány
 5% fölött 5 percen át; adatbázis-késleltetés 500 ms fölött.
 

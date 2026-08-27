@@ -46,6 +46,7 @@ export function ReleaseForm({
   formats,
   hosts,
   canDelete,
+  canPublish,
   onProjectChange,
 }: {
   releaseId?: string;
@@ -55,6 +56,8 @@ export function ReleaseForm({
   formats: Array<{ id: string; label: string; container: string }>;
   hosts: Array<{ id: string; name: string }>;
   canDelete: boolean;
+  /** See `ProjectForm` — the API enforces it, this keeps the form honest. */
+  canPublish: boolean;
   onProjectChange?: (projectId: string) => void;
 }) {
   const router = useRouter();
@@ -613,11 +616,13 @@ export function ReleaseForm({
                     value={values.status}
                     onChange={(event) => set('status', event.target.value as PublishStatus)}
                   >
-                    {Object.entries(PUBLISH_STATUS).map(([value, config]) => (
-                      <option key={value} value={value}>
-                        {config.label}
-                      </option>
-                    ))}
+                    {Object.entries(PUBLISH_STATUS)
+                      .filter(([value]) => canPublish || value !== 'PUBLISHED' || initial.status === 'PUBLISHED')
+                      .map(([value, config]) => (
+                        <option key={value} value={value}>
+                          {config.label}
+                        </option>
+                      ))}
                   </Select>
                 )}
               </Field>

@@ -51,6 +51,7 @@ export const ADMIN_NAV: AdminNavSection[] = [
       { href: '/admin/hirek', label: 'Hírek', icon: 'Newspaper', permission: 'news:write' },
       { href: '/admin/csapat', label: 'Csapat', icon: 'Users', permission: 'team:write' },
       { href: '/admin/media', label: 'Médiatár', icon: 'Images', permission: 'media:write' },
+      { href: '/admin/gyik', label: 'GYIK', icon: 'HelpCircle', permission: 'faq:write' },
     ],
   },
   {

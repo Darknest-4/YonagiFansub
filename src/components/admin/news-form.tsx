@@ -34,11 +34,14 @@ export function NewsForm({
   initial,
   categories,
   canDelete,
+  canPublish,
 }: {
   postId?: string;
   initial: NewsFormValues;
   categories: Array<{ id: string; name: string }>;
   canDelete: boolean;
+  /** See `ProjectForm` — the API enforces it, this keeps the form honest. */
+  canPublish: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -280,11 +283,13 @@ export function NewsForm({
                     value={values.status}
                     onChange={(event) => set('status', event.target.value as PublishStatus)}
                   >
-                    {Object.entries(PUBLISH_STATUS).map(([value, config]) => (
-                      <option key={value} value={value}>
-                        {config.label}
-                      </option>
-                    ))}
+                    {Object.entries(PUBLISH_STATUS)
+                      .filter(([value]) => canPublish || value !== 'PUBLISHED' || initial.status === 'PUBLISHED')
+                      .map(([value, config]) => (
+                        <option key={value} value={value}>
+                          {config.label}
+                        </option>
+                      ))}
                   </Select>
                 )}
               </Field>

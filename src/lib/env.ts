@@ -9,10 +9,6 @@ import { z } from 'zod';
  * mysterious runtime error three layers deep.
  */
 
-const booleanish = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((v) => v === 'true' || v === '1');
-
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
@@ -59,9 +55,11 @@ const schema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional(),
 
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).default('info'),
-  ERROR_REPORTING_DSN: z.string().optional(),
-
-  ANALYZE: booleanish.optional(),
+  /**
+   * Sentry-compatible DSN. Unset means errors go to the log and nowhere else,
+   * which is the correct default for development. See `lib/error-reporting.ts`.
+   */
+  ERROR_REPORTING_DSN: z.string().url().optional().or(z.literal('').transform(() => undefined)),
 });
 
 type Env = z.infer<typeof schema>;

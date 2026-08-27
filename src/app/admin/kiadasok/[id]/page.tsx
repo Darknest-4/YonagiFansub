@@ -95,6 +95,7 @@ export default async function EditReleasePage({ params }: { params: Params }) {
         formats={formats}
         hosts={hosts}
         canDelete={hasPermission(toActor(user), 'release:delete')}
+        canPublish={hasPermission(toActor(user), 'release:publish')}
       />
     </div>
   );

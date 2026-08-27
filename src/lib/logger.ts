@@ -95,6 +95,25 @@ function write(level: LogLevel, message: string, context?: LogContext, error?: u
 
   const sink = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
 
+  /*
+   * Errors are also forwarded to the reporting collector, if one is configured.
+   * It reads the *redacted* payload rather than the caller's raw context, so a
+   * key on the redaction list cannot reach a third party even though it never
+   * reached stdout either. Imported lazily: `error-reporting` imports `env`,
+   * which imports nothing, but the logger is imported by almost everything —
+   * keeping the edge one-directional avoids a cycle at module-init time.
+   */
+  if (level === 'error') {
+    void import('@/lib/error-reporting')
+      .then(({ reportError }) => {
+        const { level: _level, time: _time, message: _message, ...rest } = payload;
+        reportError({ message, error, context: rest });
+      })
+      .catch(() => {
+        /* Reporting must never be able to break logging. */
+      });
+  }
+
   if (isProduction) {
     sink(JSON.stringify(payload));
     return;

@@ -1,7 +1,9 @@
 import 'server-only';
 import type { AuditAction } from '@prisma/client';
 import { recordAudit } from '@/lib/api/audit';
-import type { SessionUser } from '@/lib/auth/session';
+import { ForbiddenError } from '@/lib/errors';
+import { hasPermission, type Permission } from '@/lib/auth/permissions';
+import { toActor, type SessionUser } from '@/lib/auth/session';
 
 /**
  * Shared plumbing for every admin mutation.
@@ -58,4 +60,37 @@ export function mutationContext(
  */
 export function nullable<T>(value: T | null | undefined): T | null {
   return value ?? null;
+}
+
+/**
+ * Guards a change of publish state.
+ *
+ * `project:publish`, `release:publish` and `news:publish` exist so a role can be
+ * allowed to prepare content without being allowed to put it in front of the
+ * public — that is the whole difference between the `staff` and `editor` roles.
+ * Enforcing that only on a dedicated "publish" endpoint would be enforcing
+ * nothing: the ordinary edit form carries a status field, so a staff member
+ * could publish by choosing PUBLISHED in the dropdown and saving. The check
+ * therefore lives on the write path itself, where the status actually changes.
+ *
+ * Both directions are gated. Taking a published page down is a publishing
+ * decision too — arguably the more disruptive one, since links to it already
+ * exist. Everything that never touches PUBLISHED (draft → archived and back,
+ * or editing a published page without changing its status) stays a plain write.
+ */
+export function assertPublishAllowed(
+  context: MutationContext,
+  permission: Permission,
+  next: string,
+  current?: string | null,
+): void {
+  if (next === current) return;
+  if (next !== 'PUBLISHED' && current !== 'PUBLISHED') return;
+  if (hasPermission(toActor(context.actor), permission)) return;
+
+  throw new ForbiddenError(
+    current === 'PUBLISHED'
+      ? 'Nincs jogosultságod publikált tartalom visszavonásához.'
+      : 'Nincs jogosultságod a publikáláshoz. Mentsd piszkozatként.',
+  );
 }

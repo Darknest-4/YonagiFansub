@@ -120,6 +120,14 @@ Az admin oldalsáv szűri magát a jogosultságok szerint, de ez **kényelmi
 funkció, nem hozzáférés-vezérlés** — minden oldal és minden végpont önállóan
 ellenőriz.
 
+**Publikálási jogosultság.** A `project:publish`, `release:publish` és
+`news:publish` ellenőrzése az írási szolgáltatásban van
+(`assertPublishAllowed`), nem csak a dedikált publikáló végponton. Ha csak ott
+lenne, a védelem nulla értékű volna: a szerkesztő űrlap tartalmaz státusz
+mezőt, tehát egy `*:write` jogú felhasználó a legördülőből publikálhatna. A
+visszavonás ugyanígy gátolt — egy már kiadott oldal levétele legalább akkora
+döntés, mint a kiadása.
+
 ---
 
 ## Bemenet és kimenet

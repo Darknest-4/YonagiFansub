@@ -25,6 +25,7 @@ export function ReleaseEditor({
   formats,
   hosts,
   canDelete,
+  canPublish,
 }: {
   releaseId?: string;
   initial: ReleaseFormValues;
@@ -33,6 +34,7 @@ export function ReleaseEditor({
   formats: Array<{ id: string; label: string; container: string }>;
   hosts: Array<{ id: string; name: string }>;
   canDelete: boolean;
+  canPublish: boolean;
 }) {
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const loadedFor = useRef(initial.projectId);
@@ -65,6 +67,7 @@ export function ReleaseEditor({
       formats={formats}
       hosts={hosts}
       canDelete={canDelete}
+      canPublish={canPublish}
       onProjectChange={loadEpisodes}
     />
   );

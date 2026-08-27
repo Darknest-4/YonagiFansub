@@ -45,11 +45,18 @@ export function ProjectForm({
   initial,
   genres,
   canDelete,
+  canPublish,
 }: {
   projectId?: string;
   initial: ProjectFormValues;
   genres: Array<{ id: string; name: string }>;
   canDelete: boolean;
+  /**
+   * False for a role that may write but not publish. The API enforces this on
+   * every write; hiding the option here keeps the form from offering a choice
+   * that would come back as a 403 after the editor filled in twenty fields.
+   */
+  canPublish: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -555,7 +562,11 @@ export function ProjectForm({
             <Field
               label="Publikálási állapot"
               required
-              hint="Csak a publikált projektek látszanak a nyilvános oldalon."
+              hint={
+                canPublish
+                  ? 'Csak a publikált projektek látszanak a nyilvános oldalon.'
+                  : 'A publikáláshoz külön jogosultság kell — mentsd piszkozatként, és szólj egy szerkesztőnek.'
+              }
             >
               {({ id, describedBy }) => (
                 <Select
@@ -564,11 +575,13 @@ export function ProjectForm({
                   onChange={(event) => set('publishStatus', event.target.value as PublishStatus)}
                   aria-describedby={describedBy}
                 >
-                  {Object.entries(PUBLISH_STATUS).map(([value, config]) => (
-                    <option key={value} value={value}>
-                      {config.label}
-                    </option>
-                  ))}
+                  {Object.entries(PUBLISH_STATUS)
+                    .filter(([value]) => canPublish || value !== 'PUBLISHED' || initial.publishStatus === 'PUBLISHED')
+                    .map(([value, config]) => (
+                      <option key={value} value={value}>
+                        {config.label}
+                      </option>
+                    ))}
                 </Select>
               )}
             </Field>

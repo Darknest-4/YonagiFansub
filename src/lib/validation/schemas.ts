@@ -385,6 +385,19 @@ export const settingsWriteSchema = z.object({
 
 // ── Search ───────────────────────────────────────────────────────────────────
 
+// ── GYIK ─────────────────────────────────────────────────────────────────────
+
+export const FAQ_CATEGORIES = ['general', 'download', 'projects', 'team', 'technical'] as const;
+
+export const faqWriteSchema = z.object({
+  question: text(4, 240, 'A kérdés'),
+  answer: text(4, 4000, 'A válasz'),
+  category: z.enum(FAQ_CATEGORIES).default('general'),
+  // Omitted on create means "put it at the end"; the service resolves it.
+  sortOrder: z.coerce.number().int().min(0).max(9999).nullable().optional(),
+  isPublished: booleanFlag.default(true),
+});
+
 export const searchQuerySchema = z.object({
   q: z.string().trim().min(1, 'Adj meg keresőkifejezést.').max(120),
   limit: z.coerce.number().int().min(1).max(20).default(8),
@@ -398,4 +411,5 @@ export type EpisodeWriteInput = z.infer<typeof episodeWriteSchema>;
 export type ReleaseWriteInput = z.infer<typeof releaseWriteSchema>;
 export type NewsWriteInput = z.infer<typeof newsWriteSchema>;
 export type TeamMemberWriteInput = z.infer<typeof teamMemberWriteSchema>;
+export type FaqWriteInput = z.infer<typeof faqWriteSchema>;
 export type ContactInput = z.infer<typeof contactSchema>;

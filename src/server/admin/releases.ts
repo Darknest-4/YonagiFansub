@@ -5,7 +5,7 @@ import { ConflictError, NotFoundError } from '@/lib/errors';
 import { invalidateRelease } from '@/lib/cache';
 import { logger } from '@/lib/logger';
 import type { ReleaseWriteInput } from '@/lib/validation/schemas';
-import { nullable, type MutationContext } from '@/server/admin/context';
+import { assertPublishAllowed, nullable, type MutationContext } from '@/server/admin/context';
 import { notifyNewRelease } from '@/server/notifications';
 
 /**
@@ -125,6 +125,8 @@ export async function createRelease(
   input: ReleaseWriteInput,
   context: MutationContext,
 ): Promise<AdminRelease> {
+  assertPublishAllowed(context, 'release:publish', input.status);
+
   const project = await db.project.findFirst({
     where: { id: input.projectId, deletedAt: null },
     select: { id: true, slug: true, title: true },
@@ -182,6 +184,7 @@ export async function updateRelease(
   context: MutationContext,
 ): Promise<AdminRelease> {
   const current = await getAdminRelease(id);
+  assertPublishAllowed(context, 'release:publish', input.status, current.status);
   await assertNoDuplicate(input, id);
 
   const wasPublished = current.status === 'PUBLISHED';

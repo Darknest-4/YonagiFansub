@@ -5,7 +5,7 @@ import { ConflictError, NotFoundError } from '@/lib/errors';
 import { invalidateNews } from '@/lib/cache';
 import { readingMinutes, stripMarkdown, truncate } from '@/lib/utils';
 import type { NewsWriteInput } from '@/lib/validation/schemas';
-import { nullable, type MutationContext } from '@/server/admin/context';
+import { assertPublishAllowed, nullable, type MutationContext } from '@/server/admin/context';
 
 /**
  * News writes.
@@ -73,6 +73,8 @@ export async function createNews(
   input: NewsWriteInput,
   context: MutationContext,
 ): Promise<AdminNewsPost> {
+  assertPublishAllowed(context, 'news:publish', input.status);
+
   const existing = await db.newsPost.findUnique({
     where: { slug: input.slug },
     select: { id: true },
@@ -107,6 +109,7 @@ export async function updateNews(
   context: MutationContext,
 ): Promise<AdminNewsPost> {
   const current = await getAdminNews(id);
+  assertPublishAllowed(context, 'news:publish', input.status, current.status);
 
   if (input.slug !== current.slug) {
     const clash = await db.newsPost.findUnique({

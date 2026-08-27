@@ -105,6 +105,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
         initial={initial}
         genres={genres.map((genre) => ({ id: genre.id, name: genre.name }))}
         canDelete={hasPermission(actor, 'project:delete')}
+        canPublish={hasPermission(actor, 'project:publish')}
       />
 
       <EpisodeManager

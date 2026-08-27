@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { CACHE_TAGS, invalidate, invalidateProject } from '@/lib/cache';
 import type { ProjectWriteInput, EpisodeWriteInput } from '@/lib/validation/schemas';
-import { nullable, type MutationContext } from '@/server/admin/context';
+import { assertPublishAllowed, nullable, type MutationContext } from '@/server/admin/context';
 
 /**
  * Project and episode writes.
@@ -109,6 +109,8 @@ export async function createProject(
   input: ProjectWriteInput,
   context: MutationContext,
 ): Promise<AdminProject> {
+  assertPublishAllowed(context, 'project:publish', input.publishStatus);
+
   const existing = await db.project.findUnique({ where: { slug: input.slug }, select: { id: true } });
   if (existing) throw new ConflictError('Ez a slug már foglalt.');
 
@@ -141,6 +143,7 @@ export async function updateProject(
   context: MutationContext,
 ): Promise<AdminProject> {
   const current = await getAdminProject(id);
+  assertPublishAllowed(context, 'project:publish', input.publishStatus, current.publishStatus);
 
   if (input.slug !== current.slug) {
     const clash = await db.project.findUnique({ where: { slug: input.slug }, select: { id: true } });

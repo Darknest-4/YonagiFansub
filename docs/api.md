@@ -170,8 +170,27 @@ Minden végpont a nevében szereplő jogosultságot követeli meg
 | Üzenetek | `GET /admin/contact`, `PATCH /admin/contact/{id}` | `contact:read` / `contact:write` |
 | Hozzászólások | `GET /admin/comments`, `PATCH /admin/comments/{id}` | `comment:moderate` |
 | Médiatár | `GET POST /admin/media`, `GET PUT DELETE /admin/media/{id}` | `media:write` / `media:delete` |
+| GYIK | `GET POST /admin/faq`, `GET PUT DELETE /admin/faq/{id}` | `faq:write` |
 | Statisztika | `GET /admin/stats` | `stats:read` |
 | Audit napló | `GET /admin/audit` | `audit:read` |
+
+### Publikálás
+
+A `*:publish` jogosultságokat **az írási útvonal** ellenőrzi, nem csak a
+dedikált publikáló végpont. A szerkesztő űrlap tartalmaz státusz mezőt, tehát
+enélkül bárki publikálhatna, aki írhat — a `staff` és `editor` szerepkör közti
+különbség érdemben megszűnne.
+
+A szabály mindkét irányban él: `PUBLISHED`-re váltani és `PUBLISHED`-ről
+lelépni is publikálási döntés. Ami sosem érinti a `PUBLISHED` állapotot
+(piszkozat ↔ archivált, vagy egy publikált bejegyzés szerkesztése státuszváltás
+nélkül) sima írás marad.
+
+```jsonc
+// PUT /api/v1/admin/projects/{id}  —  publishStatus: "PUBLISHED", project:publish nélkül
+{ "error": { "code": "FORBIDDEN",
+             "message": "Nincs jogosultságod a publikáláshoz. Mentsd piszkozatként." } }
+```
 
 ### Feltöltés
 
