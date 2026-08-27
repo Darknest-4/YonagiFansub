@@ -54,6 +54,28 @@ export const viewport: Viewport = {
   colorScheme: 'dark',
 };
 
+/**
+ * Nothing in this application is prerendered at build time.
+ *
+ * The declaration belongs here, on the root layout, because the reason is here:
+ * `generateMetadata` below reads the site name, tagline and description from the
+ * database, so **every** page in the app — the login form included — depends on
+ * a query before it can render its `<head>`. `next build` runs inside an image
+ * builder with no database reachable, which makes prerendering not a trade-off
+ * but a build that cannot finish. It failed exactly that way on Render, 29 pages
+ * into `Generating static pages`, and putting the declaration on a route group
+ * was not enough: the dependency is above every group.
+ *
+ * Nothing is lost. Response speed comes from the data cache (`unstable_cache` +
+ * `revalidateTag`, see `lib/cache.ts`), which serves these pages from memory and
+ * is invalidated the moment an editor publishes. A build-time snapshot would be
+ * strictly worse — stale from the first release, refreshable only by redeploying.
+ *
+ * Route handlers do not inherit layout config, so `app/api/**`, `sitemap.ts`,
+ * `robots.ts`, `rss.xml` and `opengraph-image.tsx` each carry their own marker.
+ */
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSettings();
   const siteName = settings.siteName ?? 'Yonagi Fansub';

@@ -51,6 +51,16 @@ npm run db:sql                                             # kiterjesztések, in
 NODE_ENV=production npx tsx prisma/seed.ts                 # szerepkörök, törzsadat
 ```
 
+Ez a három lépés egy **üres** adatbázison is végigmegy, és pontosan ez a sorrend
+fut a Render `preDeployCommand`-jában. A `prisma/migrations/0_init` a séma
+kiindulópontja: 30 tábla, 74 index, 40 idegen kulcs. Egy már meglévő,
+`db push`-sal létrehozott adatbázison ne futtasd — ott előbb jelöld
+alkalmazottnak:
+
+```bash
+npx prisma migrate resolve --applied 0_init
+```
+
 A `db:sql` a `prisma/sql/` fájljait alkalmazza névsorrendben, a
 `DIRECT_DATABASE_URL`-en keresztül (DDL nem mehet tranzakciós pooleren). Minden
 utasítás idempotens, így minden deploy után újrafuttatható — és futtatandó is,
@@ -71,7 +81,32 @@ deklarált jogosultságok.
 
 ---
 
-## 3. Indítás
+## 3. Build
+
+```bash
+npm run build
+```
+
+**A build nem fordul adatbázishoz, és nem is szabad neki.** Az alkalmazás minden
+oldala futásidőben renderelődik (`export const dynamic = 'force-dynamic'` a gyökér
+layoutban), mert a gyökér `generateMetadata` az adatbázisból olvassa az oldal
+nevét — tehát minden oldal, a belépőűrlap is, egy lekérdezéstől függ. Egy
+image builderben (Render, Fly, Docker layer) nincs elérhető adatbázis, így az
+előrenderelés nem lassabb-de-frissebb kompromisszum lenne, hanem olyan build,
+ami nem tud befejeződni.
+
+Ezt a CI `Build adatbázis nélkül` job-ja őrzi: elérhetetlen `DATABASE_URL`-lel
+buildel, és elbukik, ha bármi adatbázishoz nyúlt. A `Build és migrációs próba`
+job önmagában nem elég — az ad adatbázist, tehát zölden maradna, miközben minden
+deploy elhasal.
+
+Ha új útvonalat veszel fel, ami saját `route.ts`-ként fut (`app/api/**`,
+`sitemap.ts`, `robots.ts`, `rss.xml`), arra külön ki kell írni a
+`force-dynamic`-ot: a route handlerek nem öröklik a layout beállítását.
+
+---
+
+## 4. Indítás
 
 ### Docker Compose (self-hosted)
 
@@ -98,6 +133,27 @@ npm start
 A build `standalone` kimenetet készít, tehát az éles image-nek nincs szüksége a
 teljes `node_modules`-ra.
 
+### Render
+
+A `render.yaml` blueprint a teljes stacket leírja (Postgres 16, web service,
+napi cron job, feltöltéseknek lemez). Render → Blueprints → New Blueprint
+Instance, és a repóra mutatva alkalmazd.
+
+Amit **te** adsz meg (a fájl egyetlen titkot sem tartalmaz): a
+`NEXT_PUBLIC_SITE_URL` a valódi https origin, és ha éles levelezés kell, az
+`SMTP_*` értékek. Az `AUTH_SECRET` és a `CRON_SECRET` generálását a Render
+végzi, az adatbázis URL-eket a kezelt példány adja.
+
+Két Render-specifikus dolog:
+
+- **A migráció nem a buildben fut.** A build image builderben történik, ahonnan
+  az adatbázis nem érhető el; a séma a `preDeployCommand`-ban jön létre, ami a
+  build után és a forgalom átkapcsolása előtt fut.
+- **A fájlrendszer efemer.** A blueprint ezért csatol egy 5 GB-os lemezt a
+  `/var/data`-ra a `MEDIA_DRIVER=local` számára. A lemez egy példányhoz köti a
+  service-t — ez a tudatos csere ezen a méreten. Vízszintes skálázáshoz vedd ki
+  a lemezt és állíts `MEDIA_DRIVER=s3`-at.
+
 ### Vercel
 
 Működik, két megkötéssel:
@@ -109,7 +165,7 @@ Működik, két megkötéssel:
 
 ---
 
-## 4. Reverse proxy
+## 5. Reverse proxy
 
 A `X-Forwarded-For` fejlécet a proxy **írja felül**, ne fűzze hozzá — különben
 a kliens hamisíthatja, és ezzel megkerülheti a rate limitet.
@@ -151,7 +207,7 @@ proxyban, mert az ütköző CSP-k némán letiltják egymást.
 
 ---
 
-## 5. Ütemezett feladatok
+## 6. Ütemezett feladatok
 
 Egy napi hívás, ami az elmaradt karbantartást elvégzi:
 
@@ -166,7 +222,7 @@ futás nem okoz kárt, csak késleltet.
 
 ---
 
-## 6. Ellenőrzés
+## 7. Ellenőrzés
 
 ```bash
 curl -fsS https://yonagifansub.hu/api/health          # {"status":"ok"}

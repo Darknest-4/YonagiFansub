@@ -248,7 +248,21 @@ jelszó ne kerüljön semmibe.
 
 ## Cache fejlécek
 
-A nyilvános `GET` végpontok `s-maxage` + `stale-while-revalidate` fejlécet
-adnak, **de csak ha nincs bejelentkezett felhasználó** — különben egy CDN
-kiszolgálhatna személyre szabott választ egy másik látogatónak. Minden mutáció
-és minden hitelesített válasz `no-store`.
+Megosztott cache fejlécet (`s-maxage` + `stale-while-revalidate`) csak olyan
+végpont kap, ami **`auth: 'public'`-ként van deklarálva** és nem mutáció.
+
+A feltétel szándékosan a deklarált auth módra néz, nem arra, hogy éppen van-e
+munkamenet. A `defineRoute` csak akkor tölti be a sessiont, ha az útvonal
+megköveteli, tehát egy publikus útvonalon a `user` mindig `null` — egy „nincs
+bejelentkezett felhasználó" feltétel önmagában sosem sülne el, és pont azon a
+tíz végponton lenne hatástalan, aminek `cache` blokkja van. Ami ténylegesen
+kizárja a személyre szabott választ a CDN-ből, az az, hogy egy publikus
+útvonalnak nincs miből személyre szabnia. (A `!user` ellenőrzés megmarad
+második zárként az `optional` esetre.)
+
+Minden más — mutáció, hitelesített olvasás, hibaválasz — `no-store`.
+
+> A `next.config.ts` szándékosan **nem** tesz `Cache-Control`-t az
+> `/api/:path*` útvonalra. Az ott felsorolt fejlécek a handler futása után
+> kerülnek a válaszra és felülírják azt, amit a handler állított be — egy
+> `no-store` ott csendben kiütné az egész CDN réteget.

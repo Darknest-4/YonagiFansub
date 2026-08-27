@@ -236,6 +236,25 @@ lebukott, csak arra tanítja, hogy legközelebb jobban próbálkozzon.
 
 ---
 
+## Függőségi sebezhetőségek
+
+Az `npm audit` állapota nem „nulla", hanem **indokolt**. Ami maradt, és miért:
+
+| Csomag | Hol | Miért marad |
+| --- | --- | --- |
+| `postcss` | a Next saját `node_modules`-ában | A Next vendorolja; a 15.x sorban nincs újabb kiadás. Csak build időben, a saját CSS-ünkön fut — a sebezhetőség támadó által vezérelt CSS-t igényelne, ami nálunk nincs. |
+| `deepmerge-ts` (a `prisma` CLI-n át) | dev/build | A Prisma CLI konfigurációs fájlt olvas vele, amit mi írunk. A `@prisma/config` legújabb kiadása is a sebezhető sorra mutat, tehát nincs hova frissíteni; `overrides`-szal ki lehetne kényszeríteni, de az a `prisma generate`-et kockáztatná — pont azt a lépést, amin a deploy áll vagy bukik. |
+
+Egyik sem kerül be az éles image-be futásidejű kódként: a Dockerfile runner
+rétege csak a `standalone` kimenetet és a Prisma klienst másolja, a CLI-t és a
+build eszközöket nem.
+
+Ami **nem** marad: a Next 15.1.6 elleni két kritikus és több magas súlyosságú
+tanácsadás (cache poisoning, image optimizer cache key confusion, dev server
+origin ellenőrzés hiánya) — a 15.5.24-re frissítés lezárta őket.
+
+---
+
 ## Amit tudatosan nem védünk
 
 - **A letöltési linkek scrape-elése.** Aki elég sokáig kattint, összegyűjtheti

@@ -5,7 +5,12 @@ import { getSettings } from '@/server/settings';
 import { stripMarkdown, truncate } from '@/lib/utils';
 
 export const runtime = 'nodejs';
-export const revalidate = 900;
+/*
+ * Per request; the `Cache-Control` header below is what actually caches this,
+ * and unlike a build-time snapshot it stays correct after a release is
+ * published. See `(site)/layout.tsx`.
+ */
+export const dynamic = 'force-dynamic';
 
 /**
  * RSS feed.

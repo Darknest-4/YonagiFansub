@@ -276,7 +276,25 @@ export function defineRoute<
         return result;
       }
 
-      if (definition.cache && !isMutation && !user) {
+      /*
+       * A shared-cache header is only ever attached to a route declared
+       * `auth: 'public'`.
+       *
+       * The `!user` check alone would look sufficient and be worthless: step 1
+       * only loads the session when the route requires one, so on a public route
+       * `user` is null no matter who is calling, and the condition can never
+       * fire. What actually keeps a personalised response out of a CDN is the
+       * requirement below — a public route has no session to personalise from,
+       * by construction. `!user` stays as the second lock for the `optional`
+       * case, where a session may be present.
+       */
+      const publiclyCacheable =
+        definition.cache !== undefined &&
+        !isMutation &&
+        authRequirement === 'public' &&
+        !user;
+
+      if (publiclyCacheable && definition.cache) {
         const { sMaxAge, staleWhileRevalidate = sMaxAge * 4 } = definition.cache;
         extraHeaders.set(
           'Cache-Control',

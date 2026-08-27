@@ -2,6 +2,8 @@ import { ImageResponse } from 'next/og';
 import { getPublicSettings } from '@/server/settings';
 
 export const runtime = 'nodejs';
+/* Reads the site settings, so it cannot be generated at build time. */
+export const dynamic = 'force-dynamic';
 export const alt = 'Yonagi Fansub';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

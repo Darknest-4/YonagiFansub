@@ -49,6 +49,10 @@ npm run dev
 A seed a végén kiírja a tulajdonosi fiók jelszavát — **csak egyszer**. Ha inkább
 te adod meg: `SEED_OWNER_PASSWORD=... npm run db:seed`.
 
+Renderre a `render.yaml` blueprinttel megy ki (Postgres, web service, napi
+cron, lemez a feltöltéseknek) — részletek a
+[deployment.md](docs/deployment.md)-ben.
+
 Dockerrel, egy paranccsal:
 
 ```bash
@@ -173,6 +177,7 @@ npm run db:studio    # Prisma Studio
 prisma/
   schema.prisma          27 modell: RBAC, katalógus, csapat, szerkesztőség, üzemeltetés
   seed.ts                idempotens törzsadat + fejlesztői demó tartalom
+  migrations/0_init      a séma kiindulópontja (30 tábla, 74 index, 40 FK)
   sql/                   trigram indexek, check megszorítások
 
 scripts/

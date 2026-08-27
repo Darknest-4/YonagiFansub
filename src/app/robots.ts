@@ -2,7 +2,13 @@ import type { MetadataRoute } from 'next';
 import { env } from '@/lib/env';
 import { getSettings } from '@/server/settings';
 
-export const revalidate = 3600;
+/*
+ * Generated per request rather than at build time: it reads site settings from
+ * the database, which `next build` cannot reach. See `(site)/layout.tsx`.
+ * The response is cheap and the data comes from the cache, so per-request
+ * generation costs a cache read, not a query.
+ */
+export const dynamic = 'force-dynamic';
 
 /**
  * robots.txt.

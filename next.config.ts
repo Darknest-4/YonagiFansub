@@ -71,11 +71,18 @@ const nextConfig: NextConfig = {
     return [
       { source: '/:path*', headers: securityHeaders },
       {
+        /*
+         * No blanket `Cache-Control` here on purpose. A rule in this file is
+         * applied to the response after the handler has run and wins over what
+         * the handler set, so a `no-store` here would silently void the
+         * `cache: { sMaxAge: … }` that ten public read endpoints declare — the
+         * whole CDN caching layer, disabled by one line nobody would connect to
+         * it. `defineRoute` makes the decision per endpoint instead: `no-store`
+         * by default (see `jsonOk`), a public value only for a cacheable GET
+         * with no session attached.
+         */
         source: '/api/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store, max-age=0' },
-          ...securityHeaders,
-        ],
+        headers: securityHeaders,
       },
       {
         source: '/fonts/:path*',

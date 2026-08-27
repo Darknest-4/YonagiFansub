@@ -17,6 +17,7 @@ import {
   toAppError,
 } from '@/lib/errors';
 import { formatBytes, formatEpisodeNumber, safeRedirectPath, slugify, truncate } from '@/lib/utils';
+import { jsonCreated, jsonError, jsonNoContent, jsonOk } from '@/lib/api/response';
 
 describe('pagination', () => {
   it('applies defaults and clamps out-of-range input', () => {
@@ -173,5 +174,63 @@ describe('utils', () => {
     expect(safeRedirectPath('/path\\with\\backslash')).toBe('/');
     expect(safeRedirectPath(null)).toBe('/');
     expect(safeRedirectPath(undefined, '/fallback')).toBe('/fallback');
+  });
+});
+
+/**
+ * Response headers.
+ *
+ * These exist because of a bug that produced no symptom: `jsonOk` spread its
+ * `HeadersInit` into an object literal, and `{ ...new Headers(…) }` is `{}` —
+ * a `Headers` object exposes nothing as own enumerable properties. Every header
+ * `defineRoute` attached was dropped on the floor, so the rate-limit trio never
+ * reached a client and ten public endpoints declaring `s-maxage` were served
+ * `no-store`. The responses looked perfect the whole time.
+ */
+describe('response headers', () => {
+  it('keeps headers passed as a Headers instance', async () => {
+    const headers = new Headers({ 'X-RateLimit-Limit': '240', 'X-Request-Id': 'abc' });
+    const response = jsonOk({ ok: true }, { headers });
+
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('240');
+    expect(response.headers.get('X-Request-Id')).toBe('abc');
+  });
+
+  it('keeps headers passed as a plain object or entry list', async () => {
+    expect(jsonOk({}, { headers: { 'X-A': '1' } }).headers.get('X-A')).toBe('1');
+    expect(jsonOk({}, { headers: [['X-B', '2']] }).headers.get('X-B')).toBe('2');
+  });
+
+  it('defaults to no-store', () => {
+    expect(jsonOk({}).headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('lets a caller override the cache header — the whole point of the CDN layer', () => {
+    const headers = new Headers({ 'Cache-Control': 'public, s-maxage=60' });
+    expect(jsonOk({}, { headers }).headers.get('Cache-Control')).toBe('public, s-maxage=60');
+  });
+
+  it('applies the same rules to 201 and 204', () => {
+    const created = jsonCreated({ id: 'x' }, new Headers({ 'X-C': '3' }));
+    expect(created.status).toBe(201);
+    expect(created.headers.get('X-C')).toBe('3');
+    expect(created.headers.get('Cache-Control')).toBe('no-store');
+
+    const empty = jsonNoContent(new Headers({ 'X-D': '4' }));
+    expect(empty.status).toBe(204);
+    expect(empty.headers.get('X-D')).toBe('4');
+    expect(empty.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('never lets an error response be cached', () => {
+    const response = jsonError(new NotFoundError('A projekt'), 'req-1');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('X-Request-Id')).toBe('req-1');
+  });
+
+  it('carries Retry-After on a rate-limited response', () => {
+    const response = jsonError(new RateLimitError(42), 'req-2');
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('42');
   });
 });

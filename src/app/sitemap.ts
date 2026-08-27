@@ -3,7 +3,14 @@ import { db } from '@/lib/db';
 import { env } from '@/lib/env';
 import { getSettings } from '@/server/settings';
 
-export const revalidate = 3600;
+/*
+ * Generated per request, not at build time — the URLs come from the database,
+ * which `next build` cannot reach (see `(site)/layout.tsx`). A sitemap is
+ * fetched by crawlers a handful of times a day, so the four queries below are
+ * not worth a caching layer of their own; what mattered was that they never run
+ * during the build.
+ */
+export const dynamic = 'force-dynamic';
 
 /**
  * Sitemap.

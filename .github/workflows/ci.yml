@@ -43,6 +43,54 @@ jobs:
       - name: Egységtesztek
         run: npm test
 
+  # The check that a deploy actually needs.
+  #
+  # `next build` runs inside an image builder — Render, Fly, a Docker layer —
+  # where no database is reachable. The `build` job below provisions Postgres so
+  # it can also boot the app and hit real routes, which means it would happily
+  # stay green while every deploy failed. That is not hypothetical: it is exactly
+  # what happened, and this job is the one that reproduces it.
+  #
+  # DATABASE_URL points at a closed port on purpose. Any query issued during the
+  # build fails here, loudly, in seconds.
+  build-without-database:
+    name: Build adatbázis nélkül
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      DATABASE_URL: postgresql://nobody:nobody@127.0.0.1:1/nincs_ilyen
+      AUTH_SECRET: ci-only-secret-value-long-enough-for-validation-abcdef
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      MAIL_DRIVER: noop
+      LOG_LEVEL: error
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Next build (adatbázis nélkül)
+        run: npm run build
+
+      # A build can exit 0 while a page silently swallowed its own query failure
+      # and shipped an empty shell, so the log is checked too.
+      - name: Nem történt adatbázis-hívás build közben
+        run: |
+          rm -rf .next
+          npm run build 2>&1 | tee build.log
+          # Matched against the exact phrasings, not the word "prerender" — Next
+          # always prints "prerendered as static content" in its own legend.
+          if grep -qE "Prisma error|Can't reach database server|Error occurred prerendering" build.log; then
+            echo "::error::A build adatbázishoz fordult. Az érintett útvonalnak force-dynamic kell."
+            exit 1
+          fi
+
   build:
     name: Build és migrációs próba
     runs-on: ubuntu-latest
