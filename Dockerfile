@@ -38,11 +38,14 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# The build needs a reachable database only for statically-generated pages.
-# These placeholders satisfy env validation; real values come in at runtime.
+# The build never opens a database connection — every page renders per request
+# (see the root layout). These values exist only to satisfy `env.ts`, which
+# parses at import time and would otherwise refuse to load; the real ones arrive
+# at runtime. `DATABASE_URL` deliberately points nowhere: if a future change
+# reintroduces a query at build time, it fails here rather than on the deploy.
 ARG NEXT_PUBLIC_SITE_URL=https://yonagifansub.hu
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
-ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:1/build
 ENV AUTH_SECRET=build-time-placeholder-secret-not-used-at-runtime
 
 RUN npm run build

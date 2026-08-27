@@ -16,8 +16,13 @@ const contentSecurityPolicy = [
   "form-action 'self'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
-  "font-src 'self' https://fonts.gstatic.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  // No Google Fonts hosts here on purpose. `next/font/google` downloads the
+  // font files at build time and serves them from /_next/static/media, so the
+  // browser never contacts a third party — verified against the built output,
+  // not assumed. Listing hosts we do not use would widen the policy for
+  // requests that never happen, which is the opposite of what a CSP is for.
+  "font-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
   "connect-src 'self'",
   "upgrade-insecure-requests",
 ].join('; ');
@@ -45,6 +50,24 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+
+  /**
+   * Emit `.next/standalone`: a self-contained server with only the modules it
+   * actually imports, so the runtime image carries no `node_modules` tree and
+   * no build tooling.
+   *
+   * The Dockerfile has copied `.next/standalone` since it was written; this
+   * option is what produces it. Without it the directory simply does not exist
+   * and the image build fails at the `COPY`. Nothing caught that, because the
+   * `docker` CI job only runs on pushes to `main` — so the first real image
+   * build was the deploy itself.
+   *
+   * `public/` and `.next/static` are deliberately NOT included in the
+   * standalone output by Next; the Dockerfile copies them separately, which is
+   * why `public/.gitkeep` is tracked (git stores no empty directories, and a
+   * missing `public/` fails the same `COPY`).
+   */
+  output: 'standalone',
 
   // Fail the production build on type or lint errors instead of shipping them.
   typescript: { ignoreBuildErrors: false },
@@ -83,10 +106,6 @@ const nextConfig: NextConfig = {
          */
         source: '/api/:path*',
         headers: securityHeaders,
-      },
-      {
-        source: '/fonts/:path*',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         /*

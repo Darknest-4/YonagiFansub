@@ -130,8 +130,14 @@ npm run build
 npm start
 ```
 
-A build `standalone` kimenetet készít, tehát az éles image-nek nincs szüksége a
-teljes `node_modules`-ra.
+A build `standalone` kimenetet készít (`output: 'standalone'` a
+`next.config.ts`-ben), tehát az éles image-nek nincs szüksége a teljes
+`node_modules`-ra — csak arra, amit a szerver ténylegesen importál.
+
+A Next **nem** teszi bele a `public/`-ot és a `.next/static`-ot a standalone
+kimenetbe; a Dockerfile ezeket külön másolja. Ezért van a `public/.gitkeep`
+verziókövetve: a git nem tárol üres könyvtárat, enélkül a `COPY /app/public`
+egy friss klónon elhasal.
 
 ### Render
 

@@ -1,0 +1,9 @@
+Tartott könyvtár.
+
+A Dockerfile a `public/`-ot külön másolja a runner rétegbe (a Next standalone
+kimenete nem tartalmazza), a git viszont nem tárol üres könyvtárat — enélkül a
+`COPY /app/public ./public` egy friss klónon elhasal.
+
+A feltöltött média NEM ide kerül: azt a `MEDIA_LOCAL_DIR` tárolja
+(alapból `storage/uploads`), és a `/uploads/[...path]` útvonal szolgálja ki.
+Lásd `src/lib/env.ts`.

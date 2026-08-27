@@ -196,6 +196,17 @@ nincs is analitika vagy hirdetés az oldalon. A `style-src` `'unsafe-inline'`-t
 tartalmaz, amit a Next kritikus CSS-e és a framer-motion megkövetel; a
 `script-src` nem.
 
+A `font-src` és a `style-src` **nem** engedi a `fonts.gstatic.com`-ot és a
+`fonts.googleapis.com`-ot. A betűtípusok `next/font/google`-lel jönnek, ami
+build időben letölti a fájlokat és a `/_next/static/media`-ból szolgálja ki
+őket — a böngésző soha nem fordul harmadik félhez. Ez a built kimeneten
+ellenőrizve van, nem feltételezés. Olyan hosztokat felsorolni, amiket nem
+használunk, pontosan az ellenkezője annak, amiért a CSP van.
+
+A `/uploads/:path*` szigorúbb szabályt kap (`default-src 'none'; sandbox`) —
+ez az egyetlen útvonal, ahol felhasználó által beküldött bájtok jönnek vissza a
+saját eredetünkről.
+
 ---
 
 ## Adatvédelem

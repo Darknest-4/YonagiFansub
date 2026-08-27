@@ -170,12 +170,17 @@ jobs:
           kill $APP_PID
           exit $fail
 
+  # Runs on every pull request, not just main.
+  #
+  # It used to be gated on `main`, which meant the first real image build of any
+  # change was the deploy itself. That is how a Dockerfile that had never worked
+  # — it copied `.next/standalone` without `output: 'standalone'` ever being set,
+  # and `public/`, which git does not store while empty — reached production
+  # untouched. An image build takes two minutes; a failed deploy costs more.
   docker:
     name: Docker image
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Only on main: the image is not needed to review a pull request.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
