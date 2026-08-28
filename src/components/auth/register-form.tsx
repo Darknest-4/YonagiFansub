@@ -49,7 +49,7 @@ export function RegisterForm() {
     const data = new FormData(event.currentTarget);
 
     try {
-      await apiFetch('/api/v1/auth/register', {
+      const result = await apiFetch<{ isOwner: boolean }>('/api/v1/auth/register', {
         method: 'POST',
         body: {
           email: String(data.get('email') ?? ''),
@@ -62,9 +62,9 @@ export function RegisterForm() {
         },
       });
 
-      const target =
-        next === '/' ? '/belepes?registered=1' : `/belepes?registered=1&next=${encodeURIComponent(next)}`;
-      window.location.assign(target);
+      const params = new URLSearchParams({ registered: result.isOwner ? 'owner' : '1' });
+      if (next !== '/') params.set('next', next);
+      window.location.assign(`/belepes?${params}`);
     } catch (error) {
       if (error instanceof ApiError) {
         setFieldErrors(error.fields);

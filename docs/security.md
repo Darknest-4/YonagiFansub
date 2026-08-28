@@ -130,6 +130,23 @@ döntés, mint a kiadása.
 
 ---
 
+**Az első fiók (bootstrap).** Üres telepítésen az első regisztráció megkapja a
+tulajdonosi szerepkört, azonnal aktív és megerősített fiókkal. A számlálás és a
+beszúrás egyetlen `SERIALIZABLE` tranzakcióban fut, tehát két egyidejű
+regisztrációból sem lehet két tulajdonos. Az esemény `PERMISSION_CHANGE`
+bejegyzést kap az audit naplóban és külön `warn` sort a szerver logban — utóbbi
+azért, mert az audit tábla nyesését a napi job végzi, a logot viszont a
+gyűjtő megőrzi.
+
+A kockázat vállalt és körülhatárolt: a telepítés és az első regisztráció közti
+ablakban bárki tulajdonossá válhat, aki eléri az oldalt. Ez ugyanaz a
+bootstrap-minta, amit a Gitea, a Grafana és sok más önhosztolt rendszer használ;
+az ablakot az zárja be, hogy a deploy után azonnal regisztrálsz. Zárt
+telepítéshez a `SEED_OWNER_PASSWORD` megadásával a seed hozza létre a
+tulajdonost, és a bootstrap nem lép életbe.
+
+---
+
 ## Bemenet és kimenet
 
 **Bemenet.** Minden végpont Zod sémával validál, a `defineRoute`-on keresztül.

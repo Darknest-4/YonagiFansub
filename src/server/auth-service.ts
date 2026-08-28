@@ -1,4 +1,5 @@
 import 'server-only';
+import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
@@ -14,7 +15,7 @@ import {
 import { isPasswordAcceptable } from '@/lib/auth/password-policy';
 import { generateToken, hashToken } from '@/lib/auth/tokens';
 import { createSession, revokeAllSessions } from '@/lib/auth/session';
-import { DEFAULT_ROLE_KEY } from '@/lib/auth/permissions';
+import { DEFAULT_ROLE_KEY, OWNER_ROLE_KEY } from '@/lib/auth/permissions';
 import {
   ConflictError,
   ForbiddenError,
@@ -52,7 +53,9 @@ export interface RegisterParams {
   requestId: string;
 }
 
-export async function registerUser(params: RegisterParams): Promise<{ userId: string }> {
+export async function registerUser(
+  params: RegisterParams,
+): Promise<{ userId: string; isBootstrap: boolean }> {
   const settings = await getSettings();
   if (!settings.registrationOpen) {
     throw new ForbiddenError('A regisztráció jelenleg szünetel.');
@@ -78,48 +81,85 @@ export async function registerUser(params: RegisterParams): Promise<{ userId: st
     throw new ConflictError('Ez a felhasználónév már foglalt.');
   }
 
-  const role = await db.role.findUnique({ where: { key: DEFAULT_ROLE_KEY }, select: { id: true } });
-  if (!role) {
-    // A missing default role means the seed never ran; failing loudly is right.
-    throw new Error(`Default role "${DEFAULT_ROLE_KEY}" is missing. Run \`npm run db:seed\`.`);
-  }
-
   const passwordHash = await hashPassword(params.password);
 
-  const user = await db.user.create({
-    data: {
-      email: params.email,
-      username: params.username,
-      displayName: params.displayName,
-      passwordHash,
-      roleId: role.id,
-      status: 'PENDING',
-      preferences: {
-        notifyNewRelease: true,
-        notifyNewsPost: true,
-        notifyCommentReply: true,
-        emailDigest: 'off',
-        reducedMotion: false,
-      },
-    },
-    select: { id: true, email: true, displayName: true },
-  });
+  /*
+   * Bootstrap: egy teljesen üres telepítésen az első fiók lesz a tulajdonos.
+   *
+   * A számlálás és a beszúrás egyetlen SERIALIZABLE tranzakcióban fut. Ez nem
+   * túlbiztosítás: két egyszerre érkező regisztráció alacsonyabb izolációs
+   * szinten mindkettőt nullát látná, és két tulajdonos jönne létre. Serializable
+   * mellett a Postgres a másodikat visszagörgeti — a felhasználó hibát kap és
+   * újrapróbálja, ami sokkal jobb kimenet, mint egy nem szándékolt adminisztrátor.
+   *
+   * A bootstrap fiók azonnal ACTIVE és megerősített e-mailű. Enélkül a
+   * tulajdonos egy visszaigazoló levélre várna, amit `MAIL_DRIVER=console`
+   * mellett soha nem kap meg — vagyis pont az a fiók nem tudna belépni, ami
+   * nélkül a rendszert nem lehet beállítani.
+   */
+  const { user, isBootstrap } = await db.$transaction(
+    async (tx) => {
+      const bootstrap = (await tx.user.count()) === 0;
+      const roleKey = bootstrap ? OWNER_ROLE_KEY : DEFAULT_ROLE_KEY;
 
-  await issueVerificationEmail(user.id, user.email, user.displayName);
+      const role = await tx.role.findUnique({ where: { key: roleKey }, select: { id: true } });
+      if (!role) {
+        // Hiányzó szerepkör = a seed nem futott le. Hangosan bukni a helyes.
+        throw new Error(`A "${roleKey}" szerepkör hiányzik. Futtasd: npm run db:seed`);
+      }
+
+      const created = await tx.user.create({
+        data: {
+          email: params.email,
+          username: params.username,
+          displayName: params.displayName,
+          passwordHash,
+          roleId: role.id,
+          status: bootstrap ? 'ACTIVE' : 'PENDING',
+          emailVerifiedAt: bootstrap ? new Date() : null,
+          preferences: {
+            notifyNewRelease: true,
+            notifyNewsPost: true,
+            notifyCommentReply: true,
+            emailDigest: 'off',
+            reducedMotion: false,
+          },
+        },
+        select: { id: true, email: true, displayName: true },
+      });
+
+      return { user: created, isBootstrap: bootstrap };
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
+
+  if (isBootstrap) {
+    // Egyszeri, visszafordíthatatlan esemény: legyen nyoma a naplóban is, ne
+    // csak az audit táblában, amit valaki később átírhat vagy nyeshet.
+    logger.warn('Bootstrap: az első fiók megkapta a tulajdonosi szerepkört', {
+      userId: user.id,
+      username: params.username,
+      ipHash: params.ipHash,
+    });
+  } else {
+    await issueVerificationEmail(user.id, user.email, user.displayName);
+  }
 
   await recordAudit({
     actorId: user.id,
     actorLabel: params.username,
-    action: 'CREATE',
+    action: isBootstrap ? 'PERMISSION_CHANGE' : 'CREATE',
     entityType: 'User',
     entityId: user.id,
-    summary: `Új regisztráció: ${params.username}`,
+    summary: isBootstrap
+      ? `Első regisztráció — tulajdonosi jogosultság kiosztva: ${params.username}`
+      : `Új regisztráció: ${params.username}`,
     ipHash: params.ipHash,
     userAgent: params.userAgent,
     requestId: params.requestId,
   });
 
-  return { userId: user.id };
+  return { userId: user.id, isBootstrap };
 }
 
 export interface LoginParams {

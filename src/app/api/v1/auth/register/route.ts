@@ -15,10 +15,10 @@ export const POST = defineRoute({
     // telling a scraper it was detected only teaches it to try harder.
     if (body.website) {
       logger.warn('Honeypot triggered on registration', { requestId });
-      return { registered: true, verificationRequired: true };
+      return { registered: true, verificationRequired: true, isOwner: false };
     }
 
-    await registerUser({
+    const result = await registerUser({
       email: body.email,
       username: body.username,
       displayName: body.displayName,
@@ -29,6 +29,15 @@ export const POST = defineRoute({
       requestId,
     });
 
-    return { registered: true, verificationRequired: true };
+    /*
+     * Az első fiók tulajdonos lesz, azonnal aktív és megerősített — nincs mire
+     * várnia. A felület ezt közli vele, különben egy soha meg nem érkező
+     * levélre várna azzal a fiókkal, ami nélkül a rendszert nem lehet beállítani.
+     */
+    return {
+      registered: true,
+      verificationRequired: !result.isBootstrap,
+      isOwner: result.isBootstrap,
+    };
   },
 });

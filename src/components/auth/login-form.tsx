@@ -26,7 +26,10 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const next = safeRedirectPath(searchParams.get('next'), '/');
-  const justRegistered = searchParams.get('registered') === '1';
+  const registeredParam = searchParams.get('registered');
+  const justRegistered = registeredParam === '1';
+  // Az első fiók a telepítésen: tulajdonos, azonnal beléphet.
+  const registeredAsOwner = registeredParam === 'owner';
   const justVerified = searchParams.get('verified') === '1';
   const justReset = searchParams.get('reset') === '1';
 
@@ -76,6 +79,21 @@ export function LoginForm() {
         >
           Sikeres regisztráció! Küldtünk egy megerősítő linket az e-mail-címedre.
         </p>
+      )}
+
+      {registeredAsOwner && (
+        <div
+          role="status"
+          className="mt-5 rounded-lg border border-tide-400/30 bg-tide-400/8 px-3.5 py-3 text-sm"
+        >
+          <p className="font-medium text-tide-200">
+            Ez volt az első fiók — megkaptad a tulajdonosi jogosultságot.
+          </p>
+          <p className="mt-1 leading-relaxed text-mist-300">
+            E-mail-megerősítés nélkül is beléphetsz. Belépés után az
+            Admin → Beállítások alatt tudod felvenni az oldal adatait.
+          </p>
+        </div>
       )}
 
       {justVerified && (

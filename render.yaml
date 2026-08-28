@@ -79,8 +79,10 @@ services:
         value: memory
 
       # `console` writes password-reset links to the log instead of sending
-      # them. Fine for a first deploy, not for real users: switch to `smtp` and
-      # fill in the SMTP_* values below.
+      # them. Fine for a first deploy — the first registered account becomes the
+      # owner and is activated without an email, so you can log in and configure
+      # the site with no SMTP at all. Switch to `smtp` before real users arrive,
+      # or nobody else will be able to verify an address or reset a password.
       - key: MAIL_DRIVER
         value: console
       - key: MAIL_FROM

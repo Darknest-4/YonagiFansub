@@ -18,12 +18,28 @@ const schema = z.object({
     .default('http://localhost:3000')
     .transform((v) => v.replace(/\/$/, '')),
 
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string({
+    required_error:
+      'DATABASE_URL hiányzik. Ez a PostgreSQL kapcsolati sztring, pl. postgresql://user:jelszo@host:5432/adatbazis',
+  }).min(1, 'DATABASE_URL nem lehet üres.'),
   DIRECT_DATABASE_URL: z.string().optional(),
 
+  /*
+   * A hibaüzenet szándékosan bőbeszédű: ez az egyetlen változó, ami nélkül a
+   * folyamat el sem indul, és az üzenet olyan naplóban jelenik meg, ahol nincs
+   * kihez fordulni. A `min(32)` üzenete csak túl rövid értékre szólal meg —
+   * ha a változó teljesen hiányzik, a Zod „Kötelező mező."-t adna, ezért a
+   * `required_error` külön meg van adva.
+   */
   AUTH_SECRET: z
-    .string()
-    .min(32, 'AUTH_SECRET must be at least 32 characters – generate with `openssl rand -base64 48`'),
+    .string({
+      required_error:
+        'AUTH_SECRET hiányzik. Generálj egyet: openssl rand -base64 48 — majd állítsd be a szolgáltatásod környezeti változói között (Render: Service → Environment).',
+    })
+    .min(
+      32,
+      'AUTH_SECRET túl rövid: legalább 32 karakter kell. Generálj egyet: openssl rand -base64 48',
+    ),
   AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(14),
   AUTH_SESSION_ABSOLUTE_TTL_DAYS: z.coerce.number().int().min(1).max(730).default(90),
   AUTH_SCRYPT_LOG_N: z.coerce.number().int().min(12).max(20).default(15),
@@ -71,20 +87,24 @@ function loadEnv(): Env {
     const report = parsed.error.issues
       .map((issue) => `  • ${issue.path.join('.')}: ${issue.message}`)
       .join('\n');
-    throw new Error(`Invalid environment configuration:\n${report}\n`);
+    throw new Error(
+      `Hibás környezeti konfiguráció:\n${report}\n\n` +
+        'A hiányzó értékeket a szolgáltatásod környezeti változói között kell megadni\n' +
+        '(Render: Service → Environment; Docker: -e / docker-compose environment).\n',
+    );
   }
 
   const value = parsed.data;
 
   // Cross-field invariants that a flat schema cannot express.
   if (value.RATE_LIMIT_DRIVER === 'redis' && !value.REDIS_URL) {
-    throw new Error('RATE_LIMIT_DRIVER=redis requires REDIS_URL to be set.');
+    throw new Error('RATE_LIMIT_DRIVER=redis mellett a REDIS_URL is kötelező.');
   }
   if (value.MAIL_DRIVER === 'smtp' && !value.SMTP_HOST) {
-    throw new Error('MAIL_DRIVER=smtp requires SMTP_HOST to be set.');
+    throw new Error('MAIL_DRIVER=smtp mellett az SMTP_HOST is kötelező.');
   }
   if (value.MEDIA_DRIVER === 's3' && !value.S3_BUCKET) {
-    throw new Error('MEDIA_DRIVER=s3 requires S3_BUCKET to be set.');
+    throw new Error('MEDIA_DRIVER=s3 mellett az S3_BUCKET is kötelező.');
   }
   /*
    * `next build` runs with NODE_ENV=production even on a laptop or in CI, where
@@ -101,7 +121,9 @@ function loadEnv(): Env {
     value.NEXT_PUBLIC_SITE_URL.startsWith('http://') &&
     !value.NEXT_PUBLIC_SITE_URL.startsWith('http://localhost')
   ) {
-    throw new Error('NEXT_PUBLIC_SITE_URL must use https:// in production.');
+    throw new Error(
+      'A NEXT_PUBLIC_SITE_URL élesben https:// kell legyen — a __Host- előtagú sütik és a HSTS ezt követelik.',
+    );
   }
 
   return value;

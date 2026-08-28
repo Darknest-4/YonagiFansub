@@ -73,8 +73,26 @@ szerepköröket, pozíciókat, formátumokat és beállítás-metaadatot szinkro
 demó tartalmat nem hoz létre (`NODE_ENV=production` alatt kihagyja), és a már
 beállított értékeket nem írja felül.
 
-Az első futáskor létrehozza a tulajdonosi fiókot, és **egyszer** kiírja a
-jelszót. Ha inkább te adod meg: `SEED_OWNER_PASSWORD=…`.
+### Az első fiók
+
+A seed **nem** hoz létre tulajdonosi fiókot. Helyette: **aki elsőként
+regisztrál az oldalon, megkapja a tulajdonosi jogosultságot** — azonnal aktív
+fiókkal, e-mail-megerősítés nélkül.
+
+Ez két gyakorlati problémát old meg egyszerre: nem kell egy generált jelszót
+kihalászni a deploy logból, és nem kell működő SMTP ahhoz, hogy egyáltalán be
+tudj lépni. A második és minden további regisztráló a szokásos `member`
+szerepkört kapja, `PENDING` állapotban, e-mail-megerősítéssel.
+
+A döntés egyetlen `SERIALIZABLE` tranzakcióban születik, tehát két egyszerre
+érkező regisztrációból sem lehet két tulajdonos: a Postgres a másodikat
+visszagörgeti.
+
+> **Fontos:** a telepítés utáni első percekben bárki, aki eléri az oldalt,
+> tulajdonossá tud válni. Regisztrálj közvetlenül azután, hogy a deploy zöldre
+> váltott. Ha ezt nem akarod kockáztatni — zárt telepítésnél —, add meg a
+> `SEED_OWNER_PASSWORD`-öt: akkor a seed hozza létre a tulajdonost, és a
+> bootstrap nem lép életbe (a felhasználói tábla nem lesz üres).
 
 Minden későbbi deploy után futtasd újra a seedet — így kerülnek be az újonnan
 deklarált jogosultságok.

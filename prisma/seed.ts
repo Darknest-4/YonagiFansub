@@ -458,6 +458,19 @@ async function seedReferenceData() {
   );
 }
 
+/**
+ * Tulajdonosi fiók — csak akkor, ha kifejezetten kérik.
+ *
+ * Alapértelmezés szerint a seed NEM hoz létre tulajdonost. Helyette az első
+ * regisztráló kapja meg a tulajdonosi szerepkört (lásd `registerUser` a
+ * `src/server/auth-service.ts`-ben), ami két gyakorlati problémát old meg
+ * egyszerre: nem kell egy generált jelszót kihalászni a deploy logból, és nem
+ * kell működő SMTP ahhoz, hogy be lehessen lépni először.
+ *
+ * A `SEED_OWNER_PASSWORD` megadásával kérhető a régi viselkedés — zárt
+ * telepítésnél, ahol a regisztrációs ablakot meg sem akarod nyitni, ez a
+ * helyes választás.
+ */
 async function seedOwner(): Promise<{ email: string; password: string | null }> {
   const email = (process.env.SEED_OWNER_EMAIL ?? 'owner@yonagifansub.hu').toLowerCase();
   const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
@@ -467,11 +480,21 @@ async function seedOwner(): Promise<{ email: string; password: string | null }> 
     return { email, password: null };
   }
 
-  const ownerRole = await db.role.findUniqueOrThrow({ where: { key: 'owner' } });
-
-  // Never a fixed default: an unset password becomes a random one, printed once.
   const provided = process.env.SEED_OWNER_PASSWORD;
-  const password = provided && provided.length >= 10 ? provided : randomBytes(12).toString('base64url');
+  if (!provided || provided.length < 10) {
+    const userCount = await db.user.count();
+    if (userCount === 0) {
+      console.log('→ Tulajdonosi fiók nem készült.');
+      console.log('  Az ELSŐ regisztráló kapja a tulajdonosi jogosultságot.');
+      console.log('  (Zárt telepítéshez: SEED_OWNER_PASSWORD=… és futtasd újra.)');
+    } else {
+      console.log(`→ Tulajdonosi fiók nem készült (${userCount} felhasználó már létezik).`);
+    }
+    return { email, password: null };
+  }
+
+  const ownerRole = await db.role.findUniqueOrThrow({ where: { key: 'owner' } });
+  const password = provided;
 
   await db.user.create({
     data: {
@@ -492,7 +515,8 @@ async function seedOwner(): Promise<{ email: string; password: string | null }> 
     },
   });
 
-  return { email, password: provided ? null : password };
+  console.log(`→ Tulajdonosi fiók létrehozva: ${email}`);
+  return { email, password: null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
