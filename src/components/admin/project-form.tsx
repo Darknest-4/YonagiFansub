@@ -18,6 +18,7 @@ import { ConfirmDialog } from '@/components/ui/modal';
 import { InlineError } from '@/components/ui/feedback';
 import { useToast } from '@/components/ui/toast';
 import { ImageField } from '@/components/admin/image-field';
+import { MetadataSync } from '@/components/admin/metadata-sync-panel';
 import {
   AGE_RATING_LABEL,
   PROJECT_STATUS,
@@ -553,6 +554,10 @@ export function ProjectForm({
                 )}
               </Field>
             </div>
+
+            {projectId && (values.malId || values.anilistId) && (
+              <MetadataSync projectId={projectId} />
+            )}
           </CardBody>
         </Card>
 

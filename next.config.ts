@@ -66,11 +66,26 @@ const nextConfig: NextConfig = {
     deviceSizes: [360, 480, 640, 828, 1080, 1280, 1600, 1920, 2560],
     imageSizes: [16, 32, 48, 64, 96, 128, 192, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30,
-    // Remote CDN hosts are configured through env in deployment; the defaults keep
-    // the surface small and explicit.
+    /*
+      Remote hosts are an allow-list, so every host that can appear in an
+      `<Image src>` has to be named here — an unlisted one is answered with a
+      400 by the optimizer and renders as a broken image.
+
+      The AniList and MyAnimeList CDNs are on the list because the metadata
+      importer writes their URLs straight into `coverImageUrl` and
+      `bannerImageUrl`. Without them, every imported project would show a hole
+      where its artwork should be. Own CDNs stay first; the list is still an
+      allow-list, not a wildcard.
+    */
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.yonagifansub.hu' },
       { protocol: 'https', hostname: 'images.yonagifansub.hu' },
+      // AniList
+      { protocol: 'https', hostname: 's4.anilist.co' },
+      { protocol: 'https', hostname: 'img.anili.st' },
+      // MyAnimeList, via Jikan
+      { protocol: 'https', hostname: 'cdn.myanimelist.net' },
+      { protocol: 'https', hostname: 'api-cdn.myanimelist.net' },
     ],
   },
 

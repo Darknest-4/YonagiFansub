@@ -54,6 +54,19 @@ const schema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
 
+  /**
+   * Upstream metadata APIs.
+   *
+   * Configurable rather than hard-coded so an instance can point at a mirror, a
+   * caching proxy, or a self-hosted Jikan — all three are ordinary deployments
+   * for a site that syncs on a schedule, and a network that blocks the public
+   * hosts would otherwise leave the feature dead with no way to redirect it.
+   */
+  ANILIST_API_URL: z.string().url().default('https://graphql.anilist.co'),
+  JIKAN_API_URL: z.string().url().default('https://api.jikan.moe/v4'),
+  /** Projects refreshed per scheduled run. Keeps the run inside the rate limits. */
+  METADATA_SYNC_BATCH: z.coerce.number().int().min(1).max(200).default(20),
+
   MEDIA_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_PUBLIC_BASE_URL: z.string().default('/uploads'),
   /**

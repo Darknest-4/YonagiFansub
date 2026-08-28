@@ -6,6 +6,8 @@ import { pruneExpiredSessions } from '@/lib/auth/session';
 import { pruneNotifications } from '@/server/notifications';
 import { publishDueReleases } from '@/server/releases';
 import { publishDueNews } from '@/server/news';
+import { runScheduledSync } from '@/server/admin/metadata-sync';
+import { env } from '@/lib/env';
 import { db } from '@/lib/db';
 import { CACHE_TAGS, invalidate } from '@/lib/cache';
 
@@ -91,6 +93,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       db.emailVerificationToken.deleteMany({ where: { expiresAt: { lt: now } } }),
     ]);
     return reset.count + verify.count;
+  });
+
+  /*
+    Metadata resync, last in the run and batched.
+
+    Last because it is the only step that depends on third-party APIs: if
+    AniList is down, the pruning above has already happened. Batched because a
+    nightly job must spend a predictable slice of the upstream rate limit —
+    `runScheduledSync` takes the stalest projects, so the whole catalogue is
+    still covered over a few nights without ever hammering anyone.
+  */
+  await step('syncedMetadata', async () => {
+    const outcome = await runScheduledSync(env.METADATA_SYNC_BATCH);
+    if (outcome.failed.length > 0) {
+      logger.warn('Metadata sync had failures', { failed: outcome.failed });
+    }
+    if (outcome.succeeded > 0) invalidate(CACHE_TAGS.projects);
+    return outcome.succeeded;
   });
 
   // Anything published above is now visible; drop the cached feeds.

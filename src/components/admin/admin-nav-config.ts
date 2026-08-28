@@ -42,6 +42,12 @@ export const ADMIN_NAV: AdminNavSection[] = [
     title: 'Katalógus',
     items: [
       { href: '/admin/projektek', label: 'Projektek', icon: 'Clapperboard', permission: 'project:read' },
+      {
+        href: '/admin/projektek/import',
+        label: 'Anime importálás',
+        icon: 'Download',
+        permission: 'project:write',
+      },
       { href: '/admin/kiadasok', label: 'Kiadások', icon: 'Package', permission: 'release:write' },
     ],
   },

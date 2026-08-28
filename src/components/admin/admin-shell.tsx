@@ -274,6 +274,7 @@ function Breadcrumb({ pathname }: { pathname: string }) {
     statisztika: 'Statisztika',
     media: 'Médiatár',
     gyik: 'GYIK',
+    import: 'Anime importálás',
     uj: 'Új',
   };
 

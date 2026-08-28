@@ -59,22 +59,22 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  sessions           Session[]
-  passwordResets     PasswordResetToken[]
-  verifications      EmailVerificationToken[]
-  notifications      Notification[]
-  comments           Comment[]
-  favorites          Favorite[]
-  downloadEvents     DownloadEvent[]
-  auditLogs          AuditLog[]              @relation("AuditActor")
-  authoredNews       NewsPost[]              @relation("NewsAuthor")
-  createdProjects    Project[]               @relation("ProjectCreator")
-  createdReleases    Release[]               @relation("ReleaseCreator")
-  uploadedMedia      MediaAsset[]
-  teamMember         TeamMember?
-  handledMessages    ContactMessage[]        @relation("ContactHandler")
-  updatedSettings    SiteSetting[]
-  moderatedComments  Comment[]               @relation("CommentModerator")
+  sessions          Session[]
+  passwordResets    PasswordResetToken[]
+  verifications     EmailVerificationToken[]
+  notifications     Notification[]
+  comments          Comment[]
+  favorites         Favorite[]
+  downloadEvents    DownloadEvent[]
+  auditLogs         AuditLog[]               @relation("AuditActor")
+  authoredNews      NewsPost[]               @relation("NewsAuthor")
+  createdProjects   Project[]                @relation("ProjectCreator")
+  createdReleases   Release[]                @relation("ReleaseCreator")
+  uploadedMedia     MediaAsset[]
+  teamMember        TeamMember?
+  handledMessages   ContactMessage[]         @relation("ContactHandler")
+  updatedSettings   SiteSetting[]
+  moderatedComments Comment[]                @relation("CommentModerator")
 
   @@index([roleId])
   @@index([status, deletedAt])
@@ -107,8 +107,8 @@ model Role {
 }
 
 model Permission {
-  id          String  @id @default(cuid())
-  key         String  @unique // e.g. "project:write"
+  id          String @id @default(cuid())
+  key         String @unique // e.g. "project:write"
   group       String // e.g. "project" – used to group checkboxes in the UI
   description String
 
@@ -227,36 +227,83 @@ enum AgeRating {
 }
 
 model Project {
-  id          String  @id @default(cuid())
-  slug        String  @unique
-  title       String // primary display title (Hungarian/romaji as used by the team)
-  titleRomaji String?
-  titleNative String? // 日本語
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String // primary display title (Hungarian/romaji as used by the team)
+  titleRomaji  String?
+  titleNative  String? // 日本語
   titleEnglish String?
   /// Alternative titles / abbreviations, used by search. Stored as a string array
   /// so a single GIN index covers all of them.
-  synonyms    String[] @default([])
+  synonyms     String[] @default([])
 
-  synopsis    String? @db.Text
-  type        ProjectType   @default(TV)
-  status      ProjectStatus @default(ANNOUNCED)
+  synopsis      String?       @db.Text
+  type          ProjectType   @default(TV)
+  status        ProjectStatus @default(ANNOUNCED)
   publishStatus PublishStatus @default(DRAFT)
 
-  season     AnimeSeason?
-  seasonYear Int?
+  season        AnimeSeason?
+  seasonYear    Int?
   totalEpisodes Int?
-  ageRating  AgeRating?
-  studio     String?
-  source     String? // manga, light novel, original…
-  durationMin Int?
+  ageRating     AgeRating?
+  studio        String? // primary animation studio, kept for display and search
+  source        String? // manga, light novel, original…
+  durationMin   Int?
+
+  /// Broadcast window, as reported upstream. Separate from `seasonYear` because
+  /// a season tells you roughly when, and a viewer waiting for a finale wants
+  /// the actual date.
+  startDate DateTime? @db.Date
+  endDate   DateTime? @db.Date
+
+  /// Credits as lists rather than one string: a show has several studios and a
+  /// production committee, and joining them into prose makes them unsearchable.
+  studios   String[] @default([])
+  producers String[] @default([])
+  licensors String[] @default([])
+
+  /// Descriptive tags from AniList, which are finer-grained than genres
+  /// ("Time Skip", "Female Protagonist") and are what people actually browse by.
+  tags String[] @default([])
+
+  /// Upstream reception. Stored because it is the first thing a visitor asks of
+  /// a show they have not heard of, and re-fetching it per page view would be
+  /// both slow and a good way to get rate-limited.
+  averageScore Int? // AniList, 0–100
+  malScore     Decimal? @db.Decimal(4, 2) // MyAnimeList, 0–10
+  popularity   Int?
+  favourites   Int?
+
+  countryOfOrigin String? @db.VarChar(2)
+  hashtag         String?
+  isAdult         Boolean @default(false)
 
   coverImageUrl  String?
   bannerImageUrl String?
   trailerUrl     String?
   accentColor    String? // hex, drives the per-project theming on the detail page
 
+  /// Official sites and legal streaming links, as [{ site, url, type }].
+  /// JSON rather than a table: it is display-only, never queried, and its shape
+  /// is whatever the upstream sends.
+  externalLinks Json @default("[]")
+
+  /// Prequels, sequels and side stories, as [{ relation, malId, anilistId, title }].
+  relations Json @default("[]")
+
   malId     Int?
   anilistId Int?
+
+  /// Metadata import bookkeeping.
+  ///
+  /// `metadataSyncedAt` is what the scheduled resync orders by, so a run can
+  /// pick up the stalest projects and stay inside the upstream rate limits
+  /// instead of walking the whole catalogue every night. `autoSync` lets a team
+  /// pin a project whose upstream entry is wrong — without it, the only way to
+  /// keep a hand-written synopsis would be to clear the ids and lose the link.
+  metadataSyncedAt DateTime?
+  metadataSource   String?   @db.VarChar(16)
+  autoSync         Boolean   @default(true)
 
   isFeatured  Boolean   @default(false)
   publishedAt DateTime?
@@ -282,6 +329,7 @@ model Project {
   @@index([seasonYear, season])
   @@index([isFeatured, publishedAt])
   @@index([updatedAt])
+  @@index([autoSync, metadataSyncedAt])
   @@map("projects")
 }
 
@@ -318,19 +366,30 @@ enum EpisodeStatus {
 }
 
 model Episode {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   /// Decimal so that recap/special numbering (12.5) is representable and sorts
   /// correctly at the database level.
-  number      Decimal @db.Decimal(6, 2)
-  title       String?
-  titleNative String?
-  synopsis    String? @db.Text
+  number       Decimal   @db.Decimal(6, 2)
+  title        String?
+  titleRomaji  String?
+  titleNative  String?
+  synopsis     String?   @db.Text
   thumbnailUrl String?
-  durationSec Int?
-  airedAt     DateTime?
+  durationSec  Int?
+  airedAt      DateTime?
+
+  /// Flags carried over from the upstream episode list. Viewers skip filler and
+  /// recaps, and a fansub decides whether to even work on them, so both are
+  /// worth knowing before opening the episode.
+  isFiller Boolean @default(false)
+  isRecap  Boolean @default(false)
+
+  /// Set by the metadata importer; `null` means the row was written by hand.
+  /// The importer uses it to leave hand-edited rows alone.
+  metadataSyncedAt DateTime?
 
   status EpisodeStatus @default(PLANNED)
 
@@ -389,7 +448,7 @@ model ReleaseFormat {
 }
 
 model Release {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -410,16 +469,16 @@ model Release {
   subtitleFormat String? // ASS, SRT
   fileSizeBytes  BigInt?
   durationSec    Int?
-  crc32          String? @db.VarChar(8)
-  sha256         String? @db.VarChar(64)
+  crc32          String?    @db.VarChar(8)
+  sha256         String?    @db.VarChar(64)
 
   /// Short changelog shown on v2+ releases ("javított időzítés, új karaoke").
   changelog String? @db.Text
   notes     String? @db.Text
 
-  status      PublishStatus @default(DRAFT)
-  releasedAt  DateTime?
-  downloadCount Int         @default(0)
+  status        PublishStatus @default(DRAFT)
+  releasedAt    DateTime?
+  downloadCount Int           @default(0)
 
   createdById String?
   createdBy   User?   @relation("ReleaseCreator", fields: [createdById], references: [id], onDelete: SetNull)
@@ -456,13 +515,13 @@ enum LinkAvailability {
 /// External storage providers (Nyaa, Google Drive, Mega, own CDN…). Kept as data
 /// so a dead host can be swapped or hidden site-wide from the admin panel.
 model StorageHost {
-  id       String  @id @default(cuid())
-  key      String  @unique
-  name     String
-  iconUrl  String?
-  baseUrl  String?
-  isActive Boolean @default(true)
-  sortOrder Int    @default(0)
+  id        String  @id @default(cuid())
+  key       String  @unique
+  name      String
+  iconUrl   String?
+  baseUrl   String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
 
   links DownloadLink[]
 
@@ -514,8 +573,8 @@ model DownloadEvent {
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   ipHash    String?
-  userAgent String? @db.VarChar(400)
-  country   String? @db.VarChar(2)
+  userAgent String?  @db.VarChar(400)
+  country   String?  @db.VarChar(2)
   createdAt DateTime @default(now())
 
   @@index([releaseId, createdAt])
@@ -553,11 +612,11 @@ model TeamMember {
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  name      String
-  tagline   String? @db.VarChar(160)
-  bio       String? @db.Text
-  avatarUrl String?
-  bannerUrl String?
+  name        String
+  tagline     String? @db.VarChar(160)
+  bio         String? @db.Text
+  avatarUrl   String?
+  bannerUrl   String?
   accentColor String?
 
   /// { "discord": "...", "x": "...", "anilist": "...", "myanimelist": "..." }
@@ -615,10 +674,10 @@ model ProjectStaff {
 // ═══════════════════════════════════════════════════════════════════════════
 
 model NewsCategory {
-  id    String  @id @default(cuid())
-  slug  String  @unique
-  name  String
-  color String?
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  color       String?
   description String?
 
   posts NewsPost[]
@@ -627,8 +686,8 @@ model NewsCategory {
 }
 
 model NewsPost {
-  id      String @id @default(cuid())
-  slug    String @unique
+  id      String  @id @default(cuid())
+  slug    String  @unique
   title   String
   excerpt String? @db.VarChar(320)
   /// Markdown. Rendered through our own escaping renderer – never raw HTML.
@@ -642,11 +701,11 @@ model NewsPost {
   authorId String?
   author   User?   @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
-  status      PublishStatus @default(DRAFT)
-  publishedAt DateTime?
-  isPinned    Boolean       @default(false)
-  viewCount   Int           @default(0)
-  readingMinutes Int        @default(1)
+  status         PublishStatus @default(DRAFT)
+  publishedAt    DateTime?
+  isPinned       Boolean       @default(false)
+  viewCount      Int           @default(0)
+  readingMinutes Int           @default(1)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -690,9 +749,9 @@ model Comment {
 
   status CommentStatus @default(PUBLISHED)
 
-  moderatedById String?
-  moderatedBy   User?   @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
-  moderatedAt   DateTime?
+  moderatedById  String?
+  moderatedBy    User?     @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  moderatedAt    DateTime?
   moderationNote String?
 
   createdAt DateTime  @default(now())
@@ -708,11 +767,11 @@ model Comment {
 }
 
 model FaqEntry {
-  id        String  @id @default(cuid())
-  question  String
-  answer    String  @db.Text
-  category  String  @default("general")
-  sortOrder Int     @default(0)
+  id          String  @id @default(cuid())
+  question    String
+  answer      String  @db.Text
+  category    String  @default("general")
+  sortOrder   Int     @default(0)
   isPublished Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -755,10 +814,10 @@ model ContactMessage {
   ipHash    String?
   userAgent String? @db.VarChar(400)
 
-  handledById String?
-  handledBy   User?   @relation("ContactHandler", fields: [handledById], references: [id], onDelete: SetNull)
-  handledAt   DateTime?
-  internalNote String? @db.Text
+  handledById  String?
+  handledBy    User?     @relation("ContactHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  handledAt    DateTime?
+  internalNote String?   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -782,13 +841,13 @@ model Notification {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type  NotificationType
-  title String
-  body  String?          @db.VarChar(500)
-  href  String?
+  type     NotificationType
+  title    String
+  body     String?          @db.VarChar(500)
+  href     String?
   imageUrl String?
   /// Free-form payload (projectId, releaseId…) for client-side deep links.
-  meta  Json             @default("{}")
+  meta     Json             @default("{}")
 
   readAt    DateTime?
   createdAt DateTime  @default(now())
@@ -802,7 +861,7 @@ model Favorite {
   userId    String
   projectId String
   /// Notify this user when the project gets a new release.
-  notify    Boolean @default(true)
+  notify    Boolean  @default(true)
   createdAt DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -831,8 +890,8 @@ enum AuditAction {
 model AuditLog {
   id String @id @default(cuid())
 
-  actorId String?
-  actor   User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
+  actor      User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
   /// Denormalised so the trail survives account deletion.
   actorLabel String?
 
@@ -857,17 +916,17 @@ model AuditLog {
 }
 
 model MediaAsset {
-  id       String  @id @default(cuid())
-  key      String  @unique // storage key / path
-  url      String
-  mimeType String
+  id        String  @id @default(cuid())
+  key       String  @unique // storage key / path
+  url       String
+  mimeType  String
   sizeBytes BigInt
-  width    Int?
-  height   Int?
-  blurHash String?
-  alt      String?
-  checksum String? @db.VarChar(64)
-  folder   String  @default("general")
+  width     Int?
+  height    Int?
+  blurHash  String?
+  alt       String?
+  checksum  String? @db.VarChar(64)
+  folder    String  @default("general")
 
   uploadedById String?
   uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
@@ -890,7 +949,7 @@ model SiteSetting {
   isPublic    Boolean @default(false)
 
   updatedById String?
-  updatedBy   User?   @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
   updatedAt   DateTime @updatedAt
 
   @@index([group])
