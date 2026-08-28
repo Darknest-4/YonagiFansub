@@ -126,6 +126,22 @@ Ha új útvonalat veszel fel, ami saját `route.ts`-ként fut (`app/api/**`,
 
 ## 4. Indítás
 
+### Docker (Render, Fly, bármi, ami image-et futtat)
+
+A konténer indulásakor a `scripts/start.sh` fut le:
+
+```
+migrate deploy → db:sql → seed → node server.js
+```
+
+Mindhárom előkészítő lépés idempotens, tehát minden újraindításkor bátran
+lefuthat, és a meglévő adatokat nem bántja.
+
+**A seed nem elhagyható.** Nélküle egyetlen szerepkör sincs az adatbázisban, a
+regisztráció 500-zal elszáll, és senki nem tud belépni — még az első tulajdonos
+sem. Az oldal ettől még betöltődik és 200-at ad, ezért ez a hiba nehezen
+észrevehető: minden működni látszik, csak használni nem lehet.
+
 ### Docker Compose (self-hosted)
 
 ```bash

@@ -100,5 +100,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 # tini handles signals and zombie processes.
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Run database migrations before starting Next.js.
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node server.js"]
+# Az indulási sorrend a `scripts/start.sh`-ban van, magyarázattal együtt:
+# migráció → SQL kiegészítők → seed → szerver. Mindhárom lépés idempotens.
+CMD ["sh", "scripts/start.sh"]
