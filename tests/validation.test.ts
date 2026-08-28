@@ -74,7 +74,7 @@ describe('Hungarian error map', () => {
   it('keeps a hand-written message rather than overriding it', () => {
     // The map is a fallback: an explicit message on the schema still wins.
     expect(firstError(z.string().min(3, 'Túl rövid név.'), 'ab')).toBe('Túl rövid név.');
-    expect(firstError(hexColor, 'kék')).toBe('Érvénytelen színkód (pl. #4cd8ff).');
+    expect(firstError(hexColor, 'kék')).toBe('Érvénytelen színkód (pl. #f761a8).');
   });
 
   it('keeps a refinement message', () => {

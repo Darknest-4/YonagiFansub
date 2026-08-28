@@ -3,9 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { Building2, CalendarDays, Clapperboard, ExternalLink, Users } from 'lucide-react';
+import { Building2, CalendarDays, Clapperboard, Download, ExternalLink, Users } from 'lucide-react';
 import { env } from '@/lib/env';
-import { formatCount, toIsoString, truncate } from '@/lib/utils';
+import { formatCount, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
 import { db } from '@/lib/db';
 import {
   getPublicEpisodes,
@@ -23,7 +23,14 @@ import {
 import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeList } from '@/components/site/episode-list';
 import { FollowButton } from '@/components/site/follow-button';
+import { ExternalLinks } from '@/components/site/external-links';
+import {
+  ProjectStatusCard,
+  aggregateProgress,
+} from '@/components/site/project-status-card';
+import { Avatar } from '@/components/ui/avatar';
 import { ReleaseListSkeleton } from '@/components/ui/feedback';
+import { ButtonLink } from '@/components/ui/button';
 
 type Params = Promise<{ slug: string }>;
 
@@ -90,7 +97,10 @@ export default async function ProjectPage({ params }: { params: Params }) {
   void incrementProjectView(project.id);
 
   const accent = project.accentColor ?? '#f761a8';
-  const releasedCount = episodes.filter((episode) => episode.status === 'RELEASED').length;
+  const released = episodes.filter((episode) => episode.status === 'RELEASED');
+  const releasedCount = released.length;
+  // A legmagasabb sorszámú megjelent rész — az `episodes` szám szerint növekvő.
+  const latestRelease = released.at(-1) ?? null;
 
   const staffByPosition = [...project.staff]
     .sort((a, b) => a.position.sortOrder - b.position.sortOrder)
@@ -183,6 +193,25 @@ export default async function ProjectPage({ params }: { params: Params }) {
                   </span>
                 )}
               </div>
+
+              {/*
+                A borító alatti gomb a leggyakoribb szándékot rövidíti le: aki
+                egy projektoldalra érkezik, jellemzően a legfrissebb részt
+                keresi, és ehhez eddig végig kellett görgetnie az epizódlistát.
+                Csak akkor jelenik meg, ha van mit letölteni.
+              */}
+              {latestRelease && (
+                <ButtonLink
+                  href={`/projektek/${project.slug}/${formatEpisodeNumber(String(latestRelease.number))}`}
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  className="mt-4 text-2xs tracking-[0.1em] uppercase"
+                  leadingIcon={<Download className="size-4" aria-hidden />}
+                >
+                  Legújabb rész
+                </ButtonLink>
+              )}
             </div>
 
             <div className="min-w-0">
@@ -297,67 +326,87 @@ export default async function ProjectPage({ params }: { params: Params }) {
         </section>
 
         <aside className="space-y-6 lg:pt-1">
+          <ProjectStatusCard
+            status={project.status}
+            progress={aggregateProgress(episodes)}
+            releasedCount={releasedCount}
+            totalCount={project.totalEpisodes}
+            updatedAt={project.updatedAt}
+          />
+
+          {project.genres.length > 0 && (
+            <section aria-labelledby="genres">
+              <h2
+                id="genres"
+                className="mb-3 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase"
+              >
+                Műfajok
+              </h2>
+              <ul className="flex flex-wrap gap-1.5">
+                {project.genres.map(({ genre }) => (
+                  <li key={genre.slug}>
+                    <Link
+                      href={`/projektek?genre=${genre.slug}`}
+                      className="inline-flex rounded-md border border-ink-700 bg-ink-900/60 px-2.5 py-1 text-2xs text-mist-300 transition-colors duration-fast hover:border-bloom-500/40 hover:text-bloom-300"
+                    >
+                      {genre.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {staffByPosition.size > 0 && (
             <section aria-labelledby="credits">
               <h2
                 id="credits"
-                className="mb-3.5 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase"
+                className="mb-3 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase"
               >
-                Stáblista
+                Stáb
               </h2>
 
-              <dl className="space-y-3.5 rounded-xl border border-ink-800 bg-ink-900/40 p-4">
-                {[...staffByPosition.entries()].map(([key, group]) => (
-                  <div key={key}>
-                    <dt
-                      className="text-2xs font-medium"
-                      style={{ color: group.color ?? 'var(--color-mist-500)' }}
-                    >
-                      {group.name}
-                    </dt>
-                    <dd className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
-                      {group.members.map((credit) => (
-                        <Link
-                          key={credit.id}
-                          href={`/csapat/${credit.teamMember.slug}`}
-                          className="text-sm text-mist-200 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
-                        >
+              {/*
+                Arckép a név mellett: egy fansub csapatban a stáblista nem
+                adminisztráció, hanem a névjegy. Az arc az, amitől a nevek
+                emberekké válnak, és ez az egyetlen hely az oldalon, ahol egy
+                fordító munkája név szerint látszik.
+              */}
+              <ul className="divide-y divide-ink-800 overflow-hidden rounded-xl border border-ink-800 bg-ink-900/40">
+                {[...staffByPosition.entries()].flatMap(([key, group]) =>
+                  group.members.map((credit) => (
+                    <li key={`${key}-${credit.id}`}>
+                      <Link
+                        href={`/csapat/${credit.teamMember.slug}`}
+                        className="flex items-center gap-3 px-3.5 py-2.5 transition-colors duration-fast hover:bg-ink-850"
+                      >
+                        <Avatar
+                          name={credit.teamMember.name}
+                          src={credit.teamMember.avatarUrl}
+                          size="sm"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm text-mist-100">
                           {credit.teamMember.name}
-                        </Link>
-                      ))}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+                        </span>
+                        <span
+                          className="shrink-0 text-2xs"
+                          style={{ color: group.color ?? 'var(--color-mist-500)' }}
+                        >
+                          {group.name}
+                        </span>
+                      </Link>
+                    </li>
+                  )),
+                )}
+              </ul>
             </section>
           )}
 
-          <section aria-labelledby="external">
-            <h2
-              id="external"
-              className="mb-3.5 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase"
-            >
-              Adatlapok
-            </h2>
-
-            <ul className="space-y-2">
-              {project.malId && (
-                <ExternalRow
-                  href={`https://myanimelist.net/anime/${project.malId}`}
-                  label="MyAnimeList"
-                />
-              )}
-              {project.anilistId && (
-                <ExternalRow
-                  href={`https://anilist.co/anime/${project.anilistId}`}
-                  label="AniList"
-                />
-              )}
-              {!project.malId && !project.anilistId && (
-                <li className="text-sm text-mist-600">Nincs összekapcsolt adatlap.</li>
-              )}
-            </ul>
-          </section>
+          <ExternalLinks
+            malId={project.malId}
+            anilistId={project.anilistId}
+            title={project.titleRomaji ?? project.title}
+          />
 
           {project.source && (
             <section>
@@ -390,21 +439,5 @@ function Fact({
       </dt>
       <dd className="nums mt-1 text-sm font-semibold text-mist-100">{value}</dd>
     </div>
-  );
-}
-
-function ExternalRow({ href, label }: { href: string; label: string }) {
-  return (
-    <li>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-        className="flex items-center justify-between gap-2 rounded-lg border border-ink-800 bg-ink-900/40 px-3.5 py-2.5 text-sm text-mist-300 transition-colors duration-fast hover:border-ink-600 hover:text-mist-100"
-      >
-        {label}
-        <ExternalLink className="size-3.5 shrink-0 text-mist-600" aria-hidden />
-      </a>
-    </li>
   );
 }

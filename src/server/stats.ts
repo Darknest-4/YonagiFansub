@@ -1,4 +1,5 @@
 import 'server-only';
+import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
 
@@ -131,6 +132,171 @@ export async function getDownloadTrend(days = 30): Promise<Array<{ date: string;
       .toISOString()
       .slice(0, 10);
     return { date, count: byDay.get(date) ?? 0 };
+  });
+}
+
+/**
+ * Daily counts for one table's `createdAt`, gap-filled.
+ *
+ * The table name is interpolated with `Prisma.raw` because a placeholder cannot
+ * stand in for an identifier — so it is deliberately **not** a parameter of the
+ * exported API. Only the fixed literals in `DASHBOARD_SERIES` below ever reach
+ * it, which keeps this from becoming an injection point the day somebody wires
+ * it to a query string.
+ */
+async function dailyCounts(table: string, days: number): Promise<number[]> {
+  const rows = await db.$queryRaw<Array<{ day: Date; count: bigint }>>`
+    SELECT date_trunc('day', "createdAt") AS day, COUNT(*)::bigint AS count
+    FROM ${Prisma.raw(`"${table}"`)}
+    WHERE "createdAt" >= ${daysAgo(days)}
+    GROUP BY day
+    ORDER BY day ASC
+  `;
+
+  const byDay = new Map(rows.map((row) => [row.day.toISOString().slice(0, 10), Number(row.count)]));
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(Date.now() - (days - 1 - index) * 86_400_000).toISOString().slice(0, 10);
+    return byDay.get(date) ?? 0;
+  });
+}
+
+/** The only table names `dailyCounts` is ever called with. */
+const DASHBOARD_SERIES = {
+  downloads: 'download_events',
+  releases: 'releases',
+  users: 'users',
+  episodes: 'episodes',
+  projects: 'projects',
+} as const;
+
+export interface DashboardTrends {
+  downloads: number[];
+  releases: number[];
+  users: number[];
+  episodes: number[];
+  projects: number[];
+}
+
+/**
+ * Fourteen-day series for the stat tiles.
+ *
+ * Fourteen rather than thirty: the tile chart is 120px wide, so thirty points
+ * put a data point every four pixels and the line stops reading as a trend and
+ * starts reading as noise. Two weeks also gives an honest week-over-week delta.
+ */
+export async function getDashboardTrends(days = 14): Promise<DashboardTrends> {
+  const [downloads, releases, users, episodes, projects] = await Promise.all([
+    dailyCounts(DASHBOARD_SERIES.downloads, days),
+    dailyCounts(DASHBOARD_SERIES.releases, days),
+    dailyCounts(DASHBOARD_SERIES.users, days),
+    dailyCounts(DASHBOARD_SERIES.episodes, days),
+    dailyCounts(DASHBOARD_SERIES.projects, days),
+  ]);
+
+  return { downloads, releases, users, episodes, projects };
+}
+
+/**
+ * Percentage change of the last half of a series against the first half.
+ *
+ * Returns `null` when the earlier period is empty. A jump from zero is not
+ * "+100%" or "+∞%" — it is a first data point, and any percentage put on it
+ * would be a number the dashboard made up.
+ */
+export function periodDelta(series: number[]): number | null {
+  if (series.length < 4) return null;
+
+  const half = Math.floor(series.length / 2);
+  const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+
+  const previous = sum(series.slice(0, half));
+  if (previous === 0) return null;
+
+  return Math.round(((sum(series.slice(half)) - previous) / previous) * 100);
+}
+
+export interface ProjectProgressRow {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  coverImageUrl: string | null;
+  releasedEpisodes: number;
+  totalEpisodes: number;
+  /** Mean completion across the episodes still in flight, or `null` if none are. */
+  progress: number | null;
+}
+
+/**
+ * Progress board for the dashboard.
+ *
+ * Answers "which project is moving and which is stuck", which is the question a
+ * fansub admin actually opens the dashboard with. Ordered by most recently
+ * touched, because a stalled project is only interesting next to the ones that
+ * are not.
+ *
+ * The average covers only unreleased episodes: including finished ones would
+ * drag every bar toward 100% and make a project with ten released episodes and
+ * one barely-started look nearly done.
+ */
+export async function getProjectProgressBoard(limit = 6): Promise<ProjectProgressRow[]> {
+  const projects = await db.project.findMany({
+    where: { deletedAt: null, status: { in: ['ONGOING', 'ANNOUNCED'] } },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      status: true,
+      coverImageUrl: true,
+      episodes: {
+        where: { deletedAt: null },
+        select: {
+          status: true,
+          progressTranslation: true,
+          progressEditing: true,
+          progressTiming: true,
+          progressTypesetting: true,
+          progressEncoding: true,
+          progressQc: true,
+        },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: limit,
+  });
+
+  return projects.map((project) => {
+    const pending = project.episodes.filter((episode) => episode.status !== 'RELEASED');
+
+    const progress =
+      pending.length === 0
+        ? null
+        : Math.round(
+            pending.reduce(
+              (total, episode) =>
+                total +
+                (episode.progressTranslation +
+                  episode.progressEditing +
+                  episode.progressTiming +
+                  episode.progressTypesetting +
+                  episode.progressEncoding +
+                  episode.progressQc) /
+                  6,
+              0,
+            ) / pending.length,
+          );
+
+    return {
+      id: project.id,
+      slug: project.slug,
+      title: project.title,
+      status: project.status,
+      coverImageUrl: project.coverImageUrl,
+      releasedEpisodes: project.episodes.filter((episode) => episode.status === 'RELEASED').length,
+      totalEpisodes: project.episodes.length,
+      progress,
+    };
   });
 }
 

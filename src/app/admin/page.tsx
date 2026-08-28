@@ -5,25 +5,39 @@ import {
   AlertTriangle,
   ArrowRight,
   Clapperboard,
+  Database,
   Download,
+  FilePlus2,
+  HardDrive,
+  Images,
+  MessageSquare,
+  Newspaper,
   Package,
+  PackagePlus,
   Users,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { ensureAdminAccess } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
+import { hasPermission, type Actor, type Permission } from '@/lib/auth/permissions';
 import { toActor } from '@/lib/auth/session';
 import {
   getDashboardStats,
+  getDashboardTrends,
   getDownloadTrend,
+  getProjectProgressBoard,
   getRecentActivity,
   getTopReleases,
+  periodDelta,
 } from '@/server/stats';
 import { db } from '@/lib/db';
-import { formatCount, formatRelative } from '@/lib/utils';
+import { env } from '@/lib/env';
+import { cn, formatCount, formatRelative } from '@/lib/utils';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Skeleton, TableSkeleton } from '@/components/ui/feedback';
+import { ProjectStatusBadge } from '@/components/ui/badge';
 import { Sparkline } from '@/components/admin/sparkline';
 import { StatTile } from '@/components/admin/stat-tile';
+import type { ProjectStatus } from '@prisma/client';
 
 export const metadata: Metadata = { title: 'Vezérlőpult' };
 
@@ -33,21 +47,30 @@ export const dynamic = 'force-dynamic';
  * Admin dashboard.
  *
  * Built around one question: what needs attention right now. The stat tiles are
- * status, but the two panels below are the actual work queue — unanswered
- * messages and unpublished drafts — because a dashboard that only shows numbers
- * gets looked at once and then ignored.
+ * status, but the panels below are the actual work queue — unanswered messages,
+ * unpublished drafts, and the projects that have stopped moving — because a
+ * dashboard that only shows numbers gets looked at once and then ignored.
+ *
+ * Every panel sits behind its own `Suspense` boundary. They query independently,
+ * so one slow aggregate holds up its own card instead of the whole page, and the
+ * header and quick actions are usable before any of them resolve.
  */
 export default async function AdminDashboard() {
   const user = await ensureAdminAccess();
   const actor = toActor(user);
+  const canReadAudit = hasPermission(actor, 'audit:read');
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl">Vezérlőpult</h1>
-        <p className="mt-1.5 text-sm text-content-muted">
-          Szia, {user.displayName.split(' ')[0]}! Itt van, ami most fontos.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl">Vezérlőpult</h1>
+          <p className="mt-1.5 text-sm text-content-muted">
+            Szia, {user.displayName.split(' ')[0]}! Itt van, ami most fontos.
+          </p>
+        </div>
+
+        <QuickActions actor={actor} />
       </header>
 
       <Suspense fallback={<StatGridSkeleton />}>
@@ -64,32 +87,89 @@ export default async function AdminDashboard() {
         </Suspense>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      {hasPermission(actor, 'project:read') && (
+        <Suspense fallback={<TableSkeleton rows={5} columns={4} />}>
+          <ProjectBoardPanel />
+        </Suspense>
+      )}
+
+      {/* The audit log is the only permission-gated panel in this row, so the
+          row collapses to one column without it rather than leaving a hole. */}
+      <div className={cn('grid gap-5', canReadAudit && 'lg:grid-cols-2')}>
         <Suspense fallback={<TableSkeleton rows={5} columns={3} />}>
           <TopReleasesPanel />
         </Suspense>
 
-        {hasPermission(actor, 'audit:read') && (
+        {canReadAudit && (
           <Suspense fallback={<TableSkeleton rows={5} columns={2} />}>
             <ActivityPanel />
           </Suspense>
         )}
       </div>
+
+      <SystemPanel />
     </div>
   );
 }
 
-async function StatGrid() {
-  const stats = await getDashboardStats();
+/* ── Quick actions ─────────────────────────────────────────────────────────── */
+
+const QUICK_ACTIONS: Array<{
+  href: string;
+  label: string;
+  permission: Permission;
+  icon: LucideIcon;
+}> = [
+  { href: '/admin/projektek/uj', label: 'Új projekt', permission: 'project:write', icon: FilePlus2 },
+  { href: '/admin/kiadasok/uj', label: 'Új kiadás', permission: 'release:write', icon: PackagePlus },
+  { href: '/admin/hirek/uj', label: 'Új hír', permission: 'news:write', icon: Newspaper },
+  { href: '/admin/media', label: 'Médiatár', permission: 'media:write', icon: Images },
+];
+
+/**
+ * The four things an admin most often arrives wanting to do.
+ *
+ * Filtered by permission, so an editor without release rights never sees a
+ * button that would only take them to a 403. The pages behind them enforce the
+ * same permission independently — hiding the button is convenience, not access
+ * control.
+ */
+function QuickActions({ actor }: { actor: Actor }) {
+  const allowed = QUICK_ACTIONS.filter((action) => hasPermission(actor, action.permission));
+
+  if (allowed.length === 0) return null;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <nav aria-label="Gyors műveletek" className="flex flex-wrap gap-2">
+      {allowed.map((action) => (
+        <Link
+          key={action.href}
+          href={action.href}
+          className="inline-flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-900/60 px-3 py-2 text-xs font-medium text-mist-200 transition-colors duration-fast hover:border-bloom-500/40 hover:bg-ink-850 hover:text-bloom-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
+        >
+          <action.icon className="size-3.5 shrink-0 text-bloom-400" aria-hidden />
+          {action.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/* ── Stat tiles ────────────────────────────────────────────────────────────── */
+
+async function StatGrid() {
+  const [stats, trends] = await Promise.all([getDashboardStats(), getDashboardTrends(14)]);
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <StatTile
         label="Projektek"
         value={stats.projects.total}
         detail={`${stats.projects.ongoing} fut · ${stats.projects.draft} piszkozat`}
         icon={<Clapperboard className="size-4" aria-hidden />}
         href="/admin/projektek"
+        trend={trends.projects}
+        delta={periodDelta(trends.projects)}
       />
       <StatTile
         label="Kiadások"
@@ -98,6 +178,17 @@ async function StatGrid() {
         icon={<Package className="size-4" aria-hidden />}
         href="/admin/kiadasok"
         tone="orchid"
+        trend={trends.releases}
+        delta={periodDelta(trends.releases)}
+      />
+      <StatTile
+        label="Epizódok"
+        value={stats.episodes.total}
+        detail={`${stats.episodes.inProgress} folyamatban`}
+        icon={<Clapperboard className="size-4" aria-hidden />}
+        tone="info"
+        trend={trends.episodes}
+        delta={periodDelta(trends.episodes)}
       />
       <StatTile
         label="Letöltés (30 nap)"
@@ -105,6 +196,8 @@ async function StatGrid() {
         detail={`${formatCount(stats.downloads.total)} összesen`}
         icon={<Download className="size-4" aria-hidden />}
         tone="warm"
+        trend={trends.downloads}
+        delta={periodDelta(trends.downloads)}
       />
       <StatTile
         label="Felhasználók"
@@ -113,6 +206,8 @@ async function StatGrid() {
         icon={<Users className="size-4" aria-hidden />}
         href="/admin/felhasznalok"
         tone="success"
+        trend={trends.users}
+        delta={periodDelta(trends.users)}
       />
     </div>
   );
@@ -120,13 +215,15 @@ async function StatGrid() {
 
 function StatGridSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {Array.from({ length: 4 }, (_, index) => (
-        <Skeleton key={index} className="h-28 rounded-xl" />
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {Array.from({ length: 5 }, (_, index) => (
+        <Skeleton key={index} className="h-40 rounded-xl" />
       ))}
     </div>
   );
 }
+
+/* ── Panels ────────────────────────────────────────────────────────────────── */
 
 async function DownloadTrendPanel() {
   const trend = await getDownloadTrend(30);
@@ -140,7 +237,7 @@ async function DownloadTrendPanel() {
         description={`Összesen ${formatCount(total)}, csúcsnap ${formatCount(peak)}`}
       />
       <CardBody>
-        <Sparkline data={trend} />
+        <Sparkline data={trend} id="downloads" />
       </CardBody>
     </Card>
   );
@@ -158,7 +255,6 @@ async function NeedsAttentionPanel({ canReadContact }: { canReadContact: boolean
           label: 'Megválaszolatlan üzenet',
           count: stats.contact.new,
           href: '/admin/uzenetek?status=NEW',
-          tone: 'warm' as const,
         }
       : null,
     stats.comments.pending > 0
@@ -166,7 +262,6 @@ async function NeedsAttentionPanel({ canReadContact }: { canReadContact: boolean
           label: 'Moderálásra váró hozzászólás',
           count: stats.comments.pending,
           href: '/admin/hozzaszolasok',
-          tone: 'warn' as const,
         }
       : null,
     stats.releases.scheduled > 0
@@ -174,18 +269,12 @@ async function NeedsAttentionPanel({ canReadContact }: { canReadContact: boolean
           label: 'Ütemezett kiadás',
           count: stats.releases.scheduled,
           href: '/admin/kiadasok?status=SCHEDULED',
-          tone: 'info' as const,
         }
       : null,
     drafts > 0
-      ? {
-          label: 'Piszkozat projekt',
-          count: drafts,
-          href: '/admin/projektek?status=DRAFT',
-          tone: 'neutral' as const,
-        }
+      ? { label: 'Piszkozat projekt', count: drafts, href: '/admin/projektek?status=DRAFT' }
       : null,
-  ].filter(Boolean) as Array<{ label: string; count: number; href: string; tone: string }>;
+  ].filter((item): item is { label: string; count: number; href: string } => item !== null);
 
   return (
     <Card>
@@ -213,6 +302,102 @@ async function NeedsAttentionPanel({ canReadContact }: { canReadContact: boolean
               </li>
             ))}
           </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+/**
+ * Project progress board.
+ *
+ * A table rather than a card grid: these rows are meant to be compared against
+ * each other — which one is behind — and comparison is what a table's aligned
+ * columns are for.
+ */
+async function ProjectBoardPanel() {
+  const projects = await getProjectProgressBoard(6);
+
+  return (
+    <Card>
+      <CardHeader
+        title="Futó projektek"
+        description="Az átlag csak a még meg nem jelent részeket veszi figyelembe."
+        action={
+          <Link
+            href="/admin/projektek"
+            className="text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
+          >
+            Összes
+          </Link>
+        }
+      />
+      <CardBody>
+        {projects.length === 0 ? (
+          <p className="py-6 text-center text-sm text-mist-500">Nincs futó projekt.</p>
+        ) : (
+          <div className="-mx-1 overflow-x-auto px-1">
+            <table className="w-full min-w-[34rem] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-ink-800 text-left">
+                  <th scope="col" className="pb-2 text-2xs font-semibold tracking-wide text-mist-500 uppercase">
+                    Projekt
+                  </th>
+                  <th scope="col" className="pb-2 text-2xs font-semibold tracking-wide text-mist-500 uppercase">
+                    Státusz
+                  </th>
+                  <th scope="col" className="pb-2 text-right text-2xs font-semibold tracking-wide text-mist-500 uppercase">
+                    Rész
+                  </th>
+                  <th scope="col" className="w-40 pb-2 pl-4 text-2xs font-semibold tracking-wide text-mist-500 uppercase">
+                    Készültség
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {projects.map((project) => (
+                  <tr key={project.id} className="border-b border-ink-800/60 last:border-b-0">
+                    <td className="py-2.5 pr-3">
+                      <Link
+                        href={`/admin/projektek/${project.id}`}
+                        className="line-clamp-1 font-medium text-mist-100 transition-colors hover:text-bloom-300"
+                      >
+                        {project.title}
+                      </Link>
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <ProjectStatusBadge status={project.status as ProjectStatus} />
+                    </td>
+                    <td className="nums py-2.5 pr-3 text-right text-2xs text-mist-400">
+                      {project.releasedEpisodes}
+                      <span className="text-mist-600"> / {project.totalEpisodes}</span>
+                    </td>
+                    <td className="py-2.5 pl-4">
+                      {project.progress === null ? (
+                        <span className="text-2xs text-mist-600">Nincs nyitott rész</span>
+                      ) : (
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            aria-hidden
+                            className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-800"
+                          >
+                            <div
+                              className="h-full rounded-full bg-linear-to-r from-bloom-500 to-orchid-500"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <span className="nums w-9 shrink-0 text-right text-2xs text-mist-300">
+                            {project.progress}%
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </CardBody>
     </Card>
@@ -306,6 +491,86 @@ async function ActivityPanel() {
             ))}
           </ul>
         )}
+      </CardBody>
+    </Card>
+  );
+}
+
+/**
+ * Deployment status.
+ *
+ * Reports how this instance is *configured*, not what its secrets are: which
+ * storage driver is active, which mail driver, whether the search index is the
+ * database or an external service. That is the information you need at 2am to
+ * know why an upload went nowhere, and none of it is sensitive on its own.
+ *
+ * Nothing here reads a key, a URL, or a credential — a dashboard is a screen
+ * people screenshot, and a screenshot of a connection string is a leak.
+ */
+const MAIL_LABELS: Record<'console' | 'smtp' | 'noop', string> = {
+  console: 'Konzol (fejlesztői)',
+  smtp: 'SMTP',
+  noop: 'Kikapcsolva',
+};
+
+function SystemPanel() {
+  const rows: Array<{ label: string; value: string; ok: boolean; icon: LucideIcon }> = [
+    {
+      label: 'Adatbázis',
+      value: 'PostgreSQL',
+      ok: true,
+      icon: Database,
+    },
+    {
+      label: 'Tárhely',
+      value: env.MEDIA_DRIVER === 's3' ? 'S3-kompatibilis' : 'Helyi lemez',
+      ok: true,
+      icon: HardDrive,
+    },
+    {
+      label: 'E-mail',
+      value: MAIL_LABELS[env.MAIL_DRIVER],
+      // Only SMTP actually delivers. `console` writes to the log and `noop`
+      // silently drops — both fine locally, both a broken password reset in
+      // production, so neither gets a green dot.
+      ok: env.MAIL_DRIVER === 'smtp',
+      icon: MessageSquare,
+    },
+    {
+      label: 'Környezet',
+      value: env.NODE_ENV === 'production' ? 'Éles' : 'Fejlesztői',
+      ok: env.NODE_ENV === 'production',
+      icon: Package,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader
+        title="Rendszer állapota"
+        description="Ennek a példánynak a beállításai — érzékeny adat nélkül."
+      />
+      <CardBody>
+        <dl className="grid gap-2 sm:grid-cols-2">
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="flex items-center gap-3 rounded-lg border border-ink-800 bg-ink-900/50 px-3.5 py-2.5"
+            >
+              <row.icon className="size-4 shrink-0 text-mist-500" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <dt className="text-2xs tracking-wide text-mist-500 uppercase">{row.label}</dt>
+                <dd className="truncate text-sm text-mist-200">{row.value}</dd>
+              </div>
+              <span
+                aria-hidden
+                className={`size-1.5 shrink-0 rounded-full ${
+                  row.ok ? 'bg-success-400' : 'bg-ember-400'
+                }`}
+              />
+            </div>
+          ))}
+        </dl>
       </CardBody>
     </Card>
   );
