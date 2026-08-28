@@ -37,6 +37,7 @@ export default async function AdminTeamPage() {
           id: member.id,
           slug: member.slug,
           name: member.name,
+          account: member.user,
           tagline: member.tagline,
           bio: member.bio,
           avatarUrl: member.avatarUrl,

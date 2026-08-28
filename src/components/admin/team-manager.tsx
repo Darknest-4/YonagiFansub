@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -31,10 +31,27 @@ export interface TeamPositionOption {
   color: string | null;
 }
 
+export interface TeamCandidateView {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  linkedMemberId: string | null;
+}
+
+export interface LinkedAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 export interface AdminTeamMemberView {
   id: string;
   slug: string;
   name: string;
+  /** The login account this credit belongs to, when one is linked. */
+  account: LinkedAccount | null;
   tagline: string | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -51,6 +68,8 @@ export interface AdminTeamMemberView {
 }
 
 interface Draft {
+  userId: string | null;
+  account: LinkedAccount | null;
   slug: string;
   name: string;
   tagline: string;
@@ -71,6 +90,8 @@ interface Draft {
 }
 
 const EMPTY_DRAFT: Draft = {
+  userId: null,
+  account: null,
   slug: '',
   name: '',
   tagline: '',
@@ -92,6 +113,8 @@ const EMPTY_DRAFT: Draft = {
 
 function toDraft(member: AdminTeamMemberView): Draft {
   return {
+    userId: member.account?.id ?? null,
+    account: member.account,
     slug: member.slug,
     name: member.name,
     tagline: member.tagline ?? '',
@@ -183,11 +206,24 @@ export function TeamManager({
   };
 
   const submit = async () => {
+    /*
+      A new credit must belong to an account. Editing stays permissive: members
+      created before this rule (and the schema's documented guest case) still
+      have to be savable, and refusing to save a row you did not create is a
+      worse outcome than an unlinked row continuing to exist.
+    */
+    if (!editing && !draft.userId) {
+      setFieldErrors({ userId: ['Válassz egy fiókot a listából.'] });
+      setFormError(null);
+      return;
+    }
+
     setPending(true);
     setFieldErrors({});
     setFormError(null);
 
     const body = {
+      userId: draft.userId,
       slug: draft.slug.trim() || slugify(draft.name),
       name: draft.name.trim(),
       tagline: draft.tagline.trim() || null,
@@ -285,6 +321,14 @@ export function TeamManager({
                     )}
                   </div>
 
+                  {member.account ? (
+                    <p className="truncate font-mono text-2xs text-mist-500">
+                      @{member.account.username}
+                    </p>
+                  ) : (
+                    <p className="text-2xs text-ember-400">Nincs fiók összekötve</p>
+                  )}
+
                   {member.tagline && (
                     <p className="mt-0.5 truncate text-2xs text-mist-500">{member.tagline}</p>
                   )}
@@ -367,13 +411,41 @@ export function TeamManager({
           <div className="space-y-5">
             {formError && <InlineError message={formError} />}
 
+            <AccountPicker
+              account={draft.account}
+              error={fieldErrors.userId}
+              onSelect={(account) =>
+                setDraft((current) => ({
+                  ...current,
+                  userId: account.id,
+                  account,
+                  /*
+                    The account seeds the credit. Only fields the user has not
+                    already typed into are filled, so re-picking an account to
+                    fix a mislink does not silently discard a fansub alias or a
+                    hand-picked avatar.
+                  */
+                  name: current.name.trim() || account.displayName,
+                  slug: current.slug.trim() || slugify(account.username),
+                  avatarUrl: current.avatarUrl.trim() || account.avatarUrl || '',
+                }))
+              }
+              onClear={() => setDraft((current) => ({ ...current, userId: null, account: null }))}
+            />
+
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Név" required error={fieldErrors.name}>
-                {({ id, invalid }) => (
+              <Field
+                label="Megjelenített név"
+                required
+                hint="A fiókból jön, de felülírható, ha más néven kreditelitek."
+                error={fieldErrors.name}
+              >
+                {({ id, invalid, describedBy }) => (
                   <Input
                     id={id}
                     value={draft.name}
                     invalid={invalid}
+                    aria-describedby={describedBy}
                     onChange={(event) => {
                       const name = event.target.value;
                       // The slug follows the name until somebody edits it by
@@ -683,6 +755,164 @@ function PositionPicker({
               {position.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {error && (
+        <p className="mt-2 text-2xs text-danger-400">
+          {Array.isArray(error) ? error[0] : error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Account picker.
+ *
+ * A team credit belongs to a person, and on this site a person is an account.
+ * Typing a name by hand produced a record joined to nothing: the public profile
+ * could not link back, the avatar had to be re-uploaded, and two spellings of
+ * the same person became two members. Picking the account instead makes the
+ * credit and the login the same entity, which is what the schema already
+ * modelled and only the form did not.
+ *
+ * Search runs against `team:write`, not `user:read`: an editor manages the
+ * roster without any business reading user administration, so the endpoint
+ * returns handles and avatars and nothing else.
+ *
+ * Accounts that already hold a member profile are listed but not selectable.
+ * Hiding them would make somebody searching for a colleague conclude they have
+ * no account, when the truth is they are already on the roster.
+ */
+function AccountPicker({
+  account,
+  error,
+  onSelect,
+  onClear,
+}: {
+  account: LinkedAccount | null;
+  error?: string | string[];
+  onSelect: (account: LinkedAccount) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<TeamCandidateView[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  // Debounced so a fast typist issues one request, not one per keystroke. The
+  // cleanup makes a superseded search a no-op rather than a late overwrite.
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const path = `/api/v1/admin/team/candidates${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+        const data = await apiFetch<TeamCandidateView[]>(path);
+        if (!cancelled) setResults(data);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, open]);
+
+  if (account) {
+    return (
+      <div>
+        <p className="mb-2 text-sm font-medium text-mist-200">Fiók</p>
+        <div className="flex items-center gap-3 rounded-xl border border-bloom-500/25 bg-bloom-500/[0.06] p-3">
+          <Avatar name={account.displayName} src={account.avatarUrl} size="md" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-mist-100">{account.displayName}</p>
+            <p className="truncate font-mono text-2xs text-mist-500">@{account.username}</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClear}>
+            Leválasztás
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="mb-2 text-sm font-medium text-mist-200">
+        Fiók <span className="text-bloom-400">*</span>
+      </p>
+
+      <Input
+        value={query}
+        placeholder="Keresés név vagy felhasználónév szerint…"
+        onChange={(event) => setQuery(event.target.value)}
+        onFocus={() => setOpen(true)}
+        aria-label="Fiók keresése"
+      />
+
+      {open && (
+        <div className="mt-2 max-h-60 overflow-y-auto rounded-xl border border-ink-800 bg-ink-900/60">
+          {loading && results.length === 0 ? (
+            <p className="px-3 py-3 text-2xs text-mist-500">Keresés…</p>
+          ) : results.length === 0 ? (
+            <p className="px-3 py-3 text-2xs text-mist-500">
+              Nincs találat. Csak regisztrált fiók köthető csapattaghoz.
+            </p>
+          ) : (
+            <ul className="divide-y divide-ink-800">
+              {results.map((candidate) => {
+                const taken = candidate.linkedMemberId !== null;
+
+                return (
+                  <li key={candidate.id}>
+                    <button
+                      type="button"
+                      disabled={taken}
+                      onClick={() => {
+                        onSelect({
+                          id: candidate.id,
+                          username: candidate.username,
+                          displayName: candidate.displayName,
+                          avatarUrl: candidate.avatarUrl,
+                        });
+                        setOpen(false);
+                        setQuery('');
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors',
+                        taken
+                          ? 'cursor-not-allowed opacity-50'
+                          : 'hover:bg-ink-850 focus-visible:bg-ink-850 focus-visible:outline-none',
+                      )}
+                    >
+                      <Avatar name={candidate.displayName} src={candidate.avatarUrl} size="sm" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm text-mist-100">
+                          {candidate.displayName}
+                        </span>
+                        <span className="block truncate font-mono text-2xs text-mist-600">
+                          @{candidate.username}
+                        </span>
+                      </span>
+                      {taken && (
+                        <Badge tone="neutral" size="sm">
+                          Már tag
+                        </Badge>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 

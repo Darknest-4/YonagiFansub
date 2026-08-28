@@ -34,6 +34,7 @@ const adminTeamArgs = Prisma.validator<Prisma.TeamMemberDefaultArgs>()({
     sortOrder: true,
     createdAt: true,
     deletedAt: true,
+    user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
     positions: {
       select: { isPrimary: true, positionId: true, position: { select: { key: true, name: true } } },
     },
@@ -78,6 +79,61 @@ function toMemberData(input: TeamMemberWriteInput) {
 
 function positionRows(positionIds: string[]) {
   return positionIds.map((positionId, index) => ({ positionId, isPrimary: index === 0 }));
+}
+
+export interface TeamCandidate {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  /** Set when this account already has a member profile — one apiece. */
+  linkedMemberId: string | null;
+}
+
+/**
+ * Accounts that can be given a team profile.
+ *
+ * Deliberately narrow: id, handle, display name, avatar, and whether the account
+ * is already taken. Picking someone for the credits does not require knowing
+ * their email, their role or their account status, and this endpoint is open to
+ * `team:write` — which an editor holds and `user:read` is not.
+ *
+ * Already-linked accounts are returned rather than filtered out, so the picker
+ * can show them as unavailable instead of silently hiding somebody the user is
+ * actively searching for.
+ */
+export async function listTeamCandidates(q?: string, limit = 20): Promise<TeamCandidate[]> {
+  const users = await db.user.findMany({
+    where: {
+      deletedAt: null,
+      status: { in: ['ACTIVE', 'PENDING'] },
+      ...(q
+        ? {
+            OR: [
+              { username: { contains: q, mode: 'insensitive' } },
+              { displayName: { contains: q, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      teamMember: { where: { deletedAt: null }, select: { id: true } },
+    },
+    orderBy: [{ displayName: 'asc' }],
+    take: limit,
+  });
+
+  return users.map((user) => ({
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    linkedMemberId: user.teamMember?.id ?? null,
+  }));
 }
 
 export async function createTeamMember(
