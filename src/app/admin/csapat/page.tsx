@@ -37,7 +37,7 @@ export default async function AdminTeamPage() {
           {members.map((member) => (
             <li
               key={member.id}
-              className="rounded-xl border border-ink-800 bg-ink-900/40 p-4"
+              className="min-w-0 rounded-xl border border-ink-800 bg-ink-900/40 p-4"
             >
               <div className="flex items-start gap-3">
                 <Avatar name={member.name} src={member.avatarUrl} size="md" />

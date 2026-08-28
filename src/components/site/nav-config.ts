@@ -13,6 +13,18 @@ export interface NavItem {
   description?: string;
   /** Matches child routes too, e.g. `/projektek/steins-gate`. */
   matchPrefix?: boolean;
+  /**
+   * Lucide icon name for the mobile tab bar. Kept as a string so this module
+   * stays free of React imports and can be used by the sitemap and the footer,
+   * neither of which renders an icon.
+   */
+  icon?: 'Home' | 'Clapperboard' | 'Package' | 'Newspaper' | 'Users' | 'HelpCircle' | 'Mail' | 'Sparkles';
+  /**
+   * Whether this item earns a slot in the mobile tab bar. Five is the ceiling:
+   * a sixth tab on a 360px screen drops each target under the width a thumb can
+   * reliably hit, and the rest are one tap away behind "Több".
+   */
+  tab?: boolean;
 }
 
 /**
@@ -25,34 +37,43 @@ export const PRIMARY_NAV: NavItem[] = [
   {
     href: '/',
     label: 'Kezdőlap',
+    icon: 'Home',
+    tab: true,
     description: 'Friss kiadások és hírek',
   },
   {
     href: '/projektek',
     label: 'Projektek',
+    icon: 'Clapperboard',
+    tab: true,
     description: 'Minden sorozat és film, amin dolgozunk',
     matchPrefix: true,
   },
   {
     href: '/kiadasok',
     label: 'Kiadások',
+    icon: 'Package',
+    tab: true,
     description: 'A legfrissebb epizódok és batch-ek',
     matchPrefix: true,
   },
   {
     href: '/hirek',
     label: 'Hírek',
+    icon: 'Newspaper',
+    tab: true,
     description: 'Bejelentések és csapathírek',
     matchPrefix: true,
   },
   {
     href: '/csapat',
     label: 'Csapat',
+    icon: 'Users',
     description: 'Akik a feliratok mögött állnak',
     matchPrefix: true,
   },
-  { href: '/gyik', label: 'GYIK', description: 'Gyakori kérdések' },
-  { href: '/kapcsolat', label: 'Kapcsolat', description: 'Írj nekünk' },
+  { href: '/gyik', label: 'GYIK', description: 'Gyakori kérdések', icon: 'HelpCircle' },
+  { href: '/kapcsolat', label: 'Kapcsolat', description: 'Írj nekünk', icon: 'Mail' },
 ];
 
 /**
@@ -60,7 +81,12 @@ export const PRIMARY_NAV: NavItem[] = [
  * fősort — az ott már látszik.
  */
 export const SECONDARY_NAV: NavItem[] = [
-  { href: '/csatlakozz', label: 'Csatlakozz', description: 'Keresünk fordítót, lektort, formázót' },
+  {
+    href: '/csatlakozz',
+    label: 'Csatlakozz',
+    description: 'Keresünk fordítót, lektort, formázót',
+    icon: 'Sparkles',
+  },
 ];
 
 export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
@@ -105,3 +131,12 @@ export function isActive(pathname: string, item: NavItem): boolean {
   if (item.href === '/') return pathname === '/';
   return item.matchPrefix ? pathname.startsWith(item.href) : pathname === item.href;
 }
+
+/** The primary items that get a slot in the mobile tab bar. */
+export const TAB_NAV: NavItem[] = PRIMARY_NAV.filter((item) => item.tab);
+
+/** Everything the tab bar could not fit, surfaced behind the "Több" sheet. */
+export const OVERFLOW_NAV: NavItem[] = [
+  ...PRIMARY_NAV.filter((item) => !item.tab),
+  ...SECONDARY_NAV,
+];

@@ -8,7 +8,6 @@ import {
   Bell,
   LayoutDashboard,
   LogOut,
-  Menu,
   Search,
   Settings,
   Star,
@@ -17,7 +16,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/site/logo';
-import { PRIMARY_NAV, SECONDARY_NAV, isActive } from '@/components/site/nav-config';
+import { OVERFLOW_NAV, PRIMARY_NAV, isActive } from '@/components/site/nav-config';
+import { MobileTabBar } from '@/components/site/mobile-tab-bar';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/dropdown';
@@ -267,19 +267,11 @@ export function SiteHeader({
               </ButtonLink>
             )}
 
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="lg:hidden"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Menü megnyitása"
-              aria-expanded={mobileOpen}
-            >
-              <Menu className="size-5" aria-hidden />
-            </Button>
           </div>
         </div>
       </header>
+
+      <MobileTabBar onMore={() => setMobileOpen(true)} moreOpen={mobileOpen} />
 
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} user={user} onLogout={handleLogout} />
 
@@ -321,16 +313,22 @@ function MobileNav({
           className="fixed inset-0 z-90 lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label="Navigációs menü"
+          aria-label="További menüpontok"
         >
           <div className="absolute inset-0 bg-ink-950/85 backdrop-blur-sm" onClick={onClose} />
 
+          {/*
+            A bottom sheet rather than a side drawer: it is opened from the
+            "Több" tab at the bottom of the screen, and a panel that flies in
+            from the opposite edge breaks the link between what you pressed and
+            what appeared. It also lands where the thumb already is.
+          */}
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col border-l border-ink-800 bg-ink-925"
+            className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-ink-800 bg-ink-925 pb-[env(safe-area-inset-bottom)]"
           >
             <div className="flex items-center justify-between border-b border-ink-800 px-5 py-4">
               <Logo size="sm" />
@@ -339,9 +337,17 @@ function MobileNav({
               </Button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto overscroll-contain p-4" aria-label="Mobil navigáció">
+            <nav
+              className="flex-1 overflow-y-auto overscroll-contain p-4"
+              aria-label="További menüpontok"
+            >
+              {/*
+                Only what the tab bar could not fit. Repeating the four tabs
+                two centimetres above themselves would pad the sheet without
+                adding a single destination.
+              */}
               <ul className="space-y-1">
-                {PRIMARY_NAV.map((item) => {
+                {OVERFLOW_NAV.map((item) => {
                   const active = isActive(pathname, item);
                   return (
                     <li key={item.href}>
@@ -372,21 +378,6 @@ function MobileNav({
                     </li>
                   );
                 })}
-              </ul>
-
-              <div className="my-4 h-px bg-ink-800" />
-
-              <ul className="space-y-1">
-                {SECONDARY_NAV.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="block rounded-xl px-4 py-3 text-sm text-mist-300 transition-colors duration-fast hover:bg-ink-850 hover:text-mist-100"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
               </ul>
             </nav>
 

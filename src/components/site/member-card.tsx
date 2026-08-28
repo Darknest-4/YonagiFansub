@@ -1,8 +1,8 @@
-import Link from 'next/link';
-import { Globe, MessageCircle, Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Avatar } from '@/components/ui/avatar';
-import type { TeamCard } from '@/server/team';
+import Link from "next/link";
+import { Globe, MessageCircle, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
+import type { TeamCard } from "@/server/team";
 
 /**
  * Social handles are stored as free-form JSON. Only the keys listed here get a
@@ -11,15 +11,27 @@ import type { TeamCard } from '@/server/team';
  *
  * The profile page carries the full list — this is the shortcut, not the record.
  */
-const SOCIALS: Record<string, { label: string; url: (handle: string) => string }> = {
-  discord: { label: 'Discord', url: (handle) => `https://discord.com/users/${handle}` },
-  anilist: { label: 'AniList', url: (handle) => `https://anilist.co/user/${handle}` },
+const SOCIALS: Record<
+  string,
+  { label: string; url: (handle: string) => string }
+> = {
+  discord: {
+    label: "Discord",
+    url: (handle) => `https://discord.com/users/${handle}`,
+  },
+  anilist: {
+    label: "AniList",
+    url: (handle) => `https://anilist.co/user/${handle}`,
+  },
   myanimelist: {
-    label: 'MyAnimeList',
+    label: "MyAnimeList",
     url: (handle) => `https://myanimelist.net/profile/${handle}`,
   },
-  x: { label: 'X', url: (handle) => `https://x.com/${handle.replace(/^@/, '')}` },
-  website: { label: 'Weboldal', url: (handle) => handle },
+  x: {
+    label: "X",
+    url: (handle) => `https://x.com/${handle.replace(/^@/, "")}`,
+  },
+  website: { label: "Weboldal", url: (handle) => handle },
 };
 
 /**
@@ -36,17 +48,24 @@ const SOCIALS: Record<string, { label: string; url: (handle: string) => string }
  * holds. A card listing five roles reads as a list of jobs; the point here is
  * "who is this person", and the profile page is where the full credits live.
  */
-export function MemberCard({ member, className }: { member: TeamCard; className?: string }) {
-  const accent = member.accentColor ?? '#f761a8';
+export function MemberCard({
+  member,
+  className,
+}: {
+  member: TeamCard;
+  className?: string;
+}) {
+  const accent = member.accentColor ?? "#f761a8";
 
   const primary =
-    member.positions.find((entry) => entry.isPrimary)?.position ?? member.positions[0]?.position;
+    member.positions.find((entry) => entry.isPrimary)?.position ??
+    member.positions[0]?.position;
   const extra = Math.max(0, member.positions.length - 1);
 
   const socials = Object.entries(
     (member.socials ?? {}) as Record<string, unknown>,
   ).flatMap(([key, value]) =>
-    typeof value === 'string' && value.length > 0 && SOCIALS[key]
+    typeof value === "string" && value.length > 0 && SOCIALS[key]
       ? [{ key, handle: value, config: SOCIALS[key]! }]
       : [],
   );
@@ -54,9 +73,9 @@ export function MemberCard({ member, className }: { member: TeamCard; className?
   return (
     <article
       className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-xl border border-ink-800 bg-ink-900/50 p-5',
-        'transition-[transform,border-color,box-shadow] duration-base ease-out-quint',
-        'hover:-translate-y-1 hover:border-bloom-500/40 hover:shadow-e3 motion-reduce:hover:translate-y-0',
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-ink-800 bg-ink-900/50 p-5",
+        "transition-[transform,border-color,box-shadow] duration-base ease-out-quint",
+        "hover:-translate-y-1 hover:border-bloom-500/40 hover:shadow-e3 motion-reduce:hover:translate-y-0",
         className,
       )}
     >
@@ -111,13 +130,15 @@ export function MemberCard({ member, className }: { member: TeamCard; className?
       {/* Two lines reserved, not three: taglines run short, and a card that keeps
           a third line empty just to be safe puts a hole above its own footer. */}
       <p className="relative mt-2 mb-4 line-clamp-2 min-h-[2.75rem] text-sm leading-relaxed text-mist-400">
-        {member.tagline ?? 'Ez a tag még nem írt magáról bemutatkozót.'}
+        {member.tagline ?? "Ez a tag még nem írt magáról bemutatkozót."}
       </p>
 
       <div className="relative mt-auto flex items-center justify-between gap-3 border-t border-ink-800 pt-3.5">
         <p className="nums text-2xs text-mist-600">
           {member._count.projects} projekt
-          {extra > 0 && <span className="text-mist-700"> · +{extra} pozíció</span>}
+          {extra > 0 && (
+            <span className="text-mist-700"> · +{extra} pozíció</span>
+          )}
         </p>
 
         {socials.length > 0 && (
@@ -131,9 +152,9 @@ export function MemberCard({ member, className }: { member: TeamCard; className?
                   title={social.config.label}
                   /* `relative` lifts each icon above the name's stretched overlay;
                      without it the card link would swallow every one of them. */
-                  className="relative grid size-7 place-items-center rounded-md border border-ink-700 bg-ink-850 text-mist-500 transition-colors duration-fast hover:border-bloom-500/40 hover:text-bloom-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
+                  className="relative grid size-9 place-items-center rounded-md border border-ink-700 bg-ink-850 sm:size-7 text-mist-500 transition-colors duration-fast hover:border-bloom-500/40 hover:text-bloom-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
                 >
-                  {social.key === 'discord' ? (
+                  {social.key === "discord" ? (
                     <MessageCircle className="size-3.5" aria-hidden />
                   ) : (
                     <Globe className="size-3.5" aria-hidden />

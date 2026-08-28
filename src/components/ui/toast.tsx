@@ -202,7 +202,9 @@ function ToastViewport({
   return (
     <div
       className={cn(
-        'pointer-events-none fixed inset-x-0 bottom-0 z-200 flex flex-col items-center gap-2.5 p-4',
+        // `toast-viewport` is the hook globals.css uses to lift the stack above
+        // the mobile tab bar — but only in the shell that actually renders one.
+        'toast-viewport pointer-events-none fixed inset-x-0 bottom-0 z-200 flex flex-col items-center gap-2.5 p-4',
         'sm:inset-x-auto sm:right-0 sm:items-end sm:p-6',
       )}
     >

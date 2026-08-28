@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
+import { canManageRole, hasPermission } from '@/lib/auth/permissions';
 import { toActor } from '@/lib/auth/session';
 import { listRoles, listUsers } from '@/server/admin/users';
 import { paginationSchema } from '@/lib/api/pagination';
@@ -60,11 +60,21 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
           roleName: user.role.name,
           roleRank: user.role.rank,
           roleColor: user.role.color,
+          /*
+            Editability is decided here, with the same `canManageRole` the write
+            path uses, and sent down as a fact. The client previously re-derived
+            it from ranks alone and so disagreed with the server for anyone
+            holding the super permission — the UI refused edits the API would
+            have accepted. One rule, evaluated once.
+          */
+          isSelf: user.id === actor.id,
+          editable: user.id !== actor.id && canManageRole(actor, user.role.rank),
         }))}
         meta={meta}
-        roles={roles.map((role) => ({ id: role.id, name: role.name, rank: role.rank }))}
-        actorRank={actor.roleRank}
-        actorId={actor.id}
+        // Same rule again, for the roles this actor is allowed to grant.
+        roles={roles
+          .filter((role) => canManageRole(actor, role.rank))
+          .map((role) => ({ id: role.id, name: role.name, rank: role.rank }))}
         canWrite={hasPermission(actor, 'user:write')}
         emptyState={
           <EmptyState

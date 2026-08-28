@@ -372,7 +372,17 @@ async function seedAccessControl() {
         color: role.color,
         isSystem: true,
       },
-      update: { name: role.name, description: role.description, rank: role.rank, isSystem: true },
+      // `color` belongs in the update alongside name and rank: all four are
+      // declared here, and leaving the colour out meant a rebrand reached new
+      // installs only — an existing database kept the old palette through every
+      // reseed, with no way to pick up the new one.
+      update: {
+        name: role.name,
+        description: role.description,
+        rank: role.rank,
+        color: role.color,
+        isSystem: true,
+      },
     });
 
     const permissions = await db.permission.findMany({

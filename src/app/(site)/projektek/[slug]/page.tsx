@@ -241,7 +241,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
                     <li key={genre.slug}>
                       <Link
                         href={`/projektek?genre=${genre.slug}`}
-                        className="inline-flex rounded-full border border-ink-700 bg-ink-900/60 px-3 py-1 text-2xs text-mist-300 transition-colors duration-fast hover:border-bloom-400/40 hover:text-bloom-200"
+                        className="inline-flex rounded-full border border-ink-700 bg-ink-900/60 px-3 py-2 text-2xs text-mist-300 transition-colors duration-fast hover:border-bloom-400/40 hover:text-bloom-200 sm:py-1"
                       >
                         {genre.name}
                       </Link>

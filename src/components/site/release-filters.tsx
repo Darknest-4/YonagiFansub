@@ -111,7 +111,9 @@ function Pill({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'shrink-0 rounded-full border px-3.5 py-1.5 text-2xs font-medium whitespace-nowrap',
+        // Taller on touch: 30px is comfortable under a mouse and a miss under a
+        // thumb, and these pills are the main control on this page.
+        'shrink-0 rounded-full border px-3.5 py-2.5 text-2xs font-medium whitespace-nowrap sm:py-1.5',
         'transition-[background-color,border-color,color] duration-fast',
         active
           ? 'border-bloom-400/40 bg-bloom-400/12 text-bloom-200'

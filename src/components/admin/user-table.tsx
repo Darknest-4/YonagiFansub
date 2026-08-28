@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { UserStatus } from '@prisma/client';
-import { Pencil } from 'lucide-react';
+import { Lock, Pencil, UserCog } from 'lucide-react';
 import { formatDate, formatRelative } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, type BadgeTone } from '@/components/ui/badge';
@@ -30,6 +31,10 @@ export interface AdminUserRow {
   roleName: string;
   roleRank: number;
   roleColor: string | null;
+  /** The actor's own account — editable from profile settings, not from here. */
+  isSelf: boolean;
+  /** Decided server-side with the same rule the write path enforces. */
+  editable: boolean;
 }
 
 export const USER_STATUS: Record<UserStatus, { label: string; tone: BadgeTone }> = {
@@ -54,16 +59,13 @@ export function AdminUserTable({
   rows,
   meta,
   roles,
-  actorRank,
-  actorId,
   canWrite,
   emptyState,
 }: {
   rows: AdminUserRow[];
   meta: { page?: number; totalPages?: number; total?: number; perPage?: number };
+  /** Already narrowed to the roles this actor may grant. */
   roles: Array<{ id: string; name: string; rank: number }>;
-  actorRank: number;
-  actorId: string;
   canWrite: boolean;
   emptyState: ReactNode;
 }) {
@@ -144,23 +146,45 @@ export function AdminUserTable({
           {
             key: 'actions',
             header: '',
-            width: '4rem',
+            width: '8rem',
             align: 'right' as const,
             render: (row: AdminUserRow) => {
-              // Mirrors the server rule: no editing yourself, no reaching upward.
-              const editable = row.id !== actorId && actorRank < row.roleRank;
+              if (row.editable) {
+                return (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setEditing(row)}
+                    aria-label={`${row.displayName} szerkesztése`}
+                  >
+                    <Pencil className="size-4" aria-hidden />
+                  </Button>
+                );
+              }
+
+              /*
+                A greyed-out icon with a `title` says nothing on a touch screen,
+                where there is no hover — and "why can't I click this" was the
+                actual complaint. So the reason is written out, and for your own
+                account it becomes the link to the page that can change it.
+              */
+              if (row.isSelf) {
+                return (
+                  <Link
+                    href="/profil/beallitasok"
+                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-2xs text-mist-400 transition-colors hover:text-bloom-300"
+                  >
+                    <UserCog className="size-3.5 shrink-0" aria-hidden />
+                    Saját fiók
+                  </Link>
+                );
+              }
 
               return (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={!editable}
-                  onClick={() => setEditing(row)}
-                  aria-label={`${row.displayName} szerkesztése`}
-                  title={editable ? undefined : 'Nem szerkesztheted ezt a fiókot'}
-                >
-                  <Pencil className="size-4" aria-hidden />
-                </Button>
+                <span className="inline-flex items-center gap-1.5 px-2 py-1.5 text-2xs text-mist-600">
+                  <Lock className="size-3.5 shrink-0" aria-hidden />
+                  Magasabb rang
+                </span>
               );
             },
           },
@@ -182,7 +206,7 @@ export function AdminUserTable({
       {editing && (
         <UserDialog
           user={editing}
-          roles={roles.filter((role) => role.rank > actorRank)}
+          roles={roles}
           onClose={() => setEditing(null)}
         />
       )}

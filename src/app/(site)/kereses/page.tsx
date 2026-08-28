@@ -91,7 +91,7 @@ async function Results({ query }: { query: string }) {
 
           <ul className="grid gap-2.5 sm:grid-cols-2">
             {group.results.map((result) => (
-              <li key={`${result.type}-${result.id}`}>
+              <li key={`${result.type}-${result.id}`} className="min-w-0">
                 <ResultRow result={result} />
               </li>
             ))}

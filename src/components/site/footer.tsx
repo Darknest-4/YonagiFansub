@@ -24,7 +24,13 @@ export async function SiteFooter() {
   ].filter((item): item is { label: string; href: string } => Boolean(item.href));
 
   return (
-    <footer className="relative mt-24 border-t border-ink-800 bg-ink-925">
+    /*
+      The bottom padding clears the fixed mobile tab bar (its own height plus the
+      home-indicator inset). Without it the last line of the footer sits under a
+      floating bar, which reads as content that got cut off rather than content
+      that ended. It falls away at `lg`, where the bar is not rendered.
+    */
+    <footer className="relative mt-24 border-t border-ink-800 bg-ink-925 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-bloom-400/40 to-transparent"

@@ -221,6 +221,12 @@ function SlideIndicator({
       <span className="nums text-sm font-semibold text-mist-50">{pad(index)}</span>
 
       <div className="flex items-center gap-1.5" role="tablist" aria-label="Kiemelt projektek">
+        {/*
+          The rail is 2px of ink, but the button around it is 44px tall. A
+          hairline is the right visual weight here and the wrong hit area — on a
+          touch screen nobody lands on two pixels — so the padding carries the
+          target and the inner span carries the design.
+        */}
         {Array.from({ length: count }, (_, slide) => (
           <button
             key={slide}
@@ -229,14 +235,18 @@ function SlideIndicator({
             aria-selected={slide === index}
             aria-label={`${slide + 1}. kiemelt projekt`}
             onClick={() => onSelect(slide)}
-            className={cn(
-              'h-0.5 rounded-full transition-all duration-base ease-out-quint',
-              'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-bloom-400',
-              slide === index
-                ? 'w-16 bg-linear-to-r from-bloom-400 to-orchid-400'
-                : 'w-8 bg-ink-600 hover:bg-ink-500',
-            )}
-          />
+            className="group/slide -my-5 flex h-11 items-center rounded px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
+          >
+            <span
+              aria-hidden
+              className={cn(
+                'block h-0.5 rounded-full transition-all duration-base ease-out-quint',
+                slide === index
+                  ? 'w-16 bg-linear-to-r from-bloom-400 to-orchid-400'
+                  : 'w-8 bg-ink-600 group-hover/slide:bg-ink-500',
+              )}
+            />
+          </button>
         ))}
       </div>
 
