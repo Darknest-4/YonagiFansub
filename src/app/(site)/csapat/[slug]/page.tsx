@@ -55,7 +55,7 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
 
   if (!member) notFound();
 
-  const accent = member.accentColor ?? '#4cd8ff';
+  const accent = member.accentColor ?? '#f761a8';
   const bio = member.bio ? renderMarkdown(member.bio) : null;
   const socials = Object.entries((member.socials ?? {}) as Record<string, string>).filter(
     ([key, value]) => Boolean(value) && key in SOCIAL_LINKS,
@@ -151,7 +151,7 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
                     <li key={project.slug}>
                       <Link
                         href={`/projektek/${project.slug}`}
-                        className="group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-900/50 p-3 transition-colors duration-fast hover:border-tide-400/30 hover:bg-ink-850"
+                        className="group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-900/50 p-3 transition-colors duration-fast hover:border-bloom-400/30 hover:bg-ink-850"
                       >
                         <span className="relative aspect-2/3 w-12 shrink-0 overflow-hidden rounded-md bg-ink-800">
                           {project.coverImageUrl && (
@@ -166,7 +166,7 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
                         </span>
 
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-tide-200">
+                          <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-bloom-200">
                             {project.title}
                           </span>
                           <span className="mt-0.5 block truncate text-2xs text-mist-500">

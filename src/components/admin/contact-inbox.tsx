@@ -162,7 +162,7 @@ function MessageCard({
         isLegal
           ? 'border-danger-500/30 bg-danger-900/10'
           : unread
-            ? 'border-tide-400/25 bg-tide-400/[0.04]'
+            ? 'border-bloom-400/25 bg-bloom-400/[0.04]'
             : 'border-ink-800 bg-ink-900/40',
       )}
     >
@@ -173,7 +173,7 @@ function MessageCard({
         className="flex w-full flex-wrap items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-ink-850/60"
       >
         <Mail
-          className={cn('size-4 shrink-0', unread ? 'text-tide-300' : 'text-mist-600')}
+          className={cn('size-4 shrink-0', unread ? 'text-bloom-300' : 'text-mist-600')}
           aria-hidden
         />
 
@@ -219,7 +219,7 @@ function MessageCard({
 
           <a
             href={`mailto:${message.email}?subject=${encodeURIComponent(`Re: ${message.subject}`)}`}
-            className="mt-3 inline-block text-xs font-medium text-tide-300 underline-offset-4 hover:underline"
+            className="mt-3 inline-block text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
           >
             Válasz e-mailben →
           </a>
@@ -293,7 +293,7 @@ function FilterPill({
       className={cn(
         'rounded-full border px-3 py-1.5 text-2xs font-medium transition-colors duration-fast',
         active
-          ? 'border-tide-400/40 bg-tide-400/12 text-tide-200'
+          ? 'border-bloom-400/40 bg-bloom-400/12 text-bloom-200'
           : 'border-ink-700 bg-ink-900 text-mist-400 hover:border-ink-600 hover:text-mist-200',
       )}
     >

@@ -21,7 +21,7 @@ export interface NotificationItem {
 }
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; tone: string }> = {
-  NEW_RELEASE: { icon: Package, tone: 'text-tide-300' },
+  NEW_RELEASE: { icon: Package, tone: 'text-bloom-300' },
   PROJECT_UPDATE: { icon: Package, tone: 'text-orchid-300' },
   NEWS_POST: { icon: Newspaper, tone: 'text-ember-300' },
   COMMENT_REPLY: { icon: MessageSquare, tone: 'text-sakura-300' },
@@ -132,7 +132,7 @@ export function NotificationList({ initialItems }: { initialItems: NotificationI
               {unread && (
                 <span
                   aria-label="Olvasatlan"
-                  className="mt-1.5 size-2 shrink-0 rounded-full bg-tide-400"
+                  className="mt-1.5 size-2 shrink-0 rounded-full bg-bloom-400"
                 />
               )}
             </>
@@ -141,7 +141,7 @@ export function NotificationList({ initialItems }: { initialItems: NotificationI
           const shell = cn(
             'flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-colors duration-fast',
             unread
-              ? 'border-tide-400/20 bg-tide-400/[0.04] hover:border-tide-400/40'
+              ? 'border-bloom-400/20 bg-bloom-400/[0.04] hover:border-bloom-400/40'
               : 'border-ink-800 bg-ink-900/40 hover:border-ink-600',
           );
 

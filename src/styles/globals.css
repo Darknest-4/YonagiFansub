@@ -19,42 +19,46 @@
 @theme {
   /* ── 1. Palette ─────────────────────────────────────────────────────────── */
 
-  /* Ink — the night. Not pure black: a slight blue cast keeps it from feeling
-     dead under OLED, and gives the accents something to sit against. */
-  --color-ink-950: #04060d;
-  --color-ink-925: #06090f;
-  --color-ink-900: #080b16;
-  --color-ink-850: #0b101f;
-  --color-ink-800: #111729;
-  --color-ink-750: #161e34;
-  --color-ink-700: #1c2540;
-  --color-ink-600: #273252;
-  --color-ink-500: #384166;
+  /* Ink — the night. Not pure black: a violet cast, so the magenta and purple
+     accents sit *in* the surface rather than on top of a neutral grey. Under
+     OLED a true #000 also makes the accents look like they are floating. */
+  --color-ink-950: #07040e;
+  --color-ink-925: #0a0613;
+  --color-ink-900: #0d0818;
+  --color-ink-850: #120c20;
+  --color-ink-800: #19112c;
+  --color-ink-750: #211738;
+  --color-ink-700: #2b1e47;
+  --color-ink-600: #3a2a5c;
+  --color-ink-500: #4e3a78;
 
-  /* Tide — the primary accent. Bioluminescent cyan. */
-  --color-tide-50: #ecfdff;
-  --color-tide-100: #cff8ff;
-  --color-tide-200: #a5f0ff;
-  --color-tide-300: #6ee5ff;
-  --color-tide-400: #4cd8ff;
-  --color-tide-500: #22bfef;
-  --color-tide-600: #0f99c9;
-  --color-tide-700: #117aa2;
-  --color-tide-800: #166383;
-  --color-tide-900: #17526e;
+  /* Bloom — the primary accent. Magenta, the colour of the mark.
+     Named for the blossom it comes from, not for a hue, so a future brand shift
+     does not leave 240 references to a word that no longer describes anything. */
+  --color-bloom-50: #fff1f7;
+  --color-bloom-100: #ffe2ee;
+  --color-bloom-200: #ffc6de;
+  --color-bloom-300: #ff9ac6;
+  --color-bloom-400: #f761a8;
+  --color-bloom-500: #ec3f92;
+  --color-bloom-600: #d81f78;
+  --color-bloom-700: #b41562;
+  --color-bloom-800: #921452;
+  --color-bloom-900: #7a1547;
 
-  /* Orchid — the secondary accent. Used for gradients and for the "premium"
-     register: featured cards, hero sweeps, active navigation. */
-  --color-orchid-50: #f6f2ff;
-  --color-orchid-100: #ece5ff;
-  --color-orchid-200: #dbcfff;
-  --color-orchid-300: #c2acff;
-  --color-orchid-400: #9d7bff;
-  --color-orchid-500: #8656f5;
-  --color-orchid-600: #7434e3;
-  --color-orchid-700: #6326c2;
-  --color-orchid-800: #52229f;
-  --color-orchid-900: #451f80;
+  /* Orchid — the secondary accent. Violet. It exists to give the magenta
+     somewhere to go: every gradient in the brand runs bloom → orchid, and that
+     one sweep is what makes the palette read as a system rather than a colour. */
+  --color-orchid-50: #f8f4ff;
+  --color-orchid-100: #f0e8ff;
+  --color-orchid-200: #e0d0ff;
+  --color-orchid-300: #c9adff;
+  --color-orchid-400: #ab7ffb;
+  --color-orchid-500: #9450f0;
+  --color-orchid-600: #7e2fdd;
+  --color-orchid-700: #6a22bb;
+  --color-orchid-800: #571e97;
+  --color-orchid-900: #481b7c;
 
   /* Ember — reserved. New releases, hot items, primary CTAs. Scarcity is the
      point: if everything is amber, nothing is. */
@@ -152,8 +156,8 @@
   --shadow-e2: 0 4px 16px -4px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.04);
   --shadow-e3: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.05);
   --shadow-e4: 0 24px 64px -16px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
-  --shadow-glow-tide: 0 0 0 1px rgb(76 216 255 / 0.35), 0 8px 32px -8px rgb(76 216 255 / 0.35);
-  --shadow-glow-orchid: 0 0 0 1px rgb(157 123 255 / 0.35), 0 8px 32px -8px rgb(157 123 255 / 0.35);
+  --shadow-glow-bloom: 0 0 0 1px rgb(247 97 168 / 0.35), 0 8px 32px -8px rgb(236 63 146 / 0.45);
+  --shadow-glow-orchid: 0 0 0 1px rgb(171 127 251 / 0.35), 0 8px 32px -8px rgb(148 80 240 / 0.4);
   --shadow-glow-ember: 0 0 0 1px rgb(255 199 107 / 0.35), 0 8px 28px -8px rgb(255 199 107 / 0.3);
 
   /* ── 5. Motion ──────────────────────────────────────────────────────────── */
@@ -205,9 +209,9 @@
   --color-content-subtle: var(--color-mist-500);
   --color-content-inverse: var(--color-ink-950);
 
-  --color-accent: var(--color-tide-400);
-  --color-accent-hover: var(--color-tide-300);
-  --color-accent-muted: var(--color-tide-900);
+  --color-accent: var(--color-bloom-400);
+  --color-accent-hover: var(--color-bloom-300);
+  --color-accent-muted: var(--color-bloom-900);
   --color-accent-alt: var(--color-orchid-400);
   --color-accent-warm: var(--color-ember-400);
 }
@@ -287,7 +291,7 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-tide-400) 32%, transparent);
+    background: color-mix(in oklab, var(--color-bloom-400) 32%, transparent);
     color: var(--color-mist-50);
   }
 
@@ -376,7 +380,7 @@
 }
 
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-tide-400) 50%, transparent); }
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-bloom-400) 50%, transparent); }
   70% { box-shadow: 0 0 0 12px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
@@ -420,8 +424,8 @@
   .text-gradient {
     background-image: linear-gradient(
       100deg,
-      var(--color-tide-300) 0%,
-      var(--color-tide-400) 32%,
+      var(--color-bloom-300) 0%,
+      var(--color-bloom-400) 32%,
       var(--color-orchid-400) 72%,
       var(--color-orchid-300) 100%
     );
@@ -450,7 +454,7 @@
   .surface-panel {
     background: linear-gradient(
       165deg,
-      color-mix(in oklab, var(--color-ink-850) 96%, var(--color-tide-400)) 0%,
+      color-mix(in oklab, var(--color-ink-850) 96%, var(--color-bloom-400)) 0%,
       var(--color-ink-900) 60%
     );
     border: 1px solid var(--color-border-subtle);
@@ -469,7 +473,7 @@
     padding: 1px;
     background: linear-gradient(
       140deg,
-      color-mix(in oklab, var(--color-tide-400) 55%, transparent),
+      color-mix(in oklab, var(--color-bloom-400) 55%, transparent),
       transparent 42%,
       transparent 58%,
       color-mix(in oklab, var(--color-orchid-400) 45%, transparent)
@@ -505,7 +509,7 @@
   .aurora::before {
     top: -22%;
     left: -12%;
-    background: radial-gradient(circle, var(--color-tide-500), transparent 68%);
+    background: radial-gradient(circle, var(--color-bloom-500), transparent 68%);
     animation: var(--animate-drift);
   }
   .aurora::after {
@@ -625,16 +629,16 @@
   }
 
   .prose-yonagi a {
-    color: var(--color-tide-300);
+    color: var(--color-bloom-300);
     text-decoration: underline;
-    text-decoration-color: color-mix(in oklab, var(--color-tide-400) 40%, transparent);
+    text-decoration-color: color-mix(in oklab, var(--color-bloom-400) 40%, transparent);
     text-underline-offset: 3px;
     transition: color var(--duration-fast) var(--ease-out-quint),
       text-decoration-color var(--duration-fast) var(--ease-out-quint);
   }
 
   .prose-yonagi a:hover {
-    color: var(--color-tide-200);
+    color: var(--color-bloom-200);
     text-decoration-color: currentColor;
   }
 
@@ -664,7 +668,7 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: var(--color-tide-400);
+    background: var(--color-bloom-400);
   }
 
   .prose-yonagi ol {
@@ -676,7 +680,7 @@
   }
 
   .prose-yonagi blockquote {
-    border-left: 2px solid var(--color-tide-500);
+    border-left: 2px solid var(--color-bloom-500);
     padding: 0.25em 0 0.25em 1.25em;
     color: var(--color-mist-300);
     font-style: italic;
@@ -689,7 +693,7 @@
     border: 1px solid var(--color-border-subtle);
     padding: 0.15em 0.4em;
     border-radius: var(--radius-xs);
-    color: var(--color-tide-200);
+    color: var(--color-bloom-200);
   }
 
   .prose-yonagi pre {

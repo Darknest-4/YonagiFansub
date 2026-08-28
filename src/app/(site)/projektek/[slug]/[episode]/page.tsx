@@ -64,7 +64,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
   const { previous, next } = await getEpisodeNeighbours(episode.project.id, number);
 
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
-  const accent = episode.project.accentColor ?? '#4cd8ff';
+  const accent = episode.project.accentColor ?? '#f761a8';
   const stages = buildWorkflowStages(episode);
   const released = episode.status === 'RELEASED' && episode.releases.length > 0;
 
@@ -118,10 +118,10 @@ export default async function EpisodePage({ params }: { params: Params }) {
                 )}
               </div>
 
-              <p className="text-sm font-medium text-tide-300">
+              <p className="text-sm font-medium text-bloom-300">
                 <Link
                   href={`/projektek/${slug}`}
-                  className="underline-offset-4 transition-colors hover:text-tide-200 hover:underline"
+                  className="underline-offset-4 transition-colors hover:text-bloom-200 hover:underline"
                 >
                   {episode.project.title}
                 </Link>
@@ -245,7 +245,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
                   <span className="block text-2xs tracking-wide text-mist-500 uppercase">
                     Projekt
                   </span>
-                  <span className="mt-1 block text-sm font-semibold text-mist-100 group-hover:text-tide-200">
+                  <span className="mt-1 block text-sm font-semibold text-mist-100 group-hover:text-bloom-200">
                     {episode.project.title}
                   </span>
                   {episode.project.titleNative && (
@@ -291,14 +291,14 @@ function NeighbourLink({
     <Link
       href={href}
       rel={isPrev ? 'prev' : 'next'}
-      className={`group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-900/40 p-3.5 transition-colors duration-fast hover:border-tide-400/30 hover:bg-ink-850 ${
+      className={`group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-900/40 p-3.5 transition-colors duration-fast hover:border-bloom-400/30 hover:bg-ink-850 ${
         isPrev ? '' : 'sm:flex-row-reverse sm:text-right'
       }`}
     >
       {isPrev ? (
-        <ArrowLeft className="size-4 shrink-0 text-mist-500 group-hover:text-tide-300" aria-hidden />
+        <ArrowLeft className="size-4 shrink-0 text-mist-500 group-hover:text-bloom-300" aria-hidden />
       ) : (
-        <ArrowRight className="size-4 shrink-0 text-mist-500 group-hover:text-tide-300" aria-hidden />
+        <ArrowRight className="size-4 shrink-0 text-mist-500 group-hover:text-bloom-300" aria-hidden />
       )}
 
       <span className="min-w-0 flex-1">

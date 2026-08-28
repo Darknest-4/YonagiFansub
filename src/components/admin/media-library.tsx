@@ -242,7 +242,7 @@ export function MediaLibrary({
         }}
         className={cn(
           'rounded-xl border border-dashed p-4 transition-colors duration-fast',
-          dragging ? 'border-tide-400/70 bg-tide-400/5' : 'border-ink-800 bg-transparent',
+          dragging ? 'border-bloom-400/70 bg-bloom-400/5' : 'border-ink-800 bg-transparent',
         )}
       >
         {loading ? (

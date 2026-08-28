@@ -199,7 +199,7 @@ export function AdminShell({
                   onClick={toggle}
                   aria-haspopup="menu"
                   aria-expanded={open}
-                  className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400"
+                  className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
                 >
                   <Avatar name={user.displayName} src={user.avatarUrl} size="sm" />
                   <span className="sr-only">Fiók menü</span>
@@ -242,7 +242,7 @@ function NavLink({
       className={cn(
         'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-fast',
         active
-          ? 'bg-tide-400/12 text-tide-200'
+          ? 'bg-bloom-400/12 text-bloom-200'
           : 'text-mist-400 hover:bg-ink-850 hover:text-mist-100',
       )}
     >

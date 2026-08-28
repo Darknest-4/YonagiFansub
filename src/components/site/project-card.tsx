@@ -26,13 +26,13 @@ export function ProjectCard({
   className?: string;
 }) {
   const releasedEpisodes = project._count.episodes;
-  const accent = project.accentColor ?? '#4cd8ff';
+  const accent = project.accentColor ?? '#f761a8';
 
   return (
     <article className={cn('group relative', className)}>
       <Link
         href={`/projektek/${project.slug}`}
-        className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-tide-400"
+        className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-bloom-400"
       >
         <div
           className={cn(
@@ -115,7 +115,7 @@ export function ProjectCard({
         </div>
 
         <div className="mt-3 px-0.5">
-          <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-mist-100 transition-colors duration-fast group-hover:text-tide-200">
+          <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-mist-100 transition-colors duration-fast group-hover:text-bloom-200">
             {project.title}
           </h3>
 
@@ -161,7 +161,7 @@ export function ProjectCardCompact({ project }: { project: ProjectCardData }) {
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-tide-200">
+        <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-bloom-200">
           {project.title}
         </span>
         <span className="nums mt-0.5 block text-2xs text-mist-500">

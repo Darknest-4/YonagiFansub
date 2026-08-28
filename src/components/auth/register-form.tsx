@@ -204,11 +204,11 @@ export function RegisterForm() {
           label={
             <>
               Elfogadom a{' '}
-              <Link href="/felhasznalasi-feltetelek" className="text-tide-300 underline-offset-4 hover:underline">
+              <Link href="/felhasznalasi-feltetelek" className="text-bloom-300 underline-offset-4 hover:underline">
                 felhasználási feltételeket
               </Link>{' '}
               és az{' '}
-              <Link href="/adatkezeles" className="text-tide-300 underline-offset-4 hover:underline">
+              <Link href="/adatkezeles" className="text-bloom-300 underline-offset-4 hover:underline">
                 adatkezelési tájékoztatót
               </Link>
             </>
@@ -236,7 +236,7 @@ export function RegisterForm() {
         Van már fiókod?{' '}
         <Link
           href={next === '/' ? '/belepes' : `/belepes?next=${encodeURIComponent(next)}`}
-          className="font-medium text-tide-300 underline-offset-4 hover:underline"
+          className="font-medium text-bloom-300 underline-offset-4 hover:underline"
         >
           Jelentkezz be
         </Link>

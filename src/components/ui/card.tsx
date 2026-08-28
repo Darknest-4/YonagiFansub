@@ -140,8 +140,8 @@ export function SectionHeading({
     >
       <div className={cn('max-w-2xl', align === 'center' && 'mx-auto')}>
         {eyebrow && (
-          <span className="mb-2.5 flex items-center gap-2.5 text-2xs font-bold tracking-[0.22em] text-tide-300 uppercase">
-            <span aria-hidden className="h-px w-6 bg-linear-to-r from-tide-400 to-transparent" />
+          <span className="mb-2.5 flex items-center gap-2.5 text-2xs font-bold tracking-[0.22em] text-bloom-300 uppercase">
+            <span aria-hidden className="h-px w-6 bg-linear-to-r from-bloom-400 to-transparent" />
             {eyebrow}
           </span>
         )}

@@ -90,7 +90,7 @@ function InfoCard({
   return (
     <section className="rounded-xl border border-ink-800 bg-ink-900/40 p-4">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-mist-100">
-        <span className="text-tide-400">{icon}</span>
+        <span className="text-bloom-400">{icon}</span>
         {title}
       </h2>
       <p className="mt-2 text-xs leading-relaxed text-content-muted">{body}</p>
@@ -98,7 +98,7 @@ function InfoCard({
         <a
           href={href}
           {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-          className="mt-3 inline-block text-xs font-medium text-tide-300 underline-offset-4 hover:underline"
+          className="mt-3 inline-block text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
         >
           {hrefLabel} →
         </a>

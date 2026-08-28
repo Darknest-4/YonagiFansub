@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 const CONTROL_BASE = cn(
   'w-full rounded-lg border bg-ink-900/80 text-mist-100 placeholder:text-mist-600',
   'transition-[border-color,box-shadow,background-color] duration-fast ease-out-quint',
-  'focus:border-tide-400/70 focus:bg-ink-900 focus:ring-3 focus:ring-tide-400/15',
+  'focus:border-bloom-400/70 focus:bg-ink-900 focus:ring-3 focus:ring-bloom-400/15',
   'disabled:cursor-not-allowed disabled:opacity-50',
   // 16px on mobile prevents iOS Safari from zooming the viewport on focus.
   'text-base sm:text-sm',
@@ -248,7 +248,7 @@ export function Checkbox({ label, description, className, id, ...props }: Checkb
         <input
           id={inputId}
           type="checkbox"
-          className="peer size-5 cursor-pointer appearance-none rounded-md border border-ink-600 bg-ink-900 transition-colors duration-fast checked:border-tide-400 checked:bg-tide-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="peer size-5 cursor-pointer appearance-none rounded-md border border-ink-600 bg-ink-900 transition-colors duration-fast checked:border-bloom-400 checked:bg-bloom-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400 disabled:cursor-not-allowed disabled:opacity-50"
           {...props}
         />
         <Check
@@ -303,8 +303,8 @@ export function Switch({
         onClick={() => onChange(!checked)}
         className={cn(
           'relative mt-0.5 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border transition-colors duration-base ease-out-quint',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400',
-          checked ? 'border-tide-400 bg-tide-400/85' : 'border-ink-600 bg-ink-750',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400',
+          checked ? 'border-bloom-400 bg-bloom-400/85' : 'border-ink-600 bg-ink-750',
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >

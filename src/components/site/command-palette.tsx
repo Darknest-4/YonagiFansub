@@ -159,7 +159,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           >
             <div className="flex items-center gap-3 border-b border-ink-800 px-4">
               {loading ? (
-                <Loader2 className="size-5 shrink-0 animate-spin text-tide-400" aria-hidden />
+                <Loader2 className="size-5 shrink-0 animate-spin text-bloom-400" aria-hidden />
               ) : (
                 <Search className="size-5 shrink-0 text-mist-500" aria-hidden />
               )}
@@ -247,7 +247,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                             onClick={() => go(result.href)}
                             className={cn(
                               'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors duration-instant',
-                              active ? 'bg-tide-400/12' : 'hover:bg-ink-800',
+                              active ? 'bg-bloom-400/12' : 'hover:bg-ink-800',
                             )}
                           >
                             <span className="relative size-10 shrink-0 overflow-hidden rounded-md bg-ink-800">
@@ -266,7 +266,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                               <span
                                 className={cn(
                                   'block truncate text-sm font-medium',
-                                  active ? 'text-tide-100' : 'text-mist-100',
+                                  active ? 'text-bloom-100' : 'text-mist-100',
                                 )}
                               >
                                 {result.title}
@@ -279,7 +279,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                             </span>
 
                             {active && (
-                              <ArrowRight className="size-4 shrink-0 text-tide-300" aria-hidden />
+                              <ArrowRight className="size-4 shrink-0 text-bloom-300" aria-hidden />
                             )}
                           </button>
                         </li>
@@ -297,7 +297,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 className="flex items-center justify-between gap-3 border-t border-ink-800 px-4 py-3 text-sm text-mist-300 transition-colors hover:bg-ink-850 hover:text-mist-100"
               >
                 <span>
-                  Minden találat megtekintése erre: <strong className="text-tide-300">{query.trim()}</strong>
+                  Minden találat megtekintése erre: <strong className="text-bloom-300">{query.trim()}</strong>
                 </span>
                 <ArrowRight className="size-4 shrink-0" aria-hidden />
               </button>

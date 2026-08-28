@@ -100,13 +100,13 @@ export default async function TeamPage() {
 }
 
 function MemberCard({ member }: { member: TeamCard }) {
-  const accent = member.accentColor ?? '#4cd8ff';
+  const accent = member.accentColor ?? '#f761a8';
   const positions = member.positions.map((entry) => entry.position.name);
 
   return (
     <Link
       href={`/csapat/${member.slug}`}
-      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-ink-800 bg-ink-900/50 transition-[transform,border-color,box-shadow] duration-base ease-out-quint hover:-translate-y-1 hover:border-ink-600 hover:shadow-e3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400 motion-reduce:hover:translate-y-0"
+      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-ink-800 bg-ink-900/50 transition-[transform,border-color,box-shadow] duration-base ease-out-quint hover:-translate-y-1 hover:border-ink-600 hover:shadow-e3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400 motion-reduce:hover:translate-y-0"
     >
       <div
         aria-hidden
@@ -131,7 +131,7 @@ function MemberCard({ member }: { member: TeamCard }) {
         />
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-semibold text-mist-50 group-hover:text-tide-200">
+          <h3 className="text-base font-semibold text-mist-50 group-hover:text-bloom-200">
             {member.name}
           </h3>
           {member.isFounder && (

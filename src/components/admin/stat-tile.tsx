@@ -16,7 +16,7 @@ import { cn, formatCount } from '@/lib/utils';
 export type StatTone = 'accent' | 'orchid' | 'warm' | 'success';
 
 const TONES: Record<StatTone, { icon: string; glow: string }> = {
-  accent: { icon: 'text-tide-300 bg-tide-400/10', glow: 'hover:border-tide-400/30' },
+  accent: { icon: 'text-bloom-300 bg-bloom-400/10', glow: 'hover:border-bloom-400/30' },
   orchid: { icon: 'text-orchid-300 bg-orchid-400/10', glow: 'hover:border-orchid-400/30' },
   warm: { icon: 'text-ember-300 bg-ember-400/10', glow: 'hover:border-ember-400/30' },
   success: { icon: 'text-success-400 bg-success-500/10', glow: 'hover:border-success-500/30' },

@@ -185,7 +185,7 @@ const TONE_CONFIG: Record<
     iconColor: 'text-warning-400',
     live: 'polite',
   },
-  info: { icon: Info, ring: 'border-tide-400/30', iconColor: 'text-tide-300', live: 'polite' },
+  info: { icon: Info, ring: 'border-bloom-400/30', iconColor: 'text-bloom-300', live: 'polite' },
 };
 
 function ToastViewport({
@@ -247,7 +247,7 @@ function ToastViewport({
                         toast.action?.onClick();
                         onDismiss(toast.id);
                       }}
-                      className="mt-2.5 text-sm font-medium text-tide-300 underline-offset-4 transition-colors duration-fast hover:text-tide-200 hover:underline"
+                      className="mt-2.5 text-sm font-medium text-bloom-300 underline-offset-4 transition-colors duration-fast hover:text-bloom-200 hover:underline"
                     >
                       {toast.action.label}
                     </button>

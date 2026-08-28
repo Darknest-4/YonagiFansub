@@ -49,7 +49,7 @@ export function ReleaseRow({
     >
       <Link
         href={href}
-        className="flex items-center gap-3.5 p-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400 sm:gap-4 sm:p-4"
+        className="flex items-center gap-3.5 p-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400 sm:gap-4 sm:p-4"
       >
         <span className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-ink-800 sm:size-18">
           {release.project.coverImageUrl ? (
@@ -69,7 +69,7 @@ export function ReleaseRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="nums text-sm font-bold text-tide-300">{episodeLabel}</span>
+            <span className="nums text-sm font-bold text-bloom-300">{episodeLabel}</span>
             {release.version > 1 && (
               <Badge tone="orchid" size="sm">
                 v{release.version}
@@ -83,7 +83,7 @@ export function ReleaseRow({
           </div>
 
           {showProject && (
-            <h3 className="mt-0.5 truncate text-sm font-medium text-mist-100 transition-colors duration-fast group-hover:text-tide-200">
+            <h3 className="mt-0.5 truncate text-sm font-medium text-mist-100 transition-colors duration-fast group-hover:text-bloom-200">
               {release.project.title}
             </h3>
           )}

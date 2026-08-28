@@ -31,7 +31,7 @@ interface MailDriver {
 const BRAND = {
   name: 'Yonagi Fansub',
   url: env.NEXT_PUBLIC_SITE_URL,
-  accent: '#4cd8ff',
+  accent: '#f761a8',
   background: '#05070f',
   surface: '#111729',
   text: '#e6ecff',

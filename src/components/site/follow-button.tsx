@@ -123,10 +123,10 @@ export function FollowToggleIcon({
           toast.error('Nem sikerült menteni');
         }
       }}
-      className="rounded-lg p-2 text-mist-400 transition-colors hover:bg-ink-800 hover:text-tide-300"
+      className="rounded-lg p-2 text-mist-400 transition-colors hover:bg-ink-800 hover:text-bloom-300"
     >
       {following ? (
-        <Bell className="size-4 fill-current text-tide-300" aria-hidden />
+        <Bell className="size-4 fill-current text-bloom-300" aria-hidden />
       ) : (
         <BellOff className="size-4" aria-hidden />
       )}

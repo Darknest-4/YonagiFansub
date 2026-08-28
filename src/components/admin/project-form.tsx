@@ -451,7 +451,7 @@ export function ProjectForm({
                       className={cn(
                         'rounded-full border px-3 py-1.5 text-2xs font-medium transition-colors duration-fast',
                         active
-                          ? 'border-tide-400/40 bg-tide-400/12 text-tide-200'
+                          ? 'border-bloom-400/40 bg-bloom-400/12 text-bloom-200'
                           : 'border-ink-700 bg-ink-900 text-mist-400 hover:border-ink-600 hover:text-mist-200',
                       )}
                     >
@@ -511,7 +511,7 @@ export function ProjectForm({
                       id={id}
                       value={values.accentColor}
                       onChange={(event) => set('accentColor', event.target.value)}
-                      placeholder="#4cd8ff"
+                      placeholder="#f761a8"
                       className="font-mono"
                       invalid={invalid}
                       aria-describedby={describedBy}
@@ -519,7 +519,7 @@ export function ProjectForm({
                     <input
                       type="color"
                       aria-label="Szín választása"
-                      value={values.accentColor || '#4cd8ff'}
+                      value={values.accentColor || '#f761a8'}
                       onChange={(event) => set('accentColor', event.target.value)}
                       className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border border-ink-700 bg-ink-900 p-1"
                     />

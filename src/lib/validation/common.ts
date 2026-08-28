@@ -63,7 +63,7 @@ export const optionalUrl = safeUrl.optional().or(z.literal('')).transform((value
 
 export const hexColor = z
   .string()
-  .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Érvénytelen színkód (pl. #4cd8ff).');
+  .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Érvénytelen színkód (pl. #f761a8).');
 
 /** Percentage used by the workflow progress fields. */
 export const percent = z.coerce

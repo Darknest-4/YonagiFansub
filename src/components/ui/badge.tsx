@@ -30,7 +30,7 @@ export type BadgeTone =
 
 const TONES: Record<BadgeTone, string> = {
   neutral: 'bg-ink-750/80 text-mist-300 border-ink-600',
-  accent: 'bg-tide-400/12 text-tide-200 border-tide-400/30',
+  accent: 'bg-bloom-400/12 text-bloom-200 border-bloom-400/30',
   orchid: 'bg-orchid-400/12 text-orchid-200 border-orchid-400/30',
   warm: 'bg-ember-400/12 text-ember-300 border-ember-400/30',
   success: 'bg-success-500/12 text-success-400 border-success-500/30',

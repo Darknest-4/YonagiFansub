@@ -27,7 +27,7 @@ export async function SiteFooter() {
     <footer className="relative mt-24 border-t border-ink-800 bg-ink-925">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-tide-400/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-bloom-400/40 to-transparent"
       />
 
       <div className="container-content py-14 lg:py-16">
@@ -53,7 +53,7 @@ export async function SiteFooter() {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center rounded-lg border border-ink-700 bg-ink-900 px-3.5 py-2 text-xs font-medium text-mist-300 transition-colors duration-fast hover:border-tide-400/40 hover:text-tide-200"
+                      className="inline-flex items-center rounded-lg border border-ink-700 bg-ink-900 px-3.5 py-2 text-xs font-medium text-mist-300 transition-colors duration-fast hover:border-bloom-400/40 hover:text-bloom-200"
                     >
                       {social.label}
                     </a>
@@ -75,7 +75,7 @@ export async function SiteFooter() {
                       <li key={item.href}>
                         <Link
                           href={item.href}
-                          className="text-sm text-mist-400 transition-colors duration-fast hover:text-tide-200"
+                          className="text-sm text-mist-400 transition-colors duration-fast hover:text-bloom-200"
                         >
                           {item.label}
                         </Link>

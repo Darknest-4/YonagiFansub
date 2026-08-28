@@ -28,14 +28,14 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon' | 'icon-sm';
 const VARIANTS: Record<ButtonVariant, string> = {
   // The primary action: gradient fill, dark ink label. Exactly one per view.
   primary:
-    'bg-linear-100 from-tide-400 via-tide-400 to-orchid-400 text-ink-950 font-semibold ' +
-    'shadow-e2 hover:shadow-glow-tide hover:brightness-110 active:brightness-95',
+    'bg-linear-100 from-bloom-400 via-bloom-400 to-orchid-400 text-ink-950 font-semibold ' +
+    'shadow-e2 hover:shadow-glow-bloom hover:brightness-110 active:brightness-95',
   secondary:
     'bg-ink-750 text-mist-100 border border-ink-600 hover:bg-ink-700 hover:border-ink-500 ' +
     'active:bg-ink-800',
   outline:
-    'border border-tide-400/40 text-tide-200 hover:bg-tide-400/10 hover:border-tide-400/70 ' +
-    'active:bg-tide-400/5',
+    'border border-bloom-400/40 text-bloom-200 hover:bg-bloom-400/10 hover:border-bloom-400/70 ' +
+    'active:bg-bloom-400/5',
   ghost: 'text-mist-300 hover:bg-ink-800 hover:text-mist-100 active:bg-ink-850',
   subtle: 'bg-ink-800/70 text-mist-200 hover:bg-ink-750 active:bg-ink-800',
   danger:
@@ -62,7 +62,7 @@ const BASE = cn(
   // A 1px lift on press reads as physical without moving surrounding content.
   'active:translate-y-px',
   'disabled:pointer-events-none disabled:opacity-45 disabled:saturate-50',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400',
   // Touch targets stay finger-sized regardless of visual size.
   'touch-manipulation',
 );

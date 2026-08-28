@@ -99,7 +99,7 @@ export function ProjectFilters({
         >
           Szűrők
           {activeFilters.length > 0 && (
-            <span className="nums ml-1 rounded-full bg-tide-400 px-1.5 text-[10px] font-bold text-ink-950">
+            <span className="nums ml-1 rounded-full bg-bloom-400 px-1.5 text-[10px] font-bold text-ink-950">
               {activeFilters.length}
             </span>
           )}
@@ -248,13 +248,13 @@ export function ProjectFilters({
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-tide-400/30 bg-tide-400/10 py-1 pr-1.5 pl-2.5 text-2xs text-tide-200">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-bloom-400/30 bg-bloom-400/10 py-1 pr-1.5 pl-2.5 text-2xs text-bloom-200">
       {label}
       <button
         type="button"
         onClick={onRemove}
         aria-label={`${label} szűrő eltávolítása`}
-        className="rounded-full p-0.5 transition-colors hover:bg-tide-400/20"
+        className="rounded-full p-0.5 transition-colors hover:bg-bloom-400/20"
       >
         <X className="size-3" aria-hidden />
       </button>

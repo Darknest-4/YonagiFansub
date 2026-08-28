@@ -439,7 +439,7 @@ function StageSlider({
         step={5}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-ink-750 accent-tide-400"
+        className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-ink-750 accent-bloom-400"
       />
 
       <input

@@ -203,7 +203,7 @@ export function Modal({
                   type="button"
                   onClick={onClose}
                   aria-label="Bezárás"
-                  className="-mt-1 -mr-1 shrink-0 rounded-lg p-2 text-mist-400 transition-colors duration-fast hover:bg-ink-750 hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400"
+                  className="-mt-1 -mr-1 shrink-0 rounded-lg p-2 text-mist-400 transition-colors duration-fast hover:bg-ink-750 hover:text-mist-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
                 >
                   <X className="size-4.5" aria-hidden />
                 </button>
@@ -307,7 +307,7 @@ export function ConfirmDialog({
         <div className="space-y-2">
           <label htmlFor="confirm-typed" className="block text-sm text-mist-300">
             A megerősítéshez írd be:{' '}
-            <code className="rounded bg-ink-850 px-1.5 py-0.5 font-mono text-tide-300">
+            <code className="rounded bg-ink-850 px-1.5 py-0.5 font-mono text-bloom-300">
               {requireTyped}
             </code>
           </label>

@@ -136,7 +136,7 @@ const ROLES = [
     name: 'Tulajdonos',
     description: 'Teljes hozzáférés a rendszer minden funkciójához.',
     rank: 0,
-    color: '#4cd8ff',
+    color: '#f761a8',
     permissions: PERMISSIONS.map((permission) => permission.key),
   },
   {
@@ -144,7 +144,7 @@ const ROLES = [
     name: 'Adminisztrátor',
     description: 'Teljes tartalom- és felhasználókezelés, a szerepkörök kivételével.',
     rank: 10,
-    color: '#9d7bff',
+    color: '#ab7ffb',
     permissions: ADMIN,
   },
   {
@@ -152,7 +152,7 @@ const ROLES = [
     name: 'Szerkesztő',
     description: 'Projektek, kiadások és hírek publikálása.',
     rank: 30,
-    color: '#ffc76b',
+    color: '#fb923c',
     permissions: EDITOR,
   },
   {
@@ -160,7 +160,7 @@ const ROLES = [
     name: 'Stáb',
     description: 'Munkafolyamat és kiadások szerkesztése publikálás nélkül.',
     rank: 50,
-    color: '#5eead4',
+    color: '#c084fc',
     permissions: STAFF,
   },
   {
@@ -168,7 +168,7 @@ const ROLES = [
     name: 'Moderátor',
     description: 'Hozzászólások és beérkező üzenetek kezelése.',
     rank: 60,
-    color: '#f472b6',
+    color: '#ec3f92',
     permissions: MODERATOR,
   },
   {
@@ -182,11 +182,11 @@ const ROLES = [
 ];
 
 const POSITIONS = [
-  { key: 'translator', name: 'Fordító', nameEn: 'Translator', color: '#4cd8ff', sortOrder: 10 },
-  { key: 'timer', name: 'Időzítő', nameEn: 'Timer', color: '#5eead4', sortOrder: 20 },
-  { key: 'typesetter', name: 'Formázó', nameEn: 'Typesetter', color: '#9d7bff', sortOrder: 30 },
-  { key: 'editor', name: 'Lektor', nameEn: 'Editor', color: '#ffc76b', sortOrder: 40 },
-  { key: 'encoder', name: 'Enkóder', nameEn: 'Encoder', color: '#f472b6', sortOrder: 50 },
+  { key: 'translator', name: 'Fordító', nameEn: 'Translator', color: '#f761a8', sortOrder: 10 },
+  { key: 'timer', name: 'Időzítő', nameEn: 'Timer', color: '#c084fc', sortOrder: 20 },
+  { key: 'typesetter', name: 'Formázó', nameEn: 'Typesetter', color: '#ab7ffb', sortOrder: 30 },
+  { key: 'editor', name: 'Lektor', nameEn: 'Editor', color: '#fb923c', sortOrder: 40 },
+  { key: 'encoder', name: 'Enkóder', nameEn: 'Encoder', color: '#ec3f92', sortOrder: 50 },
   { key: 'qc', name: 'Minőségellenőr', nameEn: 'Quality Check', color: '#60a5fa', sortOrder: 60 },
   { key: 'karaoke', name: 'Karaoke', nameEn: 'Karaoke', color: '#fb7185', sortOrder: 70 },
   { key: 'manager', name: 'Projektvezető', nameEn: 'Project Manager', color: '#22c55e', sortOrder: 5 },
@@ -194,12 +194,12 @@ const POSITIONS = [
 
 const GENRES = [
   ['akcio', 'Akció', '#fb7185'],
-  ['kaland', 'Kaland', '#ffc76b'],
-  ['dráma', 'Dráma', '#9d7bff'],
-  ['vígjáték', 'Vígjáték', '#5eead4'],
+  ['kaland', 'Kaland', '#fb923c'],
+  ['dráma', 'Dráma', '#ab7ffb'],
+  ['vígjáték', 'Vígjáték', '#c084fc'],
   ['fantasy', 'Fantasy', '#c2acff'],
-  ['sci-fi', 'Sci-fi', '#4cd8ff'],
-  ['romantikus', 'Romantikus', '#f472b6'],
+  ['sci-fi', 'Sci-fi', '#f761a8'],
+  ['romantikus', 'Romantikus', '#ec3f92'],
   ['thriller', 'Thriller', '#ef4444'],
   ['misztikus', 'Misztikus', '#8656f5'],
   ['iskola', 'Iskola', '#60a5fa'],
@@ -541,7 +541,7 @@ const DEMO_PROJECTS = [
     studio: 'Studio Anagura',
     source: 'Eredeti',
     ageRating: 'PG13' as const,
-    accentColor: '#4cd8ff',
+    accentColor: '#f761a8',
     isFeatured: true,
     genres: ['dráma', 'misztikus', 'romantikus'],
     episodes: 7,
@@ -562,8 +562,8 @@ const DEMO_PROJECTS = [
     studio: 'Neon Fugu',
     source: 'Manga',
     ageRating: 'R17' as const,
-    accentColor: '#9d7bff',
-    isFeatured: false,
+    accentColor: '#ab7ffb',
+    isFeatured: true,
     genres: ['sci-fi', 'thriller', 'akcio'],
     episodes: 11,
   },
@@ -583,8 +583,8 @@ const DEMO_PROJECTS = [
     studio: 'Hakoniwa Works',
     source: 'Light novel',
     ageRating: 'PG' as const,
-    accentColor: '#5eead4',
-    isFeatured: false,
+    accentColor: '#c084fc',
+    isFeatured: true,
     genres: ['szeletek', 'vígjáték', 'dráma'],
     episodes: 12,
   },
@@ -604,7 +604,7 @@ const DEMO_PROJECTS = [
     studio: 'Kagami Animation',
     source: 'Eredeti',
     ageRating: 'G' as const,
-    accentColor: '#ffc76b',
+    accentColor: '#fb923c',
     isFeatured: false,
     genres: ['fantasy', 'zene', 'kaland'],
     episodes: 1,
@@ -625,7 +625,7 @@ const DEMO_PROJECTS = [
     studio: 'Studio Anagura',
     source: 'Manga',
     ageRating: 'PG13' as const,
-    accentColor: '#f472b6',
+    accentColor: '#ec3f92',
     isFeatured: false,
     genres: ['sci-fi', 'dráma'],
     episodes: 0,
@@ -641,7 +641,7 @@ const DEMO_MEMBERS = [
     positions: ['manager', 'translator'],
     isFounder: true,
     sortOrder: 1,
-    accentColor: '#4cd8ff',
+    accentColor: '#f761a8',
   },
   {
     slug: 'mira',
@@ -651,7 +651,7 @@ const DEMO_MEMBERS = [
     positions: ['typesetter', 'karaoke'],
     isFounder: true,
     sortOrder: 2,
-    accentColor: '#9d7bff',
+    accentColor: '#ab7ffb',
   },
   {
     slug: 'aron',
@@ -661,7 +661,7 @@ const DEMO_MEMBERS = [
     positions: ['encoder', 'qc'],
     isFounder: false,
     sortOrder: 3,
-    accentColor: '#ffc76b',
+    accentColor: '#fb923c',
   },
   {
     slug: 'juli',
@@ -671,7 +671,7 @@ const DEMO_MEMBERS = [
     positions: ['editor', 'translator'],
     isFounder: false,
     sortOrder: 4,
-    accentColor: '#5eead4',
+    accentColor: '#c084fc',
   },
   {
     slug: 'nao',
@@ -681,7 +681,7 @@ const DEMO_MEMBERS = [
     positions: ['timer'],
     isFounder: false,
     sortOrder: 5,
-    accentColor: '#f472b6',
+    accentColor: '#ec3f92',
   },
 ];
 
@@ -763,10 +763,10 @@ A többit megtanítjuk. Mindkét pozícióhoz van saját, magyar nyelvű anyagun
 ];
 
 const NEWS_CATEGORIES = [
-  { slug: 'bejelentes', name: 'Bejelentés', color: '#4cd8ff' },
-  { slug: 'kiadas', name: 'Kiadás', color: '#5eead4' },
-  { slug: 'csapat', name: 'Csapat', color: '#ffc76b' },
-  { slug: 'technikai', name: 'Technikai', color: '#9d7bff' },
+  { slug: 'bejelentes', name: 'Bejelentés', color: '#f761a8' },
+  { slug: 'kiadas', name: 'Kiadás', color: '#c084fc' },
+  { slug: 'csapat', name: 'Csapat', color: '#fb923c' },
+  { slug: 'technikai', name: 'Technikai', color: '#ab7ffb' },
 ];
 
 function daysAgo(days: number): Date {

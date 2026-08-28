@@ -400,7 +400,7 @@ function TabButton({
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-2xs font-medium transition-colors duration-fast',
         active
-          ? 'bg-tide-400/15 text-tide-200'
+          ? 'bg-bloom-400/15 text-bloom-200'
           : 'text-mist-500 hover:bg-ink-800 hover:text-mist-200',
       )}
     >

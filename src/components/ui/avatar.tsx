@@ -43,7 +43,7 @@ export function Avatar({
       className={cn(
         'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full',
         config.box,
-        ring && 'ring-2 ring-tide-400/40 ring-offset-2 ring-offset-canvas',
+        ring && 'ring-2 ring-bloom-400/40 ring-offset-2 ring-offset-canvas',
         className,
       )}
       style={

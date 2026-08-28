@@ -25,7 +25,7 @@ export function NewsCard({
   priority?: boolean;
   className?: string;
 }) {
-  const categoryColor = post.category?.color ?? '#4cd8ff';
+  const categoryColor = post.category?.color ?? '#f761a8';
 
   return (
     <article
@@ -38,7 +38,7 @@ export function NewsCard({
     >
       <Link
         href={`/hirek/${post.slug}`}
-        className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400"
+        className="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
       >
         <div
           className={cn(
@@ -95,7 +95,7 @@ export function NewsCard({
         <div className={cn('flex flex-1 flex-col p-4', featured && 'sm:p-6')}>
           <h3
             className={cn(
-              'font-semibold text-mist-50 transition-colors duration-fast group-hover:text-tide-200',
+              'font-semibold text-mist-50 transition-colors duration-fast group-hover:text-bloom-200',
               featured ? 'line-clamp-2 text-xl sm:text-2xl' : 'line-clamp-2 text-base',
             )}
           >

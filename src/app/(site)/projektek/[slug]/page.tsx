@@ -89,7 +89,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
   // Fire-and-forget: never awaited, never allowed to fail the render.
   void incrementProjectView(project.id);
 
-  const accent = project.accentColor ?? '#4cd8ff';
+  const accent = project.accentColor ?? '#f761a8';
   const releasedCount = episodes.filter((episode) => episode.status === 'RELEASED').length;
 
   const staffByPosition = [...project.staff]
@@ -212,7 +212,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
                     <li key={genre.slug}>
                       <Link
                         href={`/projektek?genre=${genre.slug}`}
-                        className="inline-flex rounded-full border border-ink-700 bg-ink-900/60 px-3 py-1 text-2xs text-mist-300 transition-colors duration-fast hover:border-tide-400/40 hover:text-tide-200"
+                        className="inline-flex rounded-full border border-ink-700 bg-ink-900/60 px-3 py-1 text-2xs text-mist-300 transition-colors duration-fast hover:border-bloom-400/40 hover:text-bloom-200"
                       >
                         {genre.name}
                       </Link>
@@ -320,7 +320,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
                         <Link
                           key={credit.id}
                           href={`/csapat/${credit.teamMember.slug}`}
-                          className="text-sm text-mist-200 underline-offset-4 transition-colors hover:text-tide-300 hover:underline"
+                          className="text-sm text-mist-200 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
                         >
                           {credit.teamMember.name}
                         </Link>

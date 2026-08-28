@@ -15,7 +15,18 @@ export interface NavItem {
   matchPrefix?: boolean;
 }
 
+/**
+ * A teljes fősor. A GYIK és a Kapcsolat is itt van, nem egy másodlagos
+ * csoportban: hét elem még kényelmesen elfér egy 1440-es sávban, és egy fansub
+ * oldalon pont ez a kettő az, amit a látogatók keresnek — elrejteni őket egy
+ * „több" menü mögé az ő dolgukat nehezítené a mi rendezettségünkért.
+ */
 export const PRIMARY_NAV: NavItem[] = [
+  {
+    href: '/',
+    label: 'Kezdőlap',
+    description: 'Friss kiadások és hírek',
+  },
   {
     href: '/projektek',
     label: 'Projektek',
@@ -40,11 +51,16 @@ export const PRIMARY_NAV: NavItem[] = [
     description: 'Akik a feliratok mögött állnak',
     matchPrefix: true,
   },
-];
-
-export const SECONDARY_NAV: NavItem[] = [
   { href: '/gyik', label: 'GYIK', description: 'Gyakori kérdések' },
   { href: '/kapcsolat', label: 'Kapcsolat', description: 'Írj nekünk' },
+];
+
+/**
+ * A mobil lap alján megjelenő másodlagos hivatkozások. Nem duplikálja a
+ * fősort — az ott már látszik.
+ */
+export const SECONDARY_NAV: NavItem[] = [
+  { href: '/csatlakozz', label: 'Csatlakozz', description: 'Keresünk fordítót, lektort, formázót' },
 ];
 
 export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [

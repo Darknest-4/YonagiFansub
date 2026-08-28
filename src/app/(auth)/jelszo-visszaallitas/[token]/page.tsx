@@ -29,7 +29,7 @@ export default async function ResetPasswordPage({ params }: { params: Params }) 
         </p>
         <Link
           href="/jelszo-visszaallitas"
-          className="mt-6 inline-block text-sm font-medium text-tide-300 underline-offset-4 hover:underline"
+          className="mt-6 inline-block text-sm font-medium text-bloom-300 underline-offset-4 hover:underline"
         >
           Új link kérése
         </Link>

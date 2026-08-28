@@ -62,7 +62,7 @@ function buildWindow(page: number, totalPages: number): Array<number | 'gap'> {
 const ITEM_BASE = cn(
   'inline-flex h-10 min-w-10 items-center justify-center rounded-lg px-3 text-sm font-medium',
   'transition-[background-color,color,border-color] duration-fast',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400',
 );
 
 export function Pagination({
@@ -134,7 +134,7 @@ export function Pagination({
                   ITEM_BASE,
                   'nums',
                   item === page
-                    ? 'bg-tide-400/15 text-tide-200 ring-1 ring-tide-400/40'
+                    ? 'bg-bloom-400/15 text-bloom-200 ring-1 ring-bloom-400/40'
                     : 'text-mist-300 hover:bg-ink-800 hover:text-mist-100',
                 )}
               >

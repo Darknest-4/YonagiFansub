@@ -1,12 +1,25 @@
 import { Suspense } from 'react';
-import { ArrowRight, Clapperboard, Newspaper, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import {
+  ArrowRight,
+  Clapperboard,
+  Download,
+  FolderOpen,
+  Newspaper,
+  PlayCircle,
+  Quote,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import { ButtonLink } from '@/components/ui/button';
 import { SectionHeading } from '@/components/ui/card';
 import { EmptyState, ProjectGridSkeleton, ReleaseListSkeleton } from '@/components/ui/feedback';
 import { Hero } from '@/components/site/hero';
 import { ProjectCard } from '@/components/site/project-card';
-import { ReleaseRow } from '@/components/site/release-card';
+import { ReleaseTile } from '@/components/site/release-tile';
+import { NewsItem } from '@/components/site/news-item';
 import { NewsCard } from '@/components/site/news-card';
+import { formatCount } from '@/lib/utils';
 import { getFeaturedProjects, getOngoingProjects } from '@/server/projects';
 import { getLatestReleases } from '@/server/releases';
 import { listPublicNews } from '@/server/news';
@@ -24,38 +37,54 @@ import { getPublicStats } from '@/server/stats';
 export const revalidate = 120;
 
 export default async function HomePage() {
-  const [featured, stats] = await Promise.all([getFeaturedProjects(1), getPublicStats()]);
-  const hero = featured[0] ?? null;
+  // Három kiemelt projekt: a hero ennyi közt vált. Nem több — a negyedik diát
+  // már mérhetően senki nem nézi meg, viszont minden dia egy teljes borítókép,
+  // amit be kell tölteni.
+  const [featured, stats] = await Promise.all([getFeaturedProjects(3), getPublicStats()]);
 
   return (
     <>
       <Hero
-        project={
-          hero
-            ? {
-                slug: hero.slug,
-                title: hero.title,
-                titleNative: hero.titleNative,
-                synopsis: hero.synopsis,
-                type: hero.type,
-                status: hero.status,
-                seasonYear: hero.seasonYear,
-                bannerImageUrl: hero.bannerImageUrl,
-                coverImageUrl: hero.coverImageUrl,
-                accentColor: hero.accentColor,
-                genres: hero.genres,
-                _count: { episodes: hero._count.episodes },
-              }
-            : null
-        }
+        projects={featured.map((project) => ({
+          slug: project.slug,
+          title: project.title,
+          titleNative: project.titleNative,
+          synopsis: project.synopsis,
+          type: project.type,
+          status: project.status,
+          seasonYear: project.seasonYear,
+          bannerImageUrl: project.bannerImageUrl,
+          coverImageUrl: project.coverImageUrl,
+          accentColor: project.accentColor,
+          genres: project.genres,
+          _count: { episodes: project._count.episodes },
+        }))}
         stats={stats}
       />
 
-      <div className="container-content space-y-24 pb-24">
-        <Suspense fallback={<ReleaseListSkeleton count={6} />}>
-          <LatestReleasesSection />
-        </Suspense>
+      {/*
+        A kiadások és a hírek egymás mellett, nem egymás alatt: mindkettő
+        „mi történt mostanában" kérdésre válaszol, és külön szekcióként a
+        látogatónak kétszer kellene ugyanazt a kérdést feltennie. A hírsáv
+        keskenyebb, mert három sor szöveg nem igényel több helyet.
+      */}
+      <div className="container-content pt-14">
+        <div className="grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-8">
+          <Suspense fallback={<ReleaseListSkeleton count={4} />}>
+            <LatestReleasesSection />
+          </Suspense>
 
+          <Suspense fallback={null}>
+            <NewsRail />
+          </Suspense>
+        </div>
+      </div>
+
+      <Suspense fallback={null}>
+        <StatsStrip />
+      </Suspense>
+
+      <div className="container-content space-y-24 py-24">
         <Suspense fallback={<ProjectGridSkeleton count={10} />}>
           <OngoingSection />
         </Suspense>
@@ -75,21 +104,11 @@ async function LatestReleasesSection() {
 
   return (
     <section aria-labelledby="latest-releases">
-      <SectionHeading
-        eyebrow="Frissen kiadva"
+      <RailHeading
+        icon={<Clapperboard className="size-4" aria-hidden />}
         title={<span id="latest-releases">Legújabb kiadások</span>}
-        description="A csapat legutóbbi munkái — epizódok, batch-ek és javított verziók."
-        action={
-          <ButtonLink
-            href="/kiadasok"
-            variant="ghost"
-            size="sm"
-            trailingIcon={<ArrowRight className="size-4" aria-hidden />}
-          >
-            Összes kiadás
-          </ButtonLink>
-        }
-        className="mb-7"
+        href="/kiadasok"
+        linkLabel="Összes megtekintése"
       />
 
       {releases.length === 0 ? (
@@ -101,12 +120,136 @@ async function LatestReleasesSection() {
           compact
         />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {releases.map((release) => (
-            <ReleaseRow key={release.id} release={release} />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          {releases.slice(0, 8).map((release, index) => (
+            <ReleaseTile key={release.id} release={release} priority={index < 4} />
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+ * Hírsáv a kiadások mellett.
+ *
+ * Három bejegyzés, nem több: a sáv magassága a mellette lévő kiadás-rácshoz
+ * igazodik, és egy negyedik hír csak lelógna alóla.
+ */
+async function NewsRail() {
+  const { items } = await listPublicNews(
+    JSON.stringify({}),
+    JSON.stringify({ page: 1, perPage: 3 }),
+  );
+
+  if (items.length === 0) return null;
+
+  return (
+    <section aria-labelledby="news-rail">
+      <RailHeading
+        icon={<Newspaper className="size-4" aria-hidden />}
+        title={<span id="news-rail">Friss hírek</span>}
+        href="/hirek"
+        linkLabel="Összes hír"
+      />
+
+      <div className="space-y-5">
+        {items.map((post) => (
+          <NewsItem key={post.id} post={post} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Szekciócím a főoldali sávokhoz.
+ *
+ * Külön a `SectionHeading`-től: az egy önálló szekció fejléce leírással és
+ * nagy címmel, ez pedig egy sávé — ikon, rövid cím, jobbra egy hivatkozás.
+ * Ugyanazt a komponenst két ilyen eltérő sűrűségre hajlítani propokkal
+ * mindkettőt rontaná.
+ */
+function RailHeading({
+  icon,
+  title,
+  href,
+  linkLabel,
+}: {
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  href: string;
+  linkLabel: string;
+}) {
+  return (
+    <div className="mb-5 flex items-center justify-between gap-4">
+      <h2 className="flex items-center gap-2.5 text-sm font-bold tracking-[0.12em] text-mist-50 uppercase">
+        <span className="grid size-7 place-items-center rounded-md border border-bloom-500/30 bg-bloom-500/10 text-bloom-400">
+          {icon}
+        </span>
+        {title}
+      </h2>
+
+      <Link
+        href={href}
+        className="group inline-flex shrink-0 items-center gap-1 text-2xs font-semibold tracking-[0.1em] text-bloom-400 uppercase transition-colors duration-fast hover:text-bloom-300"
+      >
+        {linkLabel}
+        <ArrowRight
+          className="size-3.5 transition-transform duration-fast group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
+          aria-hidden
+        />
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * Számok és egy mondat.
+ *
+ * A statisztika a heróból került ide: ott a névtábla alatt versenyzett a
+ * figyelemért, itt viszont pont az a szerepe, hogy a friss tartalom után
+ * megálljon a szem, mielőtt a katalógus következik.
+ */
+async function StatsStrip() {
+  const stats = await getPublicStats();
+
+  const items = [
+    { icon: <FolderOpen className="size-5" aria-hidden />, value: stats.projects, label: 'Aktív projekt' },
+    { icon: <PlayCircle className="size-5" aria-hidden />, value: stats.episodes, label: 'Kiadott rész' },
+    { icon: <Download className="size-5" aria-hidden />, value: stats.downloads, label: 'Letöltés' },
+    { icon: <Users className="size-5" aria-hidden />, value: stats.members, label: 'Csapattag' },
+  ];
+
+  return (
+    <section aria-label="A csapat számokban" className="container-content mt-16">
+      <div className="grid gap-6 rounded-2xl border border-ink-800 bg-ink-900/50 p-6 sm:p-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10">
+        <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+          {items.map((item) => (
+            <div key={item.label} className="flex items-center gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-bloom-500/25 bg-bloom-500/10 text-bloom-400">
+                {item.icon}
+              </span>
+              <div className="min-w-0">
+                <dd className="nums font-display text-xl font-bold text-mist-50">
+                  {formatCount(item.value)}+
+                </dd>
+                <dt className="truncate text-2xs tracking-wide text-mist-500 uppercase">
+                  {item.label}
+                </dt>
+              </div>
+            </div>
+          ))}
+        </dl>
+
+        <blockquote className="relative border-t border-ink-800 pt-6 lg:border-t-0 lg:border-l lg:border-ink-800 lg:pt-0 lg:pl-10">
+          <Quote className="absolute -top-1 left-0 size-5 text-bloom-500/40 lg:left-10" aria-hidden />
+          <p className="pt-6 text-sm leading-relaxed text-mist-200 italic lg:pt-0 lg:pl-8">
+            „Az anime nem csak szórakozás, hanem egy érzés, amit megoszthatunk egymással.”
+          </p>
+          <footer className="mt-3 text-2xs text-mist-500 lg:pl-8">— Yonagi Fansub</footer>
+        </blockquote>
+      </div>
     </section>
   );
 }
@@ -231,7 +374,7 @@ function JoinCta() {
               key={label}
               className="flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-950/50 px-4 py-3.5 text-mist-300"
             >
-              <Icon className="size-4 shrink-0 text-tide-400" aria-hidden />
+              <Icon className="size-4 shrink-0 text-bloom-400" aria-hidden />
               {label}
             </li>
           ))}

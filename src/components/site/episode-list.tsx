@@ -76,7 +76,7 @@ function EpisodeRow({
           className={cn(
             'nums grid size-11 shrink-0 place-items-center rounded-lg font-display text-sm font-bold',
             released
-              ? 'bg-tide-400/12 text-tide-200 ring-1 ring-tide-400/25'
+              ? 'bg-bloom-400/12 text-bloom-200 ring-1 ring-bloom-400/25'
               : 'bg-ink-800 text-mist-500',
           )}
           aria-hidden
@@ -157,7 +157,7 @@ function EpisodeRow({
         </div>
 
         {released && (
-          <span className="hidden shrink-0 items-center gap-1.5 self-center rounded-lg bg-ink-850 px-3 py-2 text-2xs font-medium text-tide-200 transition-colors group-hover:bg-tide-400/15 sm:inline-flex">
+          <span className="hidden shrink-0 items-center gap-1.5 self-center rounded-lg bg-ink-850 px-3 py-2 text-2xs font-medium text-bloom-200 transition-colors group-hover:bg-bloom-400/15 sm:inline-flex">
             <Download className="size-3.5" aria-hidden />
             Letöltés
             <ChevronRight className="size-3.5" aria-hidden />
@@ -170,7 +170,7 @@ function EpisodeRow({
   const shell = cn(
     'block rounded-xl border p-3.5 transition-[border-color,background-color,transform] duration-base ease-out-quint sm:p-4',
     released
-      ? 'group border-ink-800 bg-ink-900/50 hover:-translate-y-0.5 hover:border-tide-400/30 hover:bg-ink-850 motion-reduce:hover:translate-y-0'
+      ? 'group border-ink-800 bg-ink-900/50 hover:-translate-y-0.5 hover:border-bloom-400/30 hover:bg-ink-850 motion-reduce:hover:translate-y-0'
       : 'border-ink-850 bg-ink-900/25',
   );
 
@@ -188,7 +188,7 @@ function EpisodeRow({
   return (
     <Link
       href={`/projektek/${projectSlug}/${number}`}
-      className={cn(shell, 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400')}
+      className={cn(shell, 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400')}
     >
       {body}
     </Link>

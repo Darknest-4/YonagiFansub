@@ -55,12 +55,12 @@ export function Sparkline({
       >
         <defs>
           <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4cd8ff" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#4cd8ff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#f761a8" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#f761a8" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="spark-line" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#4cd8ff" />
-            <stop offset="100%" stopColor="#9d7bff" />
+            <stop offset="0%" stopColor="#f761a8" />
+            <stop offset="100%" stopColor="#ab7ffb" />
           </linearGradient>
         </defs>
 

@@ -106,7 +106,7 @@ function ResultRow({ result }: { result: SearchResult }) {
   return (
     <Link
       href={result.href}
-      className="group flex items-center gap-3.5 rounded-xl border border-ink-800 bg-ink-900/50 p-3 transition-colors duration-fast hover:border-tide-400/30 hover:bg-ink-850"
+      className="group flex items-center gap-3.5 rounded-xl border border-ink-800 bg-ink-900/50 p-3 transition-colors duration-fast hover:border-bloom-400/30 hover:bg-ink-850"
     >
       <span className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-ink-800">
         {result.imageUrl && (
@@ -115,7 +115,7 @@ function ResultRow({ result }: { result: SearchResult }) {
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-tide-200">
+        <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-bloom-200">
           {result.title}
         </span>
         {result.subtitle && (
@@ -141,7 +141,7 @@ async function Suggestions() {
               <li key={project.slug}>
                 <Link
                   href={`/projektek/${project.slug}`}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-mist-300 transition-colors hover:bg-ink-850 hover:text-tide-200"
+                  className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-mist-300 transition-colors hover:bg-ink-850 hover:text-bloom-200"
                 >
                   <span className="relative size-9 shrink-0 overflow-hidden rounded-md bg-ink-800">
                     {project.coverImageUrl && (
@@ -172,7 +172,7 @@ async function Suggestions() {
               <li key={post.slug}>
                 <Link
                   href={`/hirek/${post.slug}`}
-                  className="block rounded-lg px-2 py-2 text-sm text-mist-300 transition-colors hover:bg-ink-850 hover:text-tide-200"
+                  className="block rounded-lg px-2 py-2 text-sm text-mist-300 transition-colors hover:bg-ink-850 hover:text-bloom-200"
                 >
                   {post.title}
                 </Link>

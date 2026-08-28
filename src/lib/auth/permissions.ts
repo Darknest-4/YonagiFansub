@@ -128,7 +128,7 @@ export const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'Tulajdonos',
     description: 'Teljes hozzáférés a rendszer minden funkciójához.',
     rank: 0,
-    color: '#4cd8ff',
+    color: '#f761a8',
     permissions: SUPER_PERMISSION,
   },
   {
@@ -136,7 +136,7 @@ export const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'Adminisztrátor',
     description: 'Teljes tartalom- és felhasználókezelés, a szerepkörök kivételével.',
     rank: 10,
-    color: '#9d7bff',
+    color: '#ab7ffb',
     permissions: ADMIN_PERMISSIONS,
   },
   {

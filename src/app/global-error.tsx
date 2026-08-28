@@ -35,7 +35,7 @@ export default function GlobalError({
               fontSize: '0.75rem',
               letterSpacing: '0.28em',
               textTransform: 'uppercase',
-              color: '#4cd8ff',
+              color: '#f761a8',
               fontWeight: 700,
             }}
           >
@@ -71,7 +71,7 @@ export default function GlobalError({
               padding: '0.75rem 1.5rem',
               borderRadius: '0.625rem',
               border: 'none',
-              background: '#4cd8ff',
+              background: '#f761a8',
               color: '#04060d',
               fontWeight: 600,
               fontSize: '0.875rem',

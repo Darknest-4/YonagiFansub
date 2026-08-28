@@ -147,7 +147,7 @@ export function CommentModeration({
                   <Link
                     href={comment.target.href}
                     target="_blank"
-                    className="mt-0.5 block truncate text-2xs text-tide-300 underline-offset-4 hover:underline"
+                    className="mt-0.5 block truncate text-2xs text-bloom-300 underline-offset-4 hover:underline"
                   >
                     {comment.target.label}
                   </Link>
@@ -296,7 +296,7 @@ function FilterPill({
       className={cn(
         'rounded-full border px-3 py-1.5 text-2xs font-medium transition-colors duration-fast',
         active
-          ? 'border-tide-400/40 bg-tide-400/12 text-tide-200'
+          ? 'border-bloom-400/40 bg-bloom-400/12 text-bloom-200'
           : 'border-ink-700 bg-ink-900 text-mist-400 hover:border-ink-600 hover:text-mist-200',
       )}
     >

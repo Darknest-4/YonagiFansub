@@ -39,8 +39,8 @@ export function PageHeader({
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div className="max-w-2xl">
           {eyebrow && (
-            <p className="mb-2.5 flex items-center gap-2.5 text-2xs font-bold tracking-[0.22em] text-tide-300 uppercase">
-              <span aria-hidden className="h-px w-6 bg-linear-to-r from-tide-400 to-transparent" />
+            <p className="mb-2.5 flex items-center gap-2.5 text-2xs font-bold tracking-[0.22em] text-bloom-300 uppercase">
+              <span aria-hidden className="h-px w-6 bg-linear-to-r from-bloom-400 to-transparent" />
               {eyebrow}
             </p>
           )}
@@ -65,7 +65,7 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
     <nav aria-label="Morzsamenü" className="mb-5">
       <ol className="flex flex-wrap items-center gap-1.5 text-2xs text-mist-500">
         <li>
-          <Link href="/" className="transition-colors hover:text-tide-300">
+          <Link href="/" className="transition-colors hover:text-bloom-300">
             Kezdőlap
           </Link>
         </li>
@@ -76,7 +76,7 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
             <li key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
               <ChevronRight className="size-3 shrink-0 text-mist-700" aria-hidden />
               {crumb.href && !last ? (
-                <Link href={crumb.href} className="transition-colors hover:text-tide-300">
+                <Link href={crumb.href} className="transition-colors hover:text-bloom-300">
                   {crumb.label}
                 </Link>
               ) : (

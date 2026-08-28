@@ -23,7 +23,7 @@ export function Spinner({
   const sizes = { sm: 'size-4', md: 'size-6', lg: 'size-9' };
   return (
     <span role="status" aria-live="polite" className={cn('inline-flex', className)}>
-      <Loader2 className={cn(sizes[size], 'animate-spin text-tide-400')} aria-hidden />
+      <Loader2 className={cn(sizes[size], 'animate-spin text-bloom-400')} aria-hidden />
       <span className="sr-only">{label}</span>
     </span>
   );
@@ -151,7 +151,7 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="mb-5 flex size-14 items-center justify-center rounded-2xl border border-ink-700 bg-ink-850 text-tide-300">
+        <div className="mb-5 flex size-14 items-center justify-center rounded-2xl border border-ink-700 bg-ink-850 text-bloom-300">
           {icon}
         </div>
       )}

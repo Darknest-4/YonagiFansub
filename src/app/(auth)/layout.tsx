@@ -20,7 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-mist-500 transition-colors hover:text-tide-300"
+            className="inline-flex items-center gap-1.5 text-xs text-mist-500 transition-colors hover:text-bloom-300"
           >
             <ArrowLeft className="size-3.5" aria-hidden />
             Vissza az oldalra

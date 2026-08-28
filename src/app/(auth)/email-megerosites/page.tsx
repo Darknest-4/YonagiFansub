@@ -78,7 +78,7 @@ function Result({ ok, message }: { ok: boolean; message?: string }) {
       <div className="mt-7 flex flex-wrap gap-4 text-sm">
         <Link
           href={ok ? '/belepes?verified=1' : '/belepes'}
-          className="font-medium text-tide-300 underline-offset-4 hover:underline"
+          className="font-medium text-bloom-300 underline-offset-4 hover:underline"
         >
           Bejelentkezés
         </Link>

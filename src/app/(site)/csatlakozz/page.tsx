@@ -58,7 +58,7 @@ export default async function JoinPage() {
                 <span
                   aria-hidden
                   className="grid size-8 place-items-center rounded-lg bg-ink-850"
-                  style={{ color: position.color ?? 'var(--color-tide-400)' }}
+                  style={{ color: position.color ?? 'var(--color-bloom-400)' }}
                 >
                   <Languages className="size-4" />
                 </span>
@@ -81,7 +81,7 @@ export default async function JoinPage() {
         <ul className="mt-6 grid gap-4 sm:grid-cols-3">
           {EXPECTATIONS.map(({ icon: Icon, title, body }) => (
             <li key={title} className="rounded-xl border border-ink-800 bg-ink-900/40 p-5">
-              <Icon className="size-5 text-tide-400" aria-hidden />
+              <Icon className="size-5 text-bloom-400" aria-hidden />
               <h3 className="mt-3 text-sm font-semibold text-mist-100">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-content-muted">{body}</p>
             </li>
@@ -95,15 +95,15 @@ export default async function JoinPage() {
           <h2 className="text-2xl">Hogyan jelentkezz?</h2>
           <ol className="mt-5 space-y-3 text-sm leading-relaxed text-mist-300">
             <li className="flex gap-3">
-              <span aria-hidden className="nums grid size-6 shrink-0 place-items-center rounded-md bg-tide-400/15 text-2xs font-bold text-tide-300">1</span>
+              <span aria-hidden className="nums grid size-6 shrink-0 place-items-center rounded-md bg-bloom-400/15 text-2xs font-bold text-bloom-300">1</span>
               Írj nekünk a kapcsolati űrlapon, „Csatlakoznék a csapathoz” kategóriával.
             </li>
             <li className="flex gap-3">
-              <span aria-hidden className="nums grid size-6 shrink-0 place-items-center rounded-md bg-tide-400/15 text-2xs font-bold text-tide-300">2</span>
+              <span aria-hidden className="nums grid size-6 shrink-0 place-items-center rounded-md bg-bloom-400/15 text-2xs font-bold text-bloom-300">2</span>
               Írd meg, melyik pozíció érdekel, és hogy van-e korábbi tapasztalatod. Ha nincs, az sem baj.
             </li>
             <li className="flex gap-3">
-              <span aria-hidden className="nums grid size-6 shrink-0 place-items-center rounded-md bg-tide-400/15 text-2xs font-bold text-tide-300">3</span>
+              <span aria-hidden className="nums grid size-6 shrink-0 place-items-center rounded-md bg-bloom-400/15 text-2xs font-bold text-bloom-300">3</span>
               Kapsz egy rövid próbafeladatot. Nem vizsga — csak látni szeretnénk, hogyan dolgozol.
             </li>
           </ol>

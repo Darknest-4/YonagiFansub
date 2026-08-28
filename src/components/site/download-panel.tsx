@@ -100,7 +100,7 @@ export function DownloadPanel({ releases }: { releases: ReleaseView[] }) {
                 className={cn(
                   'shrink-0 rounded-lg px-3.5 py-2 font-mono text-2xs font-medium transition-colors duration-fast',
                   selected
-                    ? 'bg-tide-400/15 text-tide-200 ring-1 ring-tide-400/35'
+                    ? 'bg-bloom-400/15 text-bloom-200 ring-1 ring-bloom-400/35'
                     : 'bg-ink-850 text-mist-400 hover:bg-ink-800 hover:text-mist-200',
                 )}
               >
@@ -228,13 +228,13 @@ function DownloadRow({ link }: { link: DownloadLinkView }) {
         'flex items-center gap-3 rounded-lg border px-3.5 py-3 transition-colors duration-fast',
         offline
           ? 'border-ink-850 bg-ink-900/30 opacity-60'
-          : 'border-ink-800 bg-ink-900/60 hover:border-tide-400/30',
+          : 'border-ink-800 bg-ink-900/60 hover:border-bloom-400/30',
       )}
     >
       <span
         className={cn(
           'grid size-9 shrink-0 place-items-center rounded-md',
-          offline ? 'bg-ink-850 text-mist-600' : 'bg-ink-850 text-tide-300',
+          offline ? 'bg-ink-850 text-mist-600' : 'bg-ink-850 text-bloom-300',
         )}
         aria-hidden
       >

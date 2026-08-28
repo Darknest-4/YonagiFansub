@@ -146,7 +146,7 @@ export function RoleMatrix({
                   className={cn(
                     'w-full rounded-xl border p-3.5 text-left transition-colors duration-fast',
                     active
-                      ? 'border-tide-400/35 bg-tide-400/8'
+                      ? 'border-bloom-400/35 bg-bloom-400/8'
                       : 'border-ink-800 bg-ink-900/40 hover:border-ink-600',
                   )}
                 >
@@ -201,9 +201,9 @@ export function RoleMatrix({
               {formError && <InlineError message={formError} />}
 
               {role.key === 'owner' ? (
-                <div className="flex items-start gap-3 rounded-lg border border-tide-400/25 bg-tide-400/8 px-4 py-3.5">
-                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-tide-300" aria-hidden />
-                  <p className="text-sm leading-relaxed text-tide-200">
+                <div className="flex items-start gap-3 rounded-lg border border-bloom-400/25 bg-bloom-400/8 px-4 py-3.5">
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-bloom-300" aria-hidden />
+                  <p className="text-sm leading-relaxed text-bloom-200">
                     A tulajdonosi szerepkör minden jogosultsággal rendelkezik, és nem
                     módosítható. Ez a védőháló: enélkül egy hibás mentés kizárhatná a
                     csapatot a saját rendszeréből.
@@ -232,7 +232,7 @@ export function RoleMatrix({
                         <button
                           type="button"
                           onClick={() => toggleGroup(groupPermissions)}
-                          className="text-2xs text-tide-300 underline-offset-4 hover:underline"
+                          className="text-2xs text-bloom-300 underline-offset-4 hover:underline"
                         >
                           {allOn ? 'Összes kikapcsolása' : 'Összes bekapcsolása'}
                         </button>
@@ -253,7 +253,7 @@ export function RoleMatrix({
                               className={cn(
                                 'flex w-full items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors duration-fast',
                                 on
-                                  ? 'border-tide-400/30 bg-tide-400/8'
+                                  ? 'border-bloom-400/30 bg-bloom-400/8'
                                   : 'border-ink-800 bg-ink-900/40',
                                 !locked && 'hover:border-ink-600',
                                 locked && 'cursor-not-allowed opacity-70',
@@ -264,7 +264,7 @@ export function RoleMatrix({
                                 className={cn(
                                   'mt-0.5 grid size-4 shrink-0 place-items-center rounded border',
                                   on
-                                    ? 'border-tide-400 bg-tide-400 text-ink-950'
+                                    ? 'border-bloom-400 bg-bloom-400 text-ink-950'
                                     : 'border-ink-600',
                                 )}
                               >

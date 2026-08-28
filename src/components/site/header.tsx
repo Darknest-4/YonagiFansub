@@ -95,13 +95,13 @@ export function SiteHeader({
   return (
     <>
       {announcement?.text && (
-        <div className="relative z-50 bg-linear-100 from-tide-500/18 via-orchid-500/14 to-transparent">
+        <div className="relative z-50 bg-linear-100 from-bloom-500/18 via-orchid-500/14 to-transparent">
           <div className="container-wide flex items-center justify-center gap-2 py-2 text-center text-xs text-mist-200 sm:text-sm">
-            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-tide-400" />
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-bloom-400" />
             {announcement.href ? (
               <Link
                 href={announcement.href}
-                className="underline-offset-4 transition-colors hover:text-tide-200 hover:underline"
+                className="underline-offset-4 transition-colors hover:text-bloom-200 hover:underline"
               >
                 {announcement.text}
               </Link>
@@ -123,8 +123,13 @@ export function SiteHeader({
         <div className="container-wide flex h-16 items-center justify-between gap-4 lg:h-18">
           <Logo />
 
+          {/*
+            Nagybetűs, ritkított navigáció: hét rövid magyar szó kisbetűvel
+            egymás mellett összefolyik, a nagybetű és a betűköz viszont ritmust
+            ad neki, és a mark tipográfiájával is egy nyelvet beszél.
+          */}
           <nav aria-label="Fő navigáció" className="hidden lg:block">
-            <ul className="flex items-center gap-1">
+            <ul className="flex items-center gap-0.5">
               {PRIMARY_NAV.map((item) => {
                 const active = isActive(pathname, item);
                 return (
@@ -133,8 +138,9 @@ export function SiteHeader({
                       href={item.href}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'relative block rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-fast',
-                        active ? 'text-mist-50' : 'text-mist-400 hover:text-mist-100',
+                        'relative block px-3.5 py-5 text-2xs font-semibold tracking-[0.14em] uppercase',
+                        'transition-colors duration-fast',
+                        active ? 'text-bloom-400' : 'text-mist-300 hover:text-mist-50',
                       )}
                     >
                       {item.label}
@@ -142,7 +148,7 @@ export function SiteHeader({
                         <motion.span
                           layoutId="nav-active"
                           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-linear-to-r from-tide-400 to-orchid-400"
+                          className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-full bg-bloom-500"
                         />
                       )}
                     </Link>
@@ -157,16 +163,16 @@ export function SiteHeader({
               type="button"
               onClick={() => setSearchOpen(true)}
               className={cn(
-                'group hidden items-center gap-2.5 rounded-lg border border-ink-700/80 bg-ink-900/60 py-2 pr-2 pl-3',
-                'text-sm text-mist-500 transition-colors duration-fast hover:border-ink-600 hover:text-mist-300 md:flex',
+                'group hidden w-56 items-center gap-2 rounded-full border border-ink-700/80 bg-ink-900/60 py-2 pr-2 pl-4 xl:w-64',
+                'text-sm text-mist-500 transition-colors duration-fast hover:border-bloom-500/40 hover:text-mist-300 md:flex',
               )}
               aria-label="Keresés megnyitása"
             >
-              <Search className="size-4" aria-hidden />
-              <span className="pr-6">Keresés…</span>
-              <kbd className="rounded border border-ink-700 bg-ink-850 px-1.5 py-0.5 font-mono text-[10px] text-mist-500">
+              <span className="flex-1 text-left">Keresés…</span>
+              <kbd className="hidden rounded border border-ink-700 bg-ink-850 px-1.5 py-0.5 font-mono text-[10px] text-mist-500 xl:block">
                 ⌘K
               </kbd>
+              <Search className="size-4 shrink-0 text-mist-400" aria-hidden />
             </button>
 
             <Button
@@ -239,7 +245,7 @@ export function SiteHeader({
                       onClick={toggle}
                       aria-haspopup="menu"
                       aria-expanded={open}
-                      className="ml-0.5 rounded-full transition-transform duration-fast hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tide-400 motion-reduce:hover:scale-100"
+                      className="ml-0.5 rounded-full transition-transform duration-fast hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400 motion-reduce:hover:scale-100"
                     >
                       <Avatar name={user.displayName} src={user.avatarUrl} size="md" />
                       <span className="sr-only">Fiók menü</span>
@@ -248,14 +254,17 @@ export function SiteHeader({
                 />
               </>
             ) : (
-              <div className="hidden items-center gap-2 sm:flex">
-                <ButtonLink href="/belepes" variant="ghost" size="sm">
-                  Belépés
-                </ButtonLink>
-                <ButtonLink href="/regisztracio" variant="primary" size="sm">
-                  Regisztráció
-                </ButtonLink>
-              </div>
+              // Egyetlen elsődleges gomb a fejlécben. A regisztráció a
+              // belépőoldalról egy kattintás, és két egyforma súlyú gomb egymás
+              // mellett csak elveszi a döntést attól, aki már tag.
+              <ButtonLink
+                href="/belepes"
+                variant="primary"
+                size="sm"
+                className="hidden text-2xs tracking-[0.12em] uppercase sm:inline-flex"
+              >
+                Bejelentkezés
+              </ButtonLink>
             )}
 
             <Button
@@ -342,14 +351,14 @@ function MobileNav({
                         className={cn(
                           'block rounded-xl px-4 py-3.5 transition-colors duration-fast',
                           active
-                            ? 'bg-tide-400/10 ring-1 ring-tide-400/25'
+                            ? 'bg-bloom-400/10 ring-1 ring-bloom-400/25'
                             : 'hover:bg-ink-850 active:bg-ink-800',
                         )}
                       >
                         <span
                           className={cn(
                             'block text-base font-semibold',
-                            active ? 'text-tide-200' : 'text-mist-100',
+                            active ? 'text-bloom-200' : 'text-mist-100',
                           )}
                         >
                           {item.label}

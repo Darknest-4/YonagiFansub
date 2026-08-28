@@ -21,7 +21,7 @@ export async function AuthShowcase() {
       <div className="noise absolute inset-0" />
 
       <div className="relative flex h-full flex-col justify-between p-12">
-        <p className="font-jp text-sm tracking-[0.4em] text-tide-300/70">夜凪</p>
+        <p className="font-jp text-sm tracking-[0.4em] text-bloom-300/70">夜凪</p>
 
         <div>
           <p className="max-w-md font-display text-3xl leading-tight font-bold text-mist-50">

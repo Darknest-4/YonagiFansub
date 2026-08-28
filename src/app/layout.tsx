@@ -150,7 +150,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* First tab stop on every page. */}
         <a
           href="#main"
-          className="sr-only-focusable fixed top-4 left-4 z-300 rounded-lg bg-tide-400 px-4 py-2.5 text-sm font-semibold text-ink-950 shadow-e3"
+          className="sr-only-focusable fixed top-4 left-4 z-300 rounded-lg bg-bloom-400 px-4 py-2.5 text-sm font-semibold text-ink-950 shadow-e3"
         >
           Ugrás a tartalomra
         </a>

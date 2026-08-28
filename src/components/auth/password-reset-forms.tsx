@@ -69,7 +69,7 @@ export function ForgotPasswordForm() {
 
         <Link
           href="/belepes"
-          className="mt-7 inline-block text-sm font-medium text-tide-300 underline-offset-4 hover:underline"
+          className="mt-7 inline-block text-sm font-medium text-bloom-300 underline-offset-4 hover:underline"
         >
           Vissza a bejelentkezéshez
         </Link>
@@ -115,7 +115,7 @@ export function ForgotPasswordForm() {
 
       <p className="mt-7 text-center text-sm text-content-muted">
         Mégis eszedbe jutott?{' '}
-        <Link href="/belepes" className="font-medium text-tide-300 underline-offset-4 hover:underline">
+        <Link href="/belepes" className="font-medium text-bloom-300 underline-offset-4 hover:underline">
           Bejelentkezés
         </Link>
       </p>
@@ -164,7 +164,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <div>
-      <div className="mb-5 grid size-12 place-items-center rounded-2xl border border-tide-400/30 bg-tide-400/10 text-tide-300">
+      <div className="mb-5 grid size-12 place-items-center rounded-2xl border border-bloom-400/30 bg-bloom-400/10 text-bloom-300">
         <KeyRound className="size-6" aria-hidden />
       </div>
 

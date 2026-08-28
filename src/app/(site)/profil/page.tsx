@@ -91,7 +91,7 @@ export default async function ProfilePage() {
             favoriteCount > 0 ? (
               <Link
                 href="/profil/kedvencek"
-                className="text-xs font-medium text-tide-300 underline-offset-4 hover:underline"
+                className="text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
               >
                 Összes
               </Link>
@@ -160,7 +160,7 @@ function StatCard({
     return (
       <Link
         href={href}
-        className="rounded-xl border border-ink-800 bg-ink-900/40 px-4 py-3.5 transition-colors hover:border-tide-400/30 hover:bg-ink-850"
+        className="rounded-xl border border-ink-800 bg-ink-900/40 px-4 py-3.5 transition-colors hover:border-bloom-400/30 hover:bg-ink-850"
       >
         {content}
       </Link>

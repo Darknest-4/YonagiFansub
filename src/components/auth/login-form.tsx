@@ -84,9 +84,9 @@ export function LoginForm() {
       {registeredAsOwner && (
         <div
           role="status"
-          className="mt-5 rounded-lg border border-tide-400/30 bg-tide-400/8 px-3.5 py-3 text-sm"
+          className="mt-5 rounded-lg border border-bloom-400/30 bg-bloom-400/8 px-3.5 py-3 text-sm"
         >
-          <p className="font-medium text-tide-200">
+          <p className="font-medium text-bloom-200">
             Ez volt az első fiók — megkaptad a tulajdonosi jogosultságot.
           </p>
           <p className="mt-1 leading-relaxed text-mist-300">
@@ -166,7 +166,7 @@ export function LoginForm() {
 
           <Link
             href="/jelszo-visszaallitas"
-            className="shrink-0 text-xs text-tide-300 underline-offset-4 hover:underline"
+            className="shrink-0 text-xs text-bloom-300 underline-offset-4 hover:underline"
           >
             Elfelejtettem
           </Link>
@@ -188,7 +188,7 @@ export function LoginForm() {
         Még nincs fiókod?{' '}
         <Link
           href={next === '/' ? '/regisztracio' : `/regisztracio?next=${encodeURIComponent(next)}`}
-          className="font-medium text-tide-300 underline-offset-4 hover:underline"
+          className="font-medium text-bloom-300 underline-offset-4 hover:underline"
         >
           Regisztrálj
         </Link>

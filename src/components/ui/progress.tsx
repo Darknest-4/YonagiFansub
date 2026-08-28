@@ -28,7 +28,7 @@ export function ProgressBar({
   const clamped = Math.max(0, Math.min(100, Math.round(value)));
 
   const tones = {
-    accent: 'from-tide-500 to-tide-300',
+    accent: 'from-bloom-500 to-bloom-300',
     orchid: 'from-orchid-500 to-orchid-300',
     warm: 'from-ember-500 to-ember-300',
     success: 'from-success-500 to-success-400',
@@ -123,7 +123,7 @@ export function WorkflowProgress({
                   'h-full bg-linear-to-r transition-[width] duration-slow ease-out-expo',
                   stage.value >= 100
                     ? 'from-success-500 to-success-400'
-                    : 'from-tide-500 to-tide-300',
+                    : 'from-bloom-500 to-bloom-300',
                 )}
                 style={{ width: `${Math.max(0, Math.min(100, stage.value))}%` }}
               />
@@ -141,7 +141,7 @@ export function WorkflowProgress({
     <div className={cn('space-y-3', className)}>
       <div className="flex items-baseline justify-between">
         <span className="text-xs font-medium text-mist-300">Munkafolyamat</span>
-        <span className="nums text-sm font-semibold text-tide-300">{overall}%</span>
+        <span className="nums text-sm font-semibold text-bloom-300">{overall}%</span>
       </div>
 
       <div className="grid grid-cols-3 gap-x-4 gap-y-3 sm:grid-cols-6">
@@ -175,7 +175,7 @@ export function WorkflowProgress({
                   aria-label={stage.label}
                   className={cn(
                     'h-full rounded-full bg-linear-to-r transition-[width] duration-slow ease-out-expo',
-                    done ? 'from-success-500 to-success-400' : 'from-tide-500 to-tide-300',
+                    done ? 'from-success-500 to-success-400' : 'from-bloom-500 to-bloom-300',
                   )}
                   style={{ width: `${Math.max(0, Math.min(100, stage.value))}%` }}
                 />
@@ -233,7 +233,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className="stroke-tide-400 transition-[stroke-dashoffset] duration-slow ease-out-expo"
+          className="stroke-bloom-400 transition-[stroke-dashoffset] duration-slow ease-out-expo"
         />
       </svg>
       <span className="nums absolute inset-0 flex items-center justify-center text-xs font-semibold text-mist-100">

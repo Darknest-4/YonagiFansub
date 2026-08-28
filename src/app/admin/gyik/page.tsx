@@ -27,7 +27,7 @@ export default async function AdminFaqPage() {
 
         <Link
           href="/gyik"
-          className="inline-flex items-center gap-1.5 text-2xs text-mist-400 underline-offset-4 transition-colors hover:text-tide-300 hover:underline"
+          className="inline-flex items-center gap-1.5 text-2xs text-mist-400 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
         >
           Nyilvános oldal
           <ExternalLink className="size-3.5" aria-hidden />

@@ -103,7 +103,7 @@ export default async function FaqPage() {
                 <div className="divide-y divide-ink-800 overflow-hidden rounded-xl border border-ink-800 bg-ink-900/40">
                   {items.map((entry) => (
                     <details key={entry.id} className="group">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium text-mist-100 transition-colors hover:bg-ink-850 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-tide-400">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium text-mist-100 transition-colors hover:bg-ink-850 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-bloom-400">
                         {entry.question}
                         <span
                           aria-hidden

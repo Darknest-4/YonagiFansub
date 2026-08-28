@@ -229,7 +229,7 @@ async function TopReleasesPanel() {
         action={
           <Link
             href="/admin/kiadasok?sort=-downloadCount"
-            className="text-xs font-medium text-tide-300 underline-offset-4 hover:underline"
+            className="text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
           >
             Összes
           </Link>
@@ -278,7 +278,7 @@ async function ActivityPanel() {
         action={
           <Link
             href="/admin/naplo"
-            className="text-xs font-medium text-tide-300 underline-offset-4 hover:underline"
+            className="text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
           >
             Napló
           </Link>
@@ -293,7 +293,7 @@ async function ActivityPanel() {
               <li key={entry.id} className="flex items-start gap-3">
                 <span
                   aria-hidden
-                  className="mt-1.5 size-1.5 shrink-0 rounded-full bg-tide-400/60"
+                  className="mt-1.5 size-1.5 shrink-0 rounded-full bg-bloom-400/60"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-mist-200">{entry.summary}</p>

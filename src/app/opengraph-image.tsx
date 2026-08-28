@@ -42,7 +42,7 @@ export default async function OpenGraphImage() {
               width: '72px',
               height: '72px',
               borderRadius: '20px',
-              background: 'linear-gradient(140deg, #4cd8ff, #8656f5)',
+              background: 'linear-gradient(140deg, #f761a8, #8656f5)',
               color: '#04060d',
               fontSize: '40px',
               fontWeight: 700,
@@ -60,7 +60,7 @@ export default async function OpenGraphImage() {
                 fontSize: '15px',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase',
-                color: '#6ee5ff',
+                color: '#ff9ac6',
                 fontWeight: 600,
               }}
             >
@@ -91,7 +91,7 @@ export default async function OpenGraphImage() {
             style={{
               width: '48px',
               height: '3px',
-              background: 'linear-gradient(90deg, #4cd8ff, transparent)',
+              background: 'linear-gradient(90deg, #f761a8, transparent)',
             }}
           />
           yonagifansub.hu

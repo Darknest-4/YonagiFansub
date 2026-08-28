@@ -92,7 +92,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
           <Link
             href={`/projektek/${project.slug}`}
             target="_blank"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-tide-300 underline-offset-4 hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
           >
             Megnézem élesben
             <ExternalLink className="size-3.5" aria-hidden />

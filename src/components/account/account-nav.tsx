@@ -46,7 +46,7 @@ export function AccountNav() {
                   'flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-sm font-medium whitespace-nowrap',
                   'transition-colors duration-fast',
                   active
-                    ? 'bg-tide-400/12 text-tide-200 ring-1 ring-tide-400/25'
+                    ? 'bg-bloom-400/12 text-bloom-200 ring-1 ring-bloom-400/25'
                     : 'text-mist-400 hover:bg-ink-850 hover:text-mist-100',
                 )}
               >

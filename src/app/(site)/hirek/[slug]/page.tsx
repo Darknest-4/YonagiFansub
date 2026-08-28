@@ -66,7 +66,7 @@ export default async function NewsPostPage({ params }: { params: Params }) {
 
   void incrementNewsView(post.id);
 
-  const accent = post.category?.color ?? '#4cd8ff';
+  const accent = post.category?.color ?? '#f761a8';
   const showToc = headings.filter((heading) => heading.level <= 3).length >= 3;
 
   return (
@@ -139,7 +139,7 @@ export default async function NewsPostPage({ params }: { params: Params }) {
                     {post.author.teamMember ? (
                       <Link
                         href={`/csapat/${post.author.teamMember.slug}`}
-                        className="underline-offset-4 transition-colors hover:text-tide-300 hover:underline"
+                        className="underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
                       >
                         {post.author.displayName}
                       </Link>
@@ -207,7 +207,7 @@ export default async function NewsPostPage({ params }: { params: Params }) {
                       >
                         <a
                           href={`#${heading.id}`}
-                          className="text-xs leading-relaxed text-mist-400 transition-colors hover:text-tide-300"
+                          className="text-xs leading-relaxed text-mist-400 transition-colors hover:text-bloom-300"
                         >
                           {heading.text}
                         </a>

@@ -27,7 +27,7 @@ export default async function RegisterPage() {
           ha kérdésed van, írj nekünk.
         </p>
         <div className="mt-6 flex gap-3 text-sm">
-          <Link href="/belepes" className="font-medium text-tide-300 underline-offset-4 hover:underline">
+          <Link href="/belepes" className="font-medium text-bloom-300 underline-offset-4 hover:underline">
             Bejelentkezés
           </Link>
           <Link href="/kapcsolat" className="text-mist-400 underline-offset-4 hover:underline">

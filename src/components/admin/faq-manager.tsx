@@ -167,8 +167,8 @@ export function FaqManager({ entries }: { entries: FaqEntryView[] }) {
       </div>
 
       {creating && (
-        <div className="rounded-xl border border-tide-400/30 bg-tide-400/5 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-tide-200">Új bejegyzés</h2>
+        <div className="rounded-xl border border-bloom-400/30 bg-bloom-400/5 p-4">
+          <h2 className="mb-3 text-sm font-semibold text-bloom-200">Új bejegyzés</h2>
           <DraftFields
             draft={draft}
             setDraft={setDraft}

@@ -136,9 +136,9 @@ export function DataTable<T extends { id: string }>({
         <div
           role="region"
           aria-label="Tömeges műveletek"
-          className="flex flex-wrap items-center gap-3 rounded-xl border border-tide-400/30 bg-tide-400/8 px-4 py-3"
+          className="flex flex-wrap items-center gap-3 rounded-xl border border-bloom-400/30 bg-bloom-400/8 px-4 py-3"
         >
-          <p className="nums text-sm font-medium text-tide-200">
+          <p className="nums text-sm font-medium text-bloom-200">
             {selected.length} kijelölve
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -213,7 +213,7 @@ export function DataTable<T extends { id: string }>({
                     key={row.id}
                     className={cn(
                       'bg-ink-900/40 transition-colors hover:bg-ink-850',
-                      selected.includes(row.id) && 'bg-tide-400/[0.06]',
+                      selected.includes(row.id) && 'bg-bloom-400/[0.06]',
                     )}
                   >
                     {bulkActions && (
@@ -243,7 +243,7 @@ export function DataTable<T extends { id: string }>({
                         {index === 0 && rowHref ? (
                           <Link
                             href={rowHref(row)}
-                            className="block font-medium text-mist-100 transition-colors hover:text-tide-200"
+                            className="block font-medium text-mist-100 transition-colors hover:text-bloom-200"
                           >
                             {column.render(row)}
                           </Link>
@@ -287,7 +287,7 @@ export function DataTable<T extends { id: string }>({
                       <div className="text-sm font-medium text-mist-100">
                         {primary &&
                           (rowHref ? (
-                            <Link href={rowHref(row)} className="hover:text-tide-200">
+                            <Link href={rowHref(row)} className="hover:text-bloom-200">
                               {primary.render(row)}
                             </Link>
                           ) : (
