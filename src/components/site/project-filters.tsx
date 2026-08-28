@@ -28,11 +28,9 @@ export interface FilterOption {
 export function ProjectFilters({
   genres,
   seasons,
-  totalCount,
 }: {
   genres: FilterOption[];
   seasons: Array<{ season: string; seasonYear: number }>;
-  totalCount: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -107,12 +105,6 @@ export function ProjectFilters({
           )}
         </Button>
 
-        <p
-          className="nums ml-auto hidden text-sm text-content-muted sm:block"
-          aria-live="polite"
-        >
-          {totalCount} projekt
-        </p>
       </div>
 
       <div

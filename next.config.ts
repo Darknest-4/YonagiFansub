@@ -1,31 +1,16 @@
 import type { NextConfig } from 'next';
 
 /**
- * Content Security Policy.
+ * A Content Security Policy NEM itt van, hanem a `src/middleware.ts`-ben.
  *
- * `'unsafe-inline'` for styles is required by Next's inlined critical CSS and by
- * framer-motion's style writes. Scripts are protected with a per-request nonce in
- * `middleware.ts`; the `strict-dynamic` fallback keeps the policy meaningful on
- * browsers that support it while remaining functional on those that do not.
+ * Oka: a `script-src` nonce-t hordoz, amit kérésenként kell generálni — egy
+ * statikus fejléc erre képtelen. Ha itt is beállítanánk, felülírná a
+ * middleware kérésenkénti fejlécét (a config fejlécei a handler után kerülnek
+ * a válaszra), és a nonce elveszne.
+ *
+ * Az `/uploads/:path*` a kivétel: a middleware nem fut rá, és ott a
+ * legszigorúbb szabály kell, nem a nonce-os.
  */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-  "img-src 'self' data: blob: https:",
-  "media-src 'self' https:",
-  // No Google Fonts hosts here on purpose. `next/font/google` downloads the
-  // font files at build time and serves them from /_next/static/media, so the
-  // browser never contacts a third party — verified against the built output,
-  // not assumed. Listing hosts we do not use would widen the policy for
-  // requests that never happen, which is the opposite of what a CSP is for.
-  "font-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self'",
-  "upgrade-insecure-requests",
-].join('; ');
 
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
@@ -43,7 +28,6 @@ const securityHeaders = [
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
   },
-  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
 ];
 
 const nextConfig: NextConfig = {
@@ -119,7 +103,7 @@ const nextConfig: NextConfig = {
          */
         source: '/uploads/:path*',
         headers: [
-          ...securityHeaders.filter((header) => header.key !== 'Content-Security-Policy'),
+          ...securityHeaders,
           { key: 'Content-Security-Policy', value: "default-src 'none'; sandbox" },
         ],
       },

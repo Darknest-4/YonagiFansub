@@ -272,6 +272,8 @@ function Breadcrumb({ pathname }: { pathname: string }) {
     beallitasok: 'Beállítások',
     naplo: 'Audit napló',
     statisztika: 'Statisztika',
+    media: 'Médiatár',
+    gyik: 'GYIK',
     uj: 'Új',
   };
 

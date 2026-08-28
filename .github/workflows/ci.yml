@@ -170,6 +170,38 @@ jobs:
           kill $APP_PID
           exit $fail
 
+      # A 200-as válasz nem bizonyíték arra, hogy az oldal meg is jelenik.
+      #
+      # Ezt drágán tanultuk meg: a CSP-ből hiányzott a `script-src`, így a
+      # böngésző blokkolta a Next beágyazott scriptjeit. A React streamelő
+      # SSR-je viszont pont ezekkel emeli a helyükre a `<template>`-ekben
+      # érkező tartalmat — blokkolva a HTML hiánytalanul megjött (100 kB), a
+      # megjelenített oldal pedig üres maradt. A curl-alapú ellenőrzés fentebb
+      # végig zöld volt, miközben minden böngészőben fekete képernyő volt.
+      #
+      # Ez a lépés valódi böngészőben nyitja meg az oldalakat, és a látható
+      # szöveget, a `<main>` méretét és a konzolt nézi.
+      - name: Böngészős füstpróba
+        run: |
+          npm start &
+          APP_PID=$!
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 && break
+            sleep 2
+          done
+
+          npx playwright install --with-deps chromium
+          SMOKE_BASE_URL=http://127.0.0.1:3000 \
+          SMOKE_EMAIL=owner@yonagifansub.hu \
+          SMOKE_PASSWORD="$SEED_OWNER_PASSWORD" \
+          node scripts/smoke.mjs
+          status=$?
+
+          kill $APP_PID
+          exit $status
+        env:
+          SEED_OWNER_PASSWORD: ci-owner-password-not-used
+
   # Runs on every pull request, not just main.
   #
   # It used to be gated on `main`, which meant the first real image build of any

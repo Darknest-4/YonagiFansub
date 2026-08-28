@@ -46,8 +46,14 @@ npm run db:seed                                   # szerepkörök + demó tartal
 npm run dev
 ```
 
-A seed a végén kiírja a tulajdonosi fiók jelszavát — **csak egyszer**. Ha inkább
-te adod meg: `SEED_OWNER_PASSWORD=... npm run db:seed`.
+**Az első regisztráló lesz a tulajdonos.** A seed szándékosan nem hoz létre
+adminisztrátori fiókot: indítás után regisztrálj az oldalon, és a fiókod
+megkapja a teljes jogosultságot — azonnal aktívan, e-mail-megerősítés nélkül,
+tehát működő SMTP nélkül is be tudsz lépni. Minden további regisztráló a
+szokásos `member` szerepkört kapja.
+
+Zárt telepítéshez a régi viselkedés kérhető: `SEED_OWNER_PASSWORD=… npm run db:seed`
+— ilyenkor a seed hozza létre a tulajdonost, és a bootstrap nem lép életbe.
 
 Renderre a `render.yaml` blueprinttel megy ki (Postgres, web service, napi
 cron, lemez a feltöltéseknek) — részletek a
@@ -60,6 +66,199 @@ AUTH_SECRET=$(openssl rand -base64 48) POSTGRES_PASSWORD=$(openssl rand -hex 16)
   docker compose up -d
 docker compose --profile tools run --rm migrate
 ```
+
+---
+
+## Így néz ki
+
+A képek éles buildről készültek, a fejlesztői seed demó tartalmával (5 projekt,
+31 epizód, 58 kiadás, 3 hír, 5 csapattag). Nem kézzel gyűjtött felvételek: a
+`npm run screenshots` állítja elő őket azonos viewporton és azonos
+adatbázis-állapotból, tehát bármikor újragenerálhatók — részletek a
+[docs/screenshots/](docs/screenshots/README.md) alatt.
+
+<details>
+<summary><b>Nyilvános oldal</b> — 21 oldal</summary>
+
+### Főoldal
+![Főoldal](docs/screenshots/01-fooldal.png)
+
+### Projektek (katalógus)
+Szűrés állapot, típus, műfaj és évad szerint; a szűrők az URL-ben élnek, tehát
+egy szűrt nézet linkelhető.
+![Projektek](docs/screenshots/02-projektek.png)
+
+### Projekt adatlap
+A munkafolyamat állapota epizódonként — fordítás, időzítés, formázás,
+lektorálás, enkódolás, QC.
+![Projekt adatlap](docs/screenshots/03-projekt-reszletek.png)
+
+### Epizód és letöltések
+![Epizód](docs/screenshots/04-epizod.png)
+
+### Kiadások
+![Kiadások](docs/screenshots/05-kiadasok.png)
+
+### Hírek
+![Hírek](docs/screenshots/06-hirek.png)
+
+### Hír
+![Hír](docs/screenshots/07-hir.png)
+
+### Csapat
+![Csapat](docs/screenshots/08-csapat.png)
+
+### Csapattag profil
+![Csapattag](docs/screenshots/09-csapattag.png)
+
+### GYIK
+![GYIK](docs/screenshots/10-gyik.png)
+
+### Kapcsolat
+![Kapcsolat](docs/screenshots/11-kapcsolat.png)
+
+### Csatlakozz
+![Csatlakozz](docs/screenshots/12-csatlakozz.png)
+
+### Keresés
+![Keresés](docs/screenshots/13-kereses.png)
+
+### Belépés
+![Belépés](docs/screenshots/14-belepes.png)
+
+### Regisztráció
+![Regisztráció](docs/screenshots/15-regisztracio.png)
+
+### Elfelejtett jelszó
+![Elfelejtett jelszó](docs/screenshots/16-jelszo-visszaallitas.png)
+
+### Adatkezelési tájékoztató
+![Adatkezelés](docs/screenshots/17-adatkezeles.png)
+
+### Felhasználási feltételek
+![Felhasználási feltételek](docs/screenshots/18-felhasznalasi-feltetelek.png)
+
+### Jogtulajdonosi megkeresés
+![DMCA](docs/screenshots/19-dmca.png)
+
+### 404 — nem található
+![404](docs/screenshots/20-404.png)
+
+### Karbantartási mód
+![Karbantartás](docs/screenshots/21-karbantartas.png)
+
+</details>
+
+<details>
+<summary><b>Fiók</b> — 4 oldal</summary>
+
+### Profil
+![Profil](docs/screenshots/30-profil.png)
+
+### Fiókbeállítások
+Jelszócsere, értesítési beállítások és az aktív munkamenetek listája —
+bármelyik külön visszavonható.
+![Fiókbeállítások](docs/screenshots/31-profil-beallitasok.png)
+
+### Értesítések
+![Értesítések](docs/screenshots/32-profil-ertesitesek.png)
+
+### Követett projektek
+![Kedvencek](docs/screenshots/33-profil-kedvencek.png)
+
+</details>
+
+<details>
+<summary><b>Admin</b> — 18 oldal</summary>
+
+### Vezérlőpult
+![Vezérlőpult](docs/screenshots/40-admin-vezerlopult.png)
+
+### Statisztika
+![Statisztika](docs/screenshots/41-admin-statisztika.png)
+
+### Projektek
+![Admin projektek](docs/screenshots/42-admin-projektek.png)
+
+### Projekt szerkesztő
+Négy kártyára bontva — azonosítás, besorolás, média, publikálás. Piszkozat
+automatikusan mentődik, és a mentetlen munka újratöltés után visszakérhető.
+![Projekt szerkesztő](docs/screenshots/43-admin-projekt-szerkeszto.png)
+
+### Új projekt
+![Új projekt](docs/screenshots/44-admin-projekt-uj.png)
+
+### Kiadások
+![Admin kiadások](docs/screenshots/45-admin-kiadasok.png)
+
+### Új kiadás
+Felbontás, kodek, konténer, fájlméret, ellenőrzőösszeg és több letöltési tükör.
+![Új kiadás](docs/screenshots/46-admin-kiadas-uj.png)
+
+### Hírek
+![Admin hírek](docs/screenshots/47-admin-hirek.png)
+
+### Hír szerkesztő
+Írás/előnézet lapokkal; az előnézet ugyanazzal a rendererrel készül, amivel a
+nyilvános oldal — tehát amit a szerző lát, az megy ki.
+![Hír szerkesztő](docs/screenshots/48-admin-hir-szerkeszto.png)
+
+### Csapat
+![Admin csapat](docs/screenshots/49-admin-csapat.png)
+
+### Médiatár
+Fogd-és-vidd feltöltés, mappák, keresés. Ugyanez a komponens nyílik modálban
+képválasztóként a projekt- és híradatlapon.
+![Médiatár](docs/screenshots/50-admin-mediatar.png)
+
+### GYIK kezelés
+![GYIK kezelés](docs/screenshots/51-admin-gyik.png)
+
+### Kapcsolati üzenetek
+![Üzenetek](docs/screenshots/52-admin-uzenetek.png)
+
+### Hozzászólás-moderálás
+![Hozzászólások](docs/screenshots/53-admin-hozzaszolasok.png)
+
+### Felhasználók
+![Felhasználók](docs/screenshots/54-admin-felhasznalok.png)
+
+### Szerepkörök és jogosultságok
+29 jogosultság, 6 rendszerszerepkör. A mátrix mutatja, melyik szerepkör mit tud.
+![Szerepkörök](docs/screenshots/55-admin-szerepkorok.png)
+
+### Beállítások
+![Beállítások](docs/screenshots/56-admin-beallitasok.png)
+
+### Audit napló
+Minden admin írás mezőnkénti diff-fel. A tábla csak bővül: a kódban nincs olyan
+út, ami módosítaná vagy törölné.
+![Audit napló](docs/screenshots/57-admin-naplo.png)
+
+</details>
+
+<details>
+<summary><b>Mobil</b> — 390 × 844</summary>
+
+A mobil nem összenyomott asztali nézet: a navigáció, a szűrők és a táblázatok
+külön elrendezést kapnak. Ezek az oldalak azok, ahol a különbség érdemi.
+
+### Főoldal
+![Főoldal mobilon](docs/screenshots/01-fooldal-mobil.png)
+
+### Projektek
+![Projektek mobilon](docs/screenshots/02-projektek-mobil.png)
+
+### Projekt adatlap
+![Projekt adatlap mobilon](docs/screenshots/03-projekt-reszletek-mobil.png)
+
+### Kiadások
+![Kiadások mobilon](docs/screenshots/05-kiadasok-mobil.png)
+
+### Admin vezérlőpult
+![Admin mobilon](docs/screenshots/40-admin-vezerlopult-mobil.png)
+
+</details>
 
 ---
 

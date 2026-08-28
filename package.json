@@ -2,7 +2,7 @@
   "name": "yonagi-fansub",
   "version": "1.0.0",
   "private": true,
-  "description": "Yonagi Fansub – production-ready anime fansub platform (web, API, admin).",
+  "description": "Yonagi Fansub \u2013 production-ready anime fansub platform (web, API, admin).",
   "engines": {
     "node": ">=20.11.0"
   },
@@ -21,7 +21,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:sql": "tsx scripts/apply-sql.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run test",
+    "smoke": "node scripts/smoke.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -47,6 +49,7 @@
     "@types/react-dom": "^19.0.3",
     "eslint": "^9.18.0",
     "eslint-config-next": "15.5.24",
+    "playwright": "^1.62.1",
     "prisma": "^6.2.1",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.2",

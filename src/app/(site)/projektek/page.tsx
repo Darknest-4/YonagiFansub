@@ -56,7 +56,6 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
               count: genre._count.projects,
             }))}
             seasons={seasons}
-            totalCount={0}
           />
         </Suspense>
       </div>
@@ -121,6 +120,19 @@ async function ProjectResults({
 
   return (
     <>
+      {/*
+        A találatszám itt van, és nem a szűrősávban: a két szekció külön
+        Suspense-határon belül streamel, tehát a szűrősáv nem látja a
+        lekérdezés eredményét. Korábban egy bekötetlen `totalCount={0}`
+        állt ott, ami „0 projekt"-et írt ki öt látható projekt fölé.
+      */}
+      <p className="nums mb-4 text-sm text-content-muted" aria-live="polite">
+        {meta.total} projekt
+        {meta.totalPages && meta.totalPages > 1
+          ? ` · ${meta.page}. oldal a(z) ${meta.totalPages}-ből`
+          : ''}
+      </p>
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-5">
         {items.map((project, index) => (
           <ProjectCard key={project.id} project={project} priority={index < 10} />

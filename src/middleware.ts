@@ -6,16 +6,58 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Runs on the edge runtime, which means no Prisma and no Node crypto — so it
  * deliberately does *not* try to authorise anything. Its jobs are:
  *
- *   1. Issue the CSRF cookie that the API handler validates.
- *   2. Cheap gating: bounce anonymous visitors away from `/admin` before a
+ *   1. Build the per-request Content Security Policy, with a fresh script nonce.
+ *   2. Issue the CSRF cookie that the API handler validates.
+ *   3. Cheap gating: bounce anonymous visitors away from `/admin` before a
  *      server component boots. Real authorisation still happens server-side in
  *      `ensureAdminAccess()` — this is an optimisation, never the control.
- *   3. Stamp a request id so a browser error and a server log line can be tied
+ *   4. Stamp a request id so a browser error and a server log line can be tied
  *      together.
  *
- * Treating step 2 as security would be a mistake: a forged cookie passes here.
+ * Treating step 3 as security would be a mistake: a forged cookie passes here.
  * It cannot pass `getSession()`.
  */
+
+/**
+ * Content Security Policy, built per request because of the nonce.
+ *
+ * `script-src` is the reason this lives here and not in `next.config.ts`. A
+ * static header cannot carry a nonce, and without a nonce the only options are
+ * `'unsafe-inline'` (which gives up XSS protection entirely) or blocking Next's
+ * own scripts. The third option is what this project shipped with: the policy
+ * had **no `script-src` at all**, so `default-src 'self'` applied to scripts and
+ * the browser refused every inline script Next emits.
+ *
+ * That failure mode is worth spelling out, because it is invisible to `curl`:
+ * React's streaming SSR sends the page body inside `<template>` elements and
+ * moves them into place with small inline scripts. Blocked, the HTML arrives
+ * complete — 100 kB of it — and the rendered page stays **empty**. Every route
+ * returned 200 while every browser showed a blank screen.
+ *
+ * `'strict-dynamic'` lets the nonced bootstrap load Next's chunks without
+ * listing each one; `'self'` stays as the fallback for browsers that do not
+ * implement it.
+ */
+function contentSecurityPolicy(nonce: string): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' https:",
+    // No Google Fonts hosts: `next/font/google` self-hosts the files at build
+    // time, so the browser never contacts a third party.
+    "font-src 'self'",
+    // Next inlines critical CSS and framer-motion writes styles at runtime;
+    // neither can carry a nonce. Scripts are the ones that matter here.
+    "style-src 'self' 'unsafe-inline'",
+    "connect-src 'self'",
+    'upgrade-insecure-requests',
+  ].join('; ');
+}
 
 const SESSION_COOKIE =
   process.env.NODE_ENV === 'production' ? '__Host-yonagi_session' : 'yonagi_session';
@@ -49,8 +91,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const response = NextResponse.next();
+  const nonce = btoa(crypto.randomUUID());
+  const csp = contentSecurityPolicy(nonce);
 
+  /*
+   * The policy goes on the *request* as well as the response. Next reads the
+   * incoming `Content-Security-Policy` header, pulls the nonce out of it, and
+   * stamps that nonce onto every script tag it renders. Setting it only on the
+   * response would leave Next's scripts unnonced — and therefore blocked.
+   */
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  response.headers.set('Content-Security-Policy', csp);
   response.headers.set('X-Request-Id', crypto.randomUUID());
 
   // The CSRF cookie is readable by JavaScript on purpose: the browser copies it

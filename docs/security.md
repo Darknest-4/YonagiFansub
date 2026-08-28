@@ -196,7 +196,22 @@ adathalász eszközzé válna, ami a valódi domainen indul.
 
 ## Fejlécek
 
-**Hol:** `next.config.ts`
+**Hol:** a legtöbb a `next.config.ts`-ben, a **CSP viszont a
+`src/middleware.ts`-ben** — mert kérésenkénti nonce-t hordoz, amire egy statikus
+fejléc képtelen.
+
+> **Amit ez a projekt megtanult.** A CSP-ből eredetileg **hiányzott a
+> `script-src`**, így a `default-src 'self'` vonatkozott a scriptekre is, és a
+> böngésző minden beágyazott scriptet blokkolt. A React streamelő SSR-je viszont
+> pont beágyazott scriptekkel emeli a helyükre a `<template>`-ekben érkező
+> tartalmat: blokkolva a HTML hiánytalanul megérkezett (100 kB), a
+> **megjelenített oldal pedig üres maradt**. Minden útvonal 200-at adott,
+> miközben minden böngészőben fekete képernyő volt — és minden `curl`-alapú
+> ellenőrzés zöld volt, mert a curl nem futtat scriptet.
+>
+> Ezért van a `scripts/smoke.mjs`, és ezért fut a CI-ben: valódi böngészőben
+> nyitja meg az oldalakat, és a **látható szöveget**, a `<main>` méretét és a
+> konzolt nézi, nem a státuszkódot.
 
 | Fejléc | Érték |
 | --- | --- |
@@ -208,10 +223,17 @@ adathalász eszközzé válna, ami a valódi domainen indul.
 | `Permissions-Policy` | kamera, mikrofon, geolokáció, fizetés tiltva |
 | `Cross-Origin-Opener-Policy` | `same-origin` |
 
+A `script-src` felépítése: `'self' 'nonce-<kérésenkénti>' 'strict-dynamic'`. A
+nonce-ot a middleware generálja, és a **kérés** fejlécére is ráteszi — a Next
+onnan olvassa ki, és azzal bélyegzi meg a saját script tagjeit. Csak a válaszra
+téve a Next scriptjei nonce nélkül maradnának, tehát blokkolódnának. A
+`'strict-dynamic'` engedi, hogy a nonce-olt bootstrap betöltse a Next chunkjait,
+anélkül hogy egyenként fel kellene sorolni őket.
+
 A CSP `connect-src 'self'` — nincs harmadik féltől származó kapcsolat, mert
 nincs is analitika vagy hirdetés az oldalon. A `style-src` `'unsafe-inline'`-t
 tartalmaz, amit a Next kritikus CSS-e és a framer-motion megkövetel; a
-`script-src` nem.
+`script-src` **nem** — ott a nonce a védelem.
 
 A `font-src` és a `style-src` **nem** engedi a `fonts.gstatic.com`-ot és a
 `fonts.googleapis.com`-ot. A betűtípusok `next/font/google`-lel jönnek, ami
