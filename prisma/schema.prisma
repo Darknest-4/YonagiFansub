@@ -70,6 +70,7 @@ model User {
   authoredNews      NewsPost[]               @relation("NewsAuthor")
   createdProjects   Project[]                @relation("ProjectCreator")
   createdReleases   Release[]                @relation("ReleaseCreator")
+  createdVideos     VideoSource[]            @relation("VideoCreator")
   uploadedMedia     MediaAsset[]
   teamMember        TeamMember?
   handledMessages   ContactMessage[]         @relation("ContactHandler")
@@ -409,6 +410,7 @@ model Episode {
 
   releases Release[]
   comments Comment[]
+  videos   VideoSource[]
 
   @@unique([projectId, number])
   @@index([projectId, status])
@@ -637,6 +639,45 @@ model TeamMember {
 
   @@index([isActive, sortOrder])
   @@map("team_members")
+}
+
+/// Playback source for an episode.
+///
+/// Points at an **HLS package** (a master playlist plus its segments) that
+/// already exists in media storage — packaging and transcoding are a pipeline
+/// concern, not this application's. Storing the key rather than a URL is what
+/// makes protected playback possible: nothing the browser receives ever names
+/// the underlying object.
+model VideoSource {
+  id        String  @id @default(cuid())
+  episodeId String
+  episode   Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  /// Storage key of the master playlist, e.g. `video/yoru-01/master.m3u8`.
+  /// Segments are resolved relative to it and never leave the same prefix.
+  masterKey String
+
+  label       String? // "1080p BD", "TV rip"
+  resolution  Resolution @default(FHD_1080P)
+  durationSec Int?
+
+  /// Playback requires a signed-in account. Off by default: a fansub that wants
+  /// an open stream should not have to work around a login wall.
+  requiresAuth Boolean @default(false)
+
+  status    PublishStatus @default(DRAFT)
+  viewCount Int           @default(0)
+
+  createdById String?
+  createdBy   User?   @relation("VideoCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([episodeId, masterKey])
+  @@index([episodeId, status])
+  @@map("video_sources")
 }
 
 model TeamMemberPosition {

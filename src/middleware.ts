@@ -42,12 +42,25 @@ function contentSecurityPolicy(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    /*
+      hls.js parses segments in a Web Worker created from a blob. `worker-src`
+      falls back to `script-src`, which is nonce-based and would reject it, so it
+      is stated explicitly rather than left to inherit.
+    */
+    "worker-src 'self' blob:",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "img-src 'self' data: blob: https:",
-    "media-src 'self' https:",
+    /*
+      `blob:` is required by the protected video player. hls.js feeds the
+      `<video>` element through Media Source Extensions, which means the element's
+      `src` is a blob URL created in the page — that indirection is the point (no
+      media URL ever appears in the DOM), and without `blob:` here the browser
+      refuses to load it and playback silently fails.
+    */
+    "media-src 'self' blob: https:",
     // No Google Fonts hosts: `next/font/google` self-hosts the files at build
     // time, so the browser never contacts a third party.
     "font-src 'self'",

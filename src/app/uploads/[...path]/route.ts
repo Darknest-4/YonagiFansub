@@ -21,6 +21,16 @@ export const dynamic = 'force-dynamic';
  * local disk instead would hide a misconfiguration.
  */
 
+/**
+ * Extensions this route will serve — images only, deliberately.
+ *
+ * **Do not add video types here.** HLS packages live under the same storage root
+ * and are served exclusively through `/api/v1/watch/…`, which checks a signed,
+ * viewer-bound, expiring token per request. Adding `.ts`, `.m3u8` or `.m4s` to
+ * this map would publish every segment at a stable, unauthenticated URL and
+ * silently undo that protection — the video would still play, so nothing would
+ * look broken.
+ */
 const CONTENT_TYPES: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',

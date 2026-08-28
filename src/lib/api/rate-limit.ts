@@ -48,6 +48,18 @@ export const RATE_LIMITS = {
   'api:read': { limit: 240, windowSec: 60 },
   'api:write': { limit: 60, windowSec: 60 },
   'admin:write': { limit: 120, windowSec: 60 },
+  /*
+    Protected playback.
+
+    A 10-second segment means roughly 6 requests a minute per rendition, and a
+    player that switches quality or seeks a few times might briefly do several
+    times that. 240/minute leaves normal viewing — including seeking — untouched
+    while a scraper pulling a 24-minute episode as fast as it can hits the limit
+    within seconds. The bucket is per viewer *and* per video, so watching two
+    episodes in two tabs does not throttle either.
+  */
+  'video:manifest': { limit: 30, windowSec: 60 },
+  'video:segment': { limit: 240, windowSec: 60 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitKey = keyof typeof RATE_LIMITS;

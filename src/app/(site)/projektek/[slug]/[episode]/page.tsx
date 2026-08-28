@@ -9,6 +9,8 @@ import { getEpisode, getEpisodeNeighbours } from '@/server/projects';
 import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeStatusBadge } from '@/components/ui/badge';
 import { DownloadPanel, type ReleaseView } from '@/components/site/download-panel';
+import { VideoPlayer } from '@/components/site/video-player';
+import { listEpisodeVideos } from '@/server/video';
 import { WorkflowProgress, buildWorkflowStages } from '@/components/ui/progress';
 
 type Params = Promise<{ slug: string; episode: string }>;
@@ -62,6 +64,9 @@ export default async function EpisodePage({ params }: { params: Params }) {
   if (!episode) notFound();
 
   const { previous, next } = await getEpisodeNeighbours(episode.project.id, number);
+
+  // Best available published source; the list is already ordered by resolution.
+  const [video] = await listEpisodeVideos(episode.id);
 
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
   const accent = episode.project.accentColor ?? '#f761a8';
@@ -159,17 +164,33 @@ export default async function EpisodePage({ params }: { params: Params }) {
               </div>
             </header>
 
-            {episode.thumbnailUrl && (
-              <div className="relative mt-6 aspect-16/9 overflow-hidden rounded-xl border border-ink-800 bg-ink-850">
-                <Image
-                  src={episode.thumbnailUrl}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(min-width: 1024px) 60vw, 100vw"
-                  className="object-cover"
-                />
+            {/*
+              The player takes the thumbnail's place when there is something to
+              play — the still is a stand-in for the video, so showing both would
+              be showing the same frame twice.
+            */}
+            {video ? (
+              <div className="mt-6">
+                <VideoPlayer videoId={video.id} poster={episode.thumbnailUrl} />
+                {video.requiresAuth && (
+                  <p className="mt-2 text-2xs text-mist-500">
+                    A lejátszáshoz bejelentkezés szükséges.
+                  </p>
+                )}
               </div>
+            ) : (
+              episode.thumbnailUrl && (
+                <div className="relative mt-6 aspect-16/9 overflow-hidden rounded-xl border border-ink-800 bg-ink-850">
+                  <Image
+                    src={episode.thumbnailUrl}
+                    alt=""
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 60vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              )
             )}
 
             {episode.synopsis && (

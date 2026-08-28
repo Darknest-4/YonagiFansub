@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { EpisodeStatus } from '@prisma/client';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Film, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatDate, formatEpisodeNumber } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { EPISODE_STATUS, EpisodeStatusBadge } from '@/components/ui/badge';
 import { EmptyState, InlineError } from '@/components/ui/feedback';
 import { WorkflowProgress, buildWorkflowStages, overallProgress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/toast';
+import { VideoManager } from '@/components/admin/video-manager';
 import { ApiError, apiFetch, type FieldErrors } from '@/lib/client/api';
 
 export interface EpisodeRow {
@@ -63,6 +64,9 @@ export function EpisodeManager({
   const toast = useToast();
   const [editing, setEditing] = useState<EpisodeRow | 'new' | null>(null);
   const [deleting, setDeleting] = useState<EpisodeRow | null>(null);
+  // One panel open at a time: each fetches its own sources, and half a dozen
+  // open at once would be half a dozen requests for something nobody is reading.
+  const [videoFor, setVideoFor] = useState<string | null>(null);
 
   const nextNumber =
     episodes.length > 0 ? Math.floor(Math.max(...episodes.map((e) => e.number))) + 1 : 1;
@@ -152,6 +156,19 @@ export function EpisodeManager({
                           <Pencil className="size-4" aria-hidden />
                         </Button>
 
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() =>
+                            setVideoFor((current) => (current === episode.id ? null : episode.id))
+                          }
+                          aria-expanded={videoFor === episode.id}
+                          aria-label={`${formatEpisodeNumber(episode.number)}. rész online lejátszása`}
+                          className={videoFor === episode.id ? 'text-bloom-300' : undefined}
+                        >
+                          <Film className="size-4" aria-hidden />
+                        </Button>
+
                         {canDelete && (
                           <Button
                             variant="ghost"
@@ -165,6 +182,16 @@ export function EpisodeManager({
                         )}
                       </div>
                     </div>
+
+                    {videoFor === episode.id && (
+                      <div className="mt-3">
+                        <VideoManager
+                          episodeId={episode.id}
+                          episodeLabel={`${formatEpisodeNumber(episode.number)}. rész`}
+                          canDelete={canDelete}
+                        />
+                      </div>
+                    )}
                   </li>
                 );
               })}

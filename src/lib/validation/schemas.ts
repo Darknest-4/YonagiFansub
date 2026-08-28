@@ -307,6 +307,36 @@ export const teamMemberWriteSchema = z.object({
   positionIds: z.array(cuid).max(12).default([]),
 });
 
+// ── Video ────────────────────────────────────────────────────────────────────
+
+/**
+ * A storage key, not a URL.
+ *
+ * The pattern is deliberately strict: lowercase-ish path segments, no leading
+ * slash, no `..`, no scheme. This value is handed to the media driver, so
+ * anything that could resolve outside the storage root has to be impossible to
+ * express, not merely unlikely.
+ */
+export const storageKey = z
+  .string()
+  .trim()
+  .min(3, 'Add meg a tárolási kulcsot.')
+  .max(512, 'Túl hosszú kulcs.')
+  .regex(
+    /^(?!\/)(?!.*\.\.)[A-Za-z0-9._\-]+(?:\/[A-Za-z0-9._\-]+)*\.m3u8$/,
+    'Egy .m3u8 lejátszási lista kulcsa kell, pl. video/yoru-01/master.m3u8',
+  );
+
+export const videoWriteSchema = z.object({
+  episodeId: cuid,
+  masterKey: storageKey,
+  label: optionalText(60),
+  resolution: z.enum(['SD_480P', 'HD_720P', 'FHD_1080P', 'QHD_1440P', 'UHD_2160P']),
+  durationSec: z.coerce.number().int().min(0).max(86_400).nullish(),
+  requiresAuth: z.boolean().default(false),
+  status: z.enum(['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
+});
+
 // ── Contact ──────────────────────────────────────────────────────────────────
 
 export const contactSchema = z.object({
@@ -411,5 +441,6 @@ export type EpisodeWriteInput = z.infer<typeof episodeWriteSchema>;
 export type ReleaseWriteInput = z.infer<typeof releaseWriteSchema>;
 export type NewsWriteInput = z.infer<typeof newsWriteSchema>;
 export type TeamMemberWriteInput = z.infer<typeof teamMemberWriteSchema>;
+export type VideoWriteInput = z.infer<typeof videoWriteSchema>;
 export type FaqWriteInput = z.infer<typeof faqWriteSchema>;
 export type ContactInput = z.infer<typeof contactSchema>;

@@ -305,6 +305,46 @@ origin ellenőrzés hiánya) — a 15.5.24-re frissítés lezárta őket.
 
 ---
 
+## Védett videólejátszás
+
+A `/api/v1/watch/...` végpontok HLS-csomagot szolgálnak ki úgy, hogy a
+médiatároló kulcsa sosem jut el a böngészőig.
+
+**Amit megakadályoz:**
+
+| Támadás | Miért nem működik |
+| --- | --- |
+| URL másolása a hálózati fülről, megosztás | A token a nézőhöz kötött (munkamenet/anonim süti + hálózati előtag + user agent), és ~90 mp alatt lejár |
+| Egy érvényes tokennel végigmenni a szegmenseken | A token az *adott* szegmensre szól; másikra 403 |
+| Beágyazás idegen oldalra | `Sec-Fetch-Site` ellenőrzés, `Cross-Origin-Resource-Policy: same-origin` |
+| A proxy megkerülése az `/uploads` útvonalon | Az csak képkiterjesztéseket szolgál ki, minden más 404 |
+| Könyvtárból kilépés (`../`) a kulcsban | A séma elutasítja, a playlist-átíró normalizál és gyökér fölé lépést nem enged |
+| Tömeges letöltés | Nézőnként és videónként rate limit, a lejátszás és a scrapelés sebessége közé állítva |
+| „Videó címének másolása" a jobb gombos menüben | A `<video>` `src`-je `blob:` URL, nincs benne médiacím |
+
+**Amit NEM akadályoz meg — és ezt fontos kimondani:**
+
+Ha a böngésző lejátssza, a bájtok a gépen vannak. Fejlesztői eszközökkel vagy
+egy olyan bővítménnyel, ami az MSE-be köt be (nem a DOM-ot olvassa), a fájl
+kinyerhető. Ezen csak valódi DRM változtat — Widevine, PlayReady, FairPlay —,
+ami licencszervert és címenkénti csomagolást igényel, tehát külön projekt és
+külön költség.
+
+A cél tehát nem a lehetetlen garantálása, hanem az, hogy minden *olcsó* út
+zárva legyen: aki el akarja vinni, annak dolgoznia kelljen érte, és a
+véletlenül kiszivárgó link semmit ne érjen.
+
+**Amire figyelni kell karbantartáskor:**
+
+- Az `/uploads/[...path]` útvonal kiterjesztés-fehérlistájába **soha ne kerüljön
+  be** `.ts`, `.m3u8` vagy `.m4s`. Ha bekerül, minden szegmens stabil,
+  hitelesítés nélküli URL-en elérhetővé válik — és a lejátszás továbbra is
+  működne, tehát semmi nem tűnne elrontottnak.
+- A CSP `media-src` és `worker-src` direktívájában szükséges a `blob:`. Ha
+  kikerül, a lejátszás némán elhal.
+
+---
+
 ## Amit tudatosan nem védünk
 
 - **A letöltési linkek scrape-elése.** Aki elég sokáig kattint, összegyűjtheti
