@@ -1,7 +1,9 @@
 import 'server-only';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { BadRequestError, ConflictError, NotFoundError } from '@/lib/errors';
+import { BadRequestError, ConflictError, NotFoundError, ServiceUnavailableError } from '@/lib/errors';
+import { logger } from '@/lib/logger';
+import { UpstreamError } from '@/lib/anime/http';
 import { invalidateProject } from '@/lib/cache';
 import { slugify } from '@/lib/utils';
 import { fetchAniListMedia } from '@/lib/anime/anilist';
@@ -44,6 +46,23 @@ import type { MutationContext } from '@/server/admin/context';
  * reason as above: they are the team's, not MAL's.
  */
 
+/** One readable line about why an upstream call failed. */
+function describeUpstream(error: unknown): string {
+  if (error instanceof UpstreamError) {
+    // 403 from AniList is almost always Cloudflare turning away a datacenter
+    // IP, and saying so saves a long debugging session.
+    const hint =
+      error.status === 403
+        ? ' (a szolgáltató elutasította a kérést — gyakran a szerver IP-címe miatt)'
+        : error.status === 429
+          ? ' (túl sok kérés)'
+          : '';
+    return `HTTP ${error.status}${hint}`;
+  }
+  if (error instanceof Error) return error.message;
+  return 'ismeretlen hiba';
+}
+
 export interface SyncOptions {
   /** Also replace the curated fields (title, synopsis, artwork). */
   overwriteEditorial?: boolean;
@@ -54,6 +73,8 @@ export interface SyncOptions {
 export interface SyncResult {
   projectId: string;
   sources: string[];
+  /** Upstreams that failed without stopping the run. */
+  warnings: string[];
   episodesCreated: number;
   episodesUpdated: number;
   episodesSkipped: number;
@@ -68,40 +89,110 @@ export interface SyncResult {
  * project — "show me what you would write" is the difference between a feature
  * people trust and one they run once.
  */
+export interface LookupResult extends NormalizedAnime {
+  /** Non-fatal upstream problems, so the caller can report a partial result. */
+  warnings: string[];
+}
+
 export async function lookupAnime(params: {
   anilistId?: number | null;
   malId?: number | null;
   includeEpisodes?: boolean;
-}): Promise<NormalizedAnime> {
+}): Promise<LookupResult> {
   const { anilistId, malId, includeEpisodes = true } = params;
 
   if (!anilistId && !malId) {
     throw new BadRequestError('Adj meg AniList- vagy MyAnimeList-azonosítót.');
   }
 
-  const anilist = await fetchAniListMedia({ anilistId, malId });
+  /*
+    Either source failing is survivable; both failing is not.
+
+    This matters in practice: AniList sits behind Cloudflare and will refuse
+    requests from some hosting providers, while Jikan answers the same server
+    fine. Treating an AniList outage as fatal meant an import that could have
+    succeeded from MyAnimeList alone returned nothing at all — a hard failure
+    where a partial result was available and useful.
+
+    The failure is captured rather than swallowed, so the caller can say which
+    source was missing instead of quietly returning thinner data.
+  */
+  let anilist: Awaited<ReturnType<typeof fetchAniListMedia>> = null;
+  let anilistError: string | null = null;
+
+  try {
+    anilist = await fetchAniListMedia({ anilistId, malId });
+  } catch (error) {
+    anilistError = describeUpstream(error);
+    logger.warn('AniList lekérdezés sikertelen, folytatás a MyAnimeList adataival', {
+      anilistId,
+      malId,
+      error: anilistError,
+    });
+  }
 
   // AniList carries the MAL id, so one id is enough to reach both. Without that
-  // hop, entering only an AniList id would mean no episode titles at all.
+  // hop, entering only an AniList id would mean no episode titles at all — and
+  // when AniList is the source that failed, only an explicit MAL id can save us.
   const resolvedMalId = malId ?? anilist?.idMal ?? null;
 
-  const jikan = resolvedMalId ? await fetchJikanAnime(resolvedMalId) : null;
+  let jikan: Awaited<ReturnType<typeof fetchJikanAnime>> = null;
+  let jikanError: string | null = null;
+
+  if (resolvedMalId) {
+    try {
+      jikan = await fetchJikanAnime(resolvedMalId);
+    } catch (error) {
+      jikanError = describeUpstream(error);
+      logger.warn('Jikan lekérdezés sikertelen', { malId: resolvedMalId, error: jikanError });
+    }
+  }
 
   if (!anilist && !jikan) {
+    // Both down, or neither knows this id. The two cases need different
+    // messages: "try again" versus "check the id".
+    const failures = [anilistError, jikanError].filter(Boolean);
+    if (failures.length > 0) {
+      throw new ServiceUnavailableError(
+        `A metaadat-források nem elérhetők: ${failures.join(' · ')}`,
+      );
+    }
     throw new NotFoundError('Az anime a megadott azonosítóval');
   }
 
-  const episodeList =
-    includeEpisodes && resolvedMalId
-      ? await fetchJikanEpisodes(resolvedMalId)
-      : { episodes: [], truncated: false };
+  // Episode titles are a bonus, not a precondition: a project with metadata and
+  // no episode list is still worth having, so a failure here does not undo the
+  // rest of the import.
+  let episodeList: { episodes: Awaited<ReturnType<typeof fetchJikanEpisodes>>['episodes']; truncated: boolean } = {
+    episodes: [],
+    truncated: false,
+  };
 
-  return normalizeAnime({
-    anilist,
-    jikan,
-    episodes: episodeList.episodes,
-    episodesTruncated: episodeList.truncated,
-  });
+  if (includeEpisodes && resolvedMalId) {
+    try {
+      episodeList = await fetchJikanEpisodes(resolvedMalId);
+    } catch (error) {
+      logger.warn('Az epizódlista lekérdezése sikertelen', {
+        malId: resolvedMalId,
+        error: describeUpstream(error),
+      });
+    }
+  }
+
+  return {
+    ...normalizeAnime({
+      anilist,
+      jikan,
+      episodes: episodeList.episodes,
+      episodesTruncated: episodeList.truncated,
+    }),
+    // Surfaced so the UI can say "imported, but AniList was unreachable"
+    // instead of presenting a half-filled record as a complete one.
+    warnings: [
+      anilistError ? `AniList: ${anilistError}` : null,
+      jikanError ? `MyAnimeList: ${jikanError}` : null,
+    ].filter((entry): entry is string => entry !== null),
+  };
 }
 
 /** Upstream facts. Always refreshed — see the note at the top of this file. */
@@ -366,6 +457,7 @@ export async function syncProjectMetadata(
   return {
     projectId: project.id,
     sources: data.sources,
+    warnings: data.warnings,
     episodesCreated: episodes.created,
     episodesUpdated: episodes.updated,
     episodesSkipped: episodes.skipped,
@@ -453,6 +545,7 @@ export async function importProjectFromMetadata(
     slug: project.slug,
     title: project.title,
     sources: data.sources,
+    warnings: data.warnings,
     episodesCreated: episodes.created,
     episodesUpdated: episodes.updated,
     episodesSkipped: episodes.skipped,

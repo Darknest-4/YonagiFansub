@@ -1,4 +1,5 @@
 import 'server-only';
+import { env } from '@/lib/env';
 
 /**
  * Shared HTTP plumbing for the upstream metadata APIs.
@@ -21,12 +22,22 @@ import 'server-only';
 export class UpstreamError extends Error {
   readonly status: number;
   readonly host: string;
+  /**
+   * First part of the upstream's own response.
+   *
+   * Kept because "AniList answered 403" is not actionable on its own, while
+   * "AniList answered 403 and the body says Cloudflare" tells you exactly what
+   * to do next. Truncated: a failing upstream sometimes answers with a whole
+   * HTML error page, and that does not belong in a log line.
+   */
+  readonly detail: string | null;
 
-  constructor(message: string, options: { status: number; host: string }) {
+  constructor(message: string, options: { status: number; host: string; detail?: string | null }) {
     super(message);
     this.name = 'UpstreamError';
     this.status = options.status;
     this.host = options.host;
+    this.detail = options.detail?.slice(0, 400) ?? null;
   }
 
   /** True when retrying later could plausibly succeed. */
@@ -94,7 +105,7 @@ export async function upstreamFetch<T>({
             signal: controller.signal,
             headers: {
               Accept: 'application/json',
-              'User-Agent': 'YonagiFansub/1.0 (+metadata-sync)',
+              'User-Agent': env.METADATA_USER_AGENT,
               ...init?.headers,
             },
             // Upstream metadata is fetched on demand and cached in our own
@@ -109,10 +120,15 @@ export async function upstreamFetch<T>({
 
       if (response.ok) return (await response.json()) as T;
 
-      const error = new UpstreamError(
-        `${host} válasza: HTTP ${response.status}`,
-        { status: response.status, host },
-      );
+      // Read the body before giving up on the response: it is the only place the
+      // upstream explains itself, and it is gone once the response is discarded.
+      const detail = await response.text().catch(() => null);
+
+      const error = new UpstreamError(`${host} válasza: HTTP ${response.status}`, {
+        status: response.status,
+        host,
+        detail,
+      });
 
       if (!error.isTransient || attempt === attempts) throw error;
 

@@ -62,6 +62,20 @@ const schema = z.object({
    * for a site that syncs on a schedule, and a network that blocks the public
    * hosts would otherwise leave the feature dead with no way to redirect it.
    */
+  /**
+   * User-Agent sent to the metadata APIs.
+   *
+   * Configurable because AniList sits behind Cloudflare, which sometimes refuses
+   * a request on the strength of its agent string alone — and the refusal looks
+   * identical to the service being down. Being able to change it without a
+   * deploy is the difference between a five-minute fix and a day of guessing.
+   * A contact URL is conventional and makes a block less likely, not more.
+   */
+  METADATA_USER_AGENT: z
+    .string()
+    .min(3)
+    .default('YonagiFansub/1.0 (+https://github.com/Darknest-4/YonagiFansub)'),
+
   ANILIST_API_URL: z.string().url().default('https://graphql.anilist.co'),
   JIKAN_API_URL: z.string().url().default('https://api.jikan.moe/v4'),
   /** Projects refreshed per scheduled run. Keeps the run inside the rate limits. */

@@ -43,6 +43,7 @@ interface Preview {
   genres: string[];
   tags: string[];
   sources: string[];
+  warnings: string[];
 }
 
 interface ImportResult {
@@ -52,6 +53,7 @@ interface ImportResult {
   episodesTruncated: boolean;
   genresLinked: number;
   sources: string[];
+  warnings: string[];
 }
 
 /**
@@ -152,6 +154,24 @@ export function AnimeImport() {
           <Stat label="Műfaj" value={String(done.genresLinked)} />
           <Stat label="Forrás" value={done.sources.join(' + ')} />
         </dl>
+
+        {done.warnings.length > 0 && (
+          <div className="mt-4 rounded-lg border border-ember-400/30 bg-ember-400/[0.07] px-3.5 py-3">
+            <p className="text-2xs font-semibold text-ember-300">
+              Az egyik forrás nem válaszolt — a projekt a másikból készült el.
+            </p>
+            <ul className="mt-1.5 space-y-0.5">
+              {done.warnings.map((warning) => (
+                <li key={warning} className="text-2xs text-mist-400">
+                  {warning}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-2xs text-mist-500">
+              A hiányzó mezőket egy későbbi szinkronizálás pótolja.
+            </p>
+          </div>
+        )}
 
         {done.episodesTruncated && (
           <p className="mt-3 text-2xs text-ember-400">
@@ -361,6 +381,14 @@ export function AnimeImport() {
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {preview.warnings.length > 0 && (
+                <div className="mt-4 rounded-lg border border-ember-400/30 bg-ember-400/[0.07] px-3 py-2">
+                  <p className="text-2xs text-ember-300">
+                    Részleges adat — {preview.warnings.join(' · ')}
+                  </p>
+                </div>
               )}
 
               {preview.synopsis && (

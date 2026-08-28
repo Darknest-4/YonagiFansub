@@ -56,6 +56,7 @@ export const GET = defineRoute({
       tags: data.tags,
       episodeCount: data.episodes.length,
       sources: data.sources,
+      warnings: data.warnings,
     };
   },
 });
