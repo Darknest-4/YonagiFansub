@@ -1,19 +1,18 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ExternalLink, Users } from 'lucide-react';
 import { ensurePermission } from '@/lib/auth/guards';
+import { hasPermission } from '@/lib/auth/permissions';
+import { toActor } from '@/lib/auth/session';
 import { listAdminTeam } from '@/server/admin/team';
 import { listPositions } from '@/server/team';
-import { formatDate } from '@/lib/utils';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { EmptyState } from '@/components/ui/feedback';
+import { TeamManager } from '@/components/admin/team-manager';
 
 export const metadata: Metadata = { title: 'Csapat' };
 export const dynamic = 'force-dynamic';
 
 export default async function AdminTeamPage() {
-  await ensurePermission('team:write', '/admin/csapat');
+  const user = await ensurePermission('team:write', '/admin/csapat');
+  const actor = toActor(user);
+
   const [members, positions] = await Promise.all([listAdminTeam(), listPositions()]);
 
   return (
@@ -21,77 +20,51 @@ export default async function AdminTeamPage() {
       <header>
         <h1 className="text-2xl">Csapat</h1>
         <p className="mt-1 text-sm text-content-muted">
-          {members.length} tag · {positions.length} pozíció. Az inaktív tagok profilja
-          megmarad, de nem szerepelnek a nyilvános listán.
+          {members.length} tag · {positions.length} pozíció. Ez a nyilvános stáblista — hogy ki
+          mit <em>tehet</em> az admin felületen, azt a fiókja szerepköre dönti el a{' '}
+          <a
+            href="/admin/felhasznalok"
+            className="text-bloom-300 underline-offset-4 hover:underline"
+          >
+            Felhasználók
+          </a>{' '}
+          oldalon.
         </p>
       </header>
 
-      {members.length === 0 ? (
-        <EmptyState
-          icon={<Users className="size-6" aria-hidden />}
-          title="Nincs csapattag"
-          description="Vedd fel az első tagot, hogy a stáblisták kitölthetők legyenek."
-        />
-      ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {members.map((member) => (
-            <li
-              key={member.id}
-              className="min-w-0 rounded-xl border border-ink-800 bg-ink-900/40 p-4"
-            >
-              <div className="flex items-start gap-3">
-                <Avatar name={member.name} src={member.avatarUrl} size="md" />
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-medium text-mist-100">
-                      {member.name}
-                    </span>
-                    {member.isFounder && (
-                      <Badge tone="warm" size="sm">
-                        Alapító
-                      </Badge>
-                    )}
-                    {!member.isActive && (
-                      <Badge tone="neutral" size="sm">
-                        Inaktív
-                      </Badge>
-                    )}
-                  </div>
-
-                  {member.tagline && (
-                    <p className="mt-0.5 truncate text-2xs text-mist-500">{member.tagline}</p>
-                  )}
-
-                  <ul className="mt-2 flex flex-wrap gap-1">
-                    {member.positions.map((entry) => (
-                      <li key={entry.positionId}>
-                        <Badge tone={entry.isPrimary ? 'accent' : 'neutral'} size="sm">
-                          {entry.position.name}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <p className="nums mt-2.5 text-2xs text-mist-600">
-                    {member._count.projects} közreműködés
-                    {member.joinedAt && ` · csatlakozott ${formatDate(member.joinedAt)}`}
-                  </p>
-                </div>
-
-                <Link
-                  href={`/csapat/${member.slug}`}
-                  target="_blank"
-                  aria-label={`${member.name} nyilvános profilja`}
-                  className="shrink-0 rounded-md p-1.5 text-mist-600 transition-colors hover:bg-ink-800 hover:text-mist-300"
-                >
-                  <ExternalLink className="size-3.5" aria-hidden />
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <TeamManager
+        members={members.map((member) => ({
+          id: member.id,
+          slug: member.slug,
+          name: member.name,
+          tagline: member.tagline,
+          bio: member.bio,
+          avatarUrl: member.avatarUrl,
+          bannerUrl: member.bannerUrl,
+          accentColor: member.accentColor,
+          socials: (member.socials ?? {}) as Record<string, string>,
+          joinedAt: member.joinedAt?.toISOString() ?? null,
+          isActive: member.isActive,
+          isFounder: member.isFounder,
+          sortOrder: member.sortOrder,
+          projectCount: member._count.projects,
+          /*
+            Primary first. The write path reads the primary off position zero,
+            so the order has to survive the round trip — sorting it here means
+            the form opens showing the same primary the public page groups by.
+          */
+          positionIds: [...member.positions]
+            .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary))
+            .map((entry) => entry.positionId),
+        }))}
+        positions={positions.map((position) => ({
+          id: position.id,
+          key: position.key,
+          name: position.name,
+          color: position.color,
+        }))}
+        canDelete={hasPermission(actor, 'team:delete')}
+      />
     </div>
   );
 }

@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import '@/lib/validation/error-map';
-import { email, hexColor, percent, slug, text } from '@/lib/validation/common';
+import {
+  email,
+  hexColor,
+  nullableDate,
+  optionalText,
+  optionalUrl,
+  percent,
+  slug,
+  text,
+} from '@/lib/validation/common';
+import { teamMemberWriteSchema } from '@/lib/validation/schemas';
 
 /**
  * Validation messages.
@@ -110,5 +120,48 @@ describe('shared primitives answer in Hungarian', () => {
     // "Kotelezo mezo" would pass it — the assertion is on the English keywords.
     expect(HAS_LATIN_ONLY_ASCII.test('Required')).toBe(true);
     expect(HAS_LATIN_ONLY_ASCII.test('Kötelező mező.')).toBe(false);
+  });
+});
+
+/**
+ * Round-tripping optional fields.
+ *
+ * These helpers normalise an absent value to `null` on the way out, so they must
+ * also accept `null` on the way in. An edit form reads a record, shows it, and
+ * submits it back; if the schema refuses its own output, every untouched empty
+ * field fails validation and the user is told a blank optional field is
+ * required. That is a bug you only see through a real form, so it is pinned here.
+ */
+describe('optional fields round-trip', () => {
+  it('accepts null for every optional helper', () => {
+    expect(optionalText(160).parse(null)).toBeNull();
+    expect(optionalText(160).parse(undefined)).toBeNull();
+    expect(optionalText(160).parse('')).toBeNull();
+    expect(optionalText(160).parse(' szia ')).toBe('szia');
+
+    expect(optionalUrl.parse(null)).toBeNull();
+    expect(optionalUrl.parse(undefined)).toBeNull();
+    expect(optionalUrl.parse('')).toBeNull();
+    expect(optionalUrl.parse('/uploads/a.png')).toBe('/uploads/a.png');
+
+    expect(nullableDate.parse(null)).toBeNull();
+  });
+
+  it('re-accepts what a write schema emits', () => {
+    const first = teamMemberWriteSchema.parse({
+      slug: 'nagy-anna',
+      name: 'Nagy Anna',
+      positionIds: [],
+    });
+
+    // Feeding the parsed record straight back must not fail: this is exactly
+    // what an edit form does with the fields nobody touched.
+    expect(() =>
+      teamMemberWriteSchema.parse({
+        ...first,
+        joinedAt: null,
+        leftAt: null,
+      }),
+    ).not.toThrow();
   });
 });

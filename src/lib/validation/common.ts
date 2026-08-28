@@ -59,7 +59,17 @@ export const safeUrl = z
     'Csak http(s) URL vagy oldalon belüli útvonal adható meg.',
   );
 
-export const optionalUrl = safeUrl.optional().or(z.literal('')).transform((value) => value || null);
+/*
+  `nullish`, not `optional`. These helpers emit `null` for an absent value, so
+  they have to accept `null` on the way back in — otherwise a client that reads a
+  record and submits it unchanged is rejected on every empty field, which is
+  exactly what a normal edit form does. `nullableDate` below already got this
+  right; these two did not.
+*/
+export const optionalUrl = safeUrl
+  .nullish()
+  .or(z.literal(''))
+  .transform((value) => value || null);
 
 export const hexColor = z
   .string()
@@ -100,7 +110,7 @@ export const optionalText = (max: number) =>
     .string()
     .trim()
     .max(max, `Legfeljebb ${max} karakter.`)
-    .optional()
+    .nullish()
     .transform((value) => value || null);
 
 /**
