@@ -32,6 +32,7 @@ import {
 import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeList } from '@/components/site/episode-list';
 import { FollowButton } from '@/components/site/follow-button';
+import { Comments } from '@/components/site/comments';
 import { ExternalLinks } from '@/components/site/external-links';
 import { OfficialLinks } from '@/components/site/official-links';
 import { ProductionCredits } from '@/components/site/production-credits';
@@ -388,6 +389,11 @@ export default async function ProjectPage({ params }: { params: Params }) {
           <Suspense fallback={<ReleaseListSkeleton count={6} />}>
             <EpisodeList episodes={episodes} projectSlug={project.slug} />
           </Suspense>
+
+          <Comments
+            target={{ projectId: project.id }}
+            returnTo={`/projektek/${project.slug}`}
+          />
         </section>
 
         <aside className="space-y-6 lg:pt-1">

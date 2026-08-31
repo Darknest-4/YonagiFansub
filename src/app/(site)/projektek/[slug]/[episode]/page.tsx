@@ -10,6 +10,7 @@ import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeStatusBadge } from '@/components/ui/badge';
 import { DownloadPanel, type ReleaseView } from '@/components/site/download-panel';
 import { VideoPlayer } from '@/components/site/video-player';
+import { Comments } from '@/components/site/comments';
 import { listEpisodeVideos } from '@/server/video';
 import { WorkflowProgress, buildWorkflowStages } from '@/components/ui/progress';
 
@@ -255,6 +256,11 @@ export default async function EpisodePage({ params }: { params: Params }) {
                 />
               )}
             </nav>
+
+            <Comments
+              target={{ episodeId: episode.id }}
+              returnTo={`/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`}
+            />
           </div>
 
           <aside className="lg:pt-1">

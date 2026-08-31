@@ -9,6 +9,7 @@ import { renderMarkdown } from '@/lib/markdown';
 import { getPublicNewsBySlug, getRelatedNews, incrementNewsView } from '@/server/news';
 import { Breadcrumbs } from '@/components/site/page-header';
 import { NewsCard } from '@/components/site/news-card';
+import { Comments } from '@/components/site/comments';
 import { Avatar } from '@/components/ui/avatar';
 
 type Params = Promise<{ slug: string }>;
@@ -218,6 +219,8 @@ export default async function NewsPostPage({ params }: { params: Params }) {
             </aside>
           )}
         </div>
+
+        <Comments target={{ newsPostId: post.id }} returnTo={`/hirek/${post.slug}`} />
 
         {related.length > 0 && (
           <section aria-labelledby="related" className="mt-16 border-t border-ink-800 pt-10">

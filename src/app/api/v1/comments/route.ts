@@ -5,7 +5,8 @@ import { db } from '@/lib/db';
 import { ForbiddenError, NotFoundError } from '@/lib/errors';
 import { getSettings } from '@/server/settings';
 import { notify } from '@/server/notifications';
-import { paginationSchema, paginationMeta, toSkipTake } from '@/lib/api/pagination';
+import { listCommentThreads } from '@/server/comments';
+import { paginationSchema } from '@/lib/api/pagination';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,13 @@ const commentSelect = {
   user: { select: { username: true, displayName: true, avatarUrl: true } },
 } as const;
 
-/** Published comments for one target. */
+/**
+ * Published comment threads for one target.
+ *
+ * Each item is a top-level comment carrying its replies; pagination walks
+ * threads rather than individual comments, so a page never contains a reply
+ * whose parent is missing. See `server/comments.ts` for why.
+ */
 export const GET = defineRoute({
   auth: 'public',
   rateLimit: 'api:read',
@@ -28,30 +35,11 @@ export const GET = defineRoute({
     newsPostId: z.string().cuid().optional(),
   }),
   async handler({ query }) {
-    const target = query.projectId ?? query.episodeId ?? query.newsPostId;
-    if (!target) throw new NotFoundError('A hozzászólás-cél');
+    if (!(query.projectId ?? query.episodeId ?? query.newsPostId)) {
+      throw new NotFoundError('A hozzászólás-cél');
+    }
 
-    const where = {
-      status: 'PUBLISHED' as const,
-      deletedAt: null,
-      ...(query.projectId ? { projectId: query.projectId } : {}),
-      ...(query.episodeId ? { episodeId: query.episodeId } : {}),
-      ...(query.newsPostId ? { newsPostId: query.newsPostId } : {}),
-    };
-
-    const pagination = { page: query.page, perPage: query.perPage };
-
-    const [items, total] = await Promise.all([
-      db.comment.findMany({
-        where,
-        select: commentSelect,
-        orderBy: { createdAt: 'desc' },
-        ...toSkipTake(pagination),
-      }),
-      db.comment.count({ where }),
-    ]);
-
-    return { items, meta: paginationMeta(total, pagination) };
+    return listCommentThreads(query, { page: query.page, perPage: query.perPage });
   },
   meta: (result) => result.meta,
 });

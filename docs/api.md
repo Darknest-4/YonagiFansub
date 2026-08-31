@@ -124,7 +124,7 @@ statisztikát, és lehetővé teszi egy halott tükör központi cseréjét.
 | `GET` | `/api/v1/team/{slug}` | Csapattag profil, közreműködésekkel |
 | `GET` | `/api/v1/search?q=…` | Globális keresés, típus szerint csoportosítva |
 | `POST` | `/api/v1/contact` | Kapcsolati űrlap (honeypot + 3/óra limit) |
-| `GET` | `/api/v1/comments` | Hozzászólások egy célhoz |
+| `GET` | `/api/v1/comments` | Hozzászólás-szálak egy célhoz (a válaszok a szálukkal együtt jönnek) |
 | `POST` | `/api/v1/comments` | Új hozzászólás (megerősített e-mail kell) |
 
 ---

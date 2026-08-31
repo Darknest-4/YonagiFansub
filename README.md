@@ -19,7 +19,7 @@ A rendszer három felületre bomlik, egy kódbázisban:
 
 | Felület | Kinek | Mit tud |
 | --- | --- | --- |
-| **Nyilvános oldal** | Látogatók | Katalógus, epizódok valós munkafolyamat-állapottal, kiadások letöltési tükrökkel, hírek, csapat, keresés |
+| **Nyilvános oldal** | Látogatók | Katalógus, epizódok valós munkafolyamat-állapottal, online lejátszó, kiadások letöltési tükrökkel, hírek, hozzászólások, csapat, keresés |
 | **Fiók** | Regisztrált tagok | Projektkövetés, értesítések, beállítások, aktív munkamenetek |
 | **Admin** | Csapat | Projekt-, epizód-, kiadás-, hír- és csapatkezelés, médiatár, felhasználók, szerepkörök, statisztika, audit napló |
 
@@ -72,7 +72,7 @@ docker compose --profile tools run --rm migrate
 ## Így néz ki
 
 A képek éles buildről készültek, a fejlesztői seed demó tartalmával (5 projekt,
-31 epizód, 58 kiadás, 3 hír, 5 csapattag). Nem kézzel gyűjtött felvételek: a
+31 epizód, 58 kiadás, 3 hír, 5 csapattag, 5 hozzászólás). Nem kézzel gyűjtött felvételek: a
 `npm run screenshots` állítja elő őket azonos viewporton és azonos
 adatbázis-állapotból, tehát bármikor újragenerálhatók — részletek a
 [docs/screenshots/](docs/screenshots/README.md) alatt.
@@ -106,6 +106,8 @@ harmadik féltől pedig saját CSP-vel elzárt keretben.
 ![Hírek](docs/screenshots/06-hirek.png)
 
 ### Hír
+Hozzászólásokkal: szálas válaszok, megerősített e-mailhez kötve, moderálható.
+Ugyanez a szekció ül a projekt- és az epizódoldal alján is.
 ![Hír](docs/screenshots/07-hir.png)
 
 ### Csapat

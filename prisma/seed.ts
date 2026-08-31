@@ -981,7 +981,22 @@ function daysAgo(days: number): Date {
 async function seedDemoContent(ownerEmail: string) {
   console.log('→ Demó tartalom (fejlesztői környezet)…');
 
-  const owner = await db.user.findUniqueOrThrow({ where: { email: ownerEmail } });
+  /*
+    `findUnique`, not `findUniqueOrThrow` — and this is the whole reason the
+    documented quick start used to fail.
+
+    By default the seed creates no owner: the first person to register becomes
+    one (see `seedOwner`). So on a fresh database there is no user here, and
+    asking for one with `…OrThrow` aborted the demo seeding entirely, with a
+    Prisma stack trace, before a single project was written. The very first
+    command the README tells a new contributor to run ended in an error.
+
+    Every column that referenced the owner is nullable (`createdById`,
+    `authorId`, all `onDelete: SetNull`), because content has to survive the
+    deletion of the account that made it. That same nullability is what lets the
+    demo content exist without an author.
+  */
+  const owner = await db.user.findUnique({ where: { email: ownerEmail } });
   const positions = await db.position.findMany();
   const positionByKey = new Map(positions.map((position) => [position.key, position.id]));
   const genres = await db.genre.findMany();
@@ -1054,7 +1069,7 @@ async function seedDemoContent(ownerEmail: string) {
         durationMin: project.type === 'MOVIE' ? 104 : 24,
         publishedAt: daysAgo(120 - index * 10),
         viewCount: 400 + index * 137,
-        createdById: owner.id,
+        createdById: owner?.id ?? null,
         genres: {
           create: project.genres
             .map((slug) => genreBySlug.get(slug))
@@ -1134,7 +1149,7 @@ async function seedDemoContent(ownerEmail: string) {
             status: 'PUBLISHED',
             releasedAt: daysAgo(88 - number * 7),
             downloadCount: Math.round(800 / (number + 1)) + formatIndex * 40,
-            createdById: owner.id,
+            createdById: owner?.id ?? null,
             links: {
               create: hosts.slice(0, 3).map((host, hostIndex) => ({
                 hostId: host.id,
@@ -1169,7 +1184,7 @@ async function seedDemoContent(ownerEmail: string) {
         excerpt: post.excerpt,
         content: post.content,
         categoryId: categoryBySlug.get(post.category) ?? null,
-        authorId: owner.id,
+        authorId: owner?.id ?? null,
         status: 'PUBLISHED',
         publishedAt: daysAgo(post.daysAgo),
         isPinned: post.isPinned,
@@ -1180,6 +1195,8 @@ async function seedDemoContent(ownerEmail: string) {
     });
   }
 
+  const commentCount = await seedDemoDiscussion();
+
   const [projectCount, episodeCount, releaseCount] = await Promise.all([
     db.project.count(),
     db.episode.count(),
@@ -1187,8 +1204,128 @@ async function seedDemoContent(ownerEmail: string) {
   ]);
 
   console.log(
-    `  ${projectCount} projekt, ${episodeCount} epizód, ${releaseCount} kiadás, ${DEMO_NEWS.length} hír, ${members.length} csapattag`,
+    `  ${projectCount} projekt, ${episodeCount} epizód, ${releaseCount} kiadás, ${DEMO_NEWS.length} hír, ${members.length} csapattag` +
+      (commentCount > 0 ? `, ${commentCount} hozzászólás` : ''),
   );
+}
+
+/** Demó olvasók: a hozzászólások szerzői. Belépni egyikükkel sem lehet. */
+const DEMO_READERS = [
+  { username: 'haruka', displayName: 'Haruka' },
+  { username: 'tsubaki', displayName: 'Tsubaki' },
+  { username: 'kenji', displayName: 'Kenji' },
+];
+
+/**
+ * Demó beszélgetés.
+ *
+ * Két dolog miatt fut külön, feltételesen:
+ *
+ * 1. **Egy hozzászólásnak kötelező a szerzője** (`Comment.userId` nem
+ *    nullázható) — a többi demó tartalommal ellentétben ez nem létezhet
+ *    felhasználó nélkül.
+ * 2. **A seed nem hozhat létre felhasználót a semmiből.** Az első regisztráló
+ *    csak akkor kapja meg a tulajdonosi szerepkört, ha a `users` tábla üres
+ *    (lásd `registerUser`); egy demó fiók létrehozása csendben elvenné valaki
+ *    elől a tulajdonosi jogot, és az illető egy jogosultság nélküli fiókkal
+ *    maradna, minden magyarázat nélkül.
+ *
+ * Ezért csak akkor fut, ha már *van* felhasználó — vagyis zárt telepítésnél
+ * (`SEED_OWNER_PASSWORD`), vagy ha valaki a regisztráció után újra lefuttatja a
+ * seedet. Ilyenkor a bootstrap már elkelt, tehát nincs mit elvenni.
+ *
+ * A demó fiókok jelszava 32 véletlen bájt, amit sehol nem írunk ki: a fiók
+ * létezik és hitelesnek látszik a felületen, de belépni vele nem lehet. Egy
+ * ismert jelszavú demó fiók pontosan az a fajta apróság, ami éles rendszerben
+ * felejtve nyitott ajtó marad.
+ */
+async function seedDemoDiscussion(): Promise<number> {
+  if ((await db.user.count()) === 0) return 0;
+  // Nem duplikálunk: ha már van beszélgetés, ez a lépés kimarad.
+  if ((await db.comment.count()) > 0) return 0;
+
+  const memberRole = await db.role.findUnique({ where: { key: 'member' } });
+  if (!memberRole) return 0;
+
+  const readers = [];
+  for (const reader of DEMO_READERS) {
+    readers.push(
+      await db.user.upsert({
+        where: { email: `${reader.username}@example.invalid` },
+        create: {
+          email: `${reader.username}@example.invalid`,
+          username: reader.username,
+          displayName: reader.displayName,
+          passwordHash: hashPassword(randomBytes(32).toString('base64url')),
+          roleId: memberRole.id,
+          status: 'ACTIVE',
+          emailVerifiedAt: daysAgo(200),
+        },
+        update: {},
+      }),
+    );
+  }
+
+  const [haruka, tsubaki, kenji] = readers;
+  if (!haruka || !tsubaki || !kenji) return 0;
+
+  const post = await db.newsPost.findFirst({ orderBy: { publishedAt: 'desc' } });
+  const project = await db.project.findFirst({ where: { slug: 'yoru-no-shizuku' } });
+  const episode = project
+    ? await db.episode.findFirst({ where: { projectId: project.id }, orderBy: { number: 'asc' } })
+    : null;
+
+  let created = 0;
+
+  const write = async (data: Prisma.CommentUncheckedCreateInput) => {
+    const comment = await db.comment.create({ data });
+    created += 1;
+    return comment;
+  };
+
+  if (post) {
+    const root = await write({
+      userId: haruka.id,
+      newsPostId: post.id,
+      body: 'Nagyon vártam már ezt a bejelentést. Köszönjük, hogy nem sietitek el!',
+      createdAt: daysAgo(9),
+    });
+
+    await write({
+      userId: tsubaki.id,
+      newsPostId: post.id,
+      parentId: root.id,
+      body: 'Csatlakozom. Inkább várok egy hetet, mint hogy elrontott időzítéssel nézzem.',
+      createdAt: daysAgo(8),
+    });
+
+    await write({
+      userId: kenji.id,
+      newsPostId: post.id,
+      body: 'Lesz később BD-verzió is, vagy csak a TV-forrás marad?',
+      createdAt: daysAgo(6),
+    });
+  }
+
+  if (project) {
+    await write({
+      userId: tsubaki.id,
+      projectId: project.id,
+      body: 'A borító és a színvilág is eltalált. Látszik, hogy van mögötte munka.',
+      createdAt: daysAgo(5),
+    });
+  }
+
+  if (episode) {
+    await write({
+      userId: kenji.id,
+      episodeId: episode.id,
+      body: 'Az OP karaoke külön öröm volt. Kis dolog, de ettől lesz az egész kerek.',
+      createdAt: daysAgo(3),
+    });
+  }
+
+  return created;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
