@@ -258,7 +258,17 @@ function CommentRow({ comment, compact = false }: { comment: CommentView; compac
       />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-sm font-medium text-mist-100">{comment.user.displayName}</span>
+          {/*
+            A név mostantól visz valahová. A felhasználónevet eddig is lekértük,
+            csak nem volt hova mutatnia — egy közösségi funkciónál pedig az a
+            minimum, hogy meg lehessen nézni, ki írta.
+          */}
+          <Link
+            href={`/felhasznalo/${comment.user.username}`}
+            className="text-sm font-medium text-mist-100 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
+          >
+            {comment.user.displayName}
+          </Link>
           <time
             dateTime={new Date(comment.createdAt).toISOString()}
             className="text-2xs text-mist-600"
