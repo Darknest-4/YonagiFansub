@@ -134,6 +134,14 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
       apple: '/apple-icon.png',
     },
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      // iOS ignores the manifest and reads these instead. Without them an
+      // "Add to Home Screen" on an iPhone opens a plain browser tab.
+      capable: true,
+      title: 'Yonagi',
+      statusBarStyle: 'black-translucent',
+    },
   };
 }
 
