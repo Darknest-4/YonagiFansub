@@ -31,6 +31,7 @@ import {
 } from '@/server/stats';
 import { db } from '@/lib/db';
 import { env } from '@/lib/env';
+import { getMailStatus } from '@/lib/mail';
 import { cn, formatCount, formatRelative } from '@/lib/utils';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Skeleton, TableSkeleton } from '@/components/ui/feedback';
@@ -507,14 +508,18 @@ async function ActivityPanel() {
  * Nothing here reads a key, a URL, or a credential — a dashboard is a screen
  * people screenshot, and a screenshot of a connection string is a leak.
  */
-const MAIL_LABELS: Record<'console' | 'smtp' | 'noop', string> = {
-  console: 'Konzol (fejlesztői)',
-  smtp: 'SMTP',
-  noop: 'Kikapcsolva',
-};
+async function SystemPanel() {
+  /*
+    The mail row is the one that has to ask rather than assume.
 
-function SystemPanel() {
-  const rows: Array<{ label: string; value: string; ok: boolean; icon: LucideIcon }> = [
+    Every other row here is a setting read back to you, but "MAIL_DRIVER=resend"
+    does not mean mail leaves the building: an unverified sender domain rejects
+    every message, and because sending is fire-and-forget nothing on the site
+    ever looks wrong. This asks Resend and reports the answer.
+  */
+  const mail = await getMailStatus();
+
+  const rows: Array<{ label: string; value: string; ok: boolean; icon: LucideIcon; detail?: string }> = [
     {
       label: 'Adatbázis',
       value: 'PostgreSQL',
@@ -529,11 +534,9 @@ function SystemPanel() {
     },
     {
       label: 'E-mail',
-      value: MAIL_LABELS[env.MAIL_DRIVER],
-      // Only SMTP actually delivers. `console` writes to the log and `noop`
-      // silently drops — both fine locally, both a broken password reset in
-      // production, so neither gets a green dot.
-      ok: env.MAIL_DRIVER === 'smtp',
+      value: mail.driver,
+      ok: mail.ok,
+      detail: mail.detail,
       icon: MessageSquare,
     },
     {
@@ -555,16 +558,21 @@ function SystemPanel() {
           {rows.map((row) => (
             <div
               key={row.label}
-              className="flex items-center gap-3 rounded-lg border border-ink-800 bg-ink-900/50 px-3.5 py-2.5"
+              className="flex items-start gap-3 rounded-lg border border-ink-800 bg-ink-900/50 px-3.5 py-2.5"
             >
-              <row.icon className="size-4 shrink-0 text-mist-500" aria-hidden />
+              <row.icon className="mt-0.5 size-4 shrink-0 text-mist-500" aria-hidden />
               <div className="min-w-0 flex-1">
                 <dt className="text-2xs tracking-wide text-mist-500 uppercase">{row.label}</dt>
                 <dd className="truncate text-sm text-mist-200">{row.value}</dd>
+                {/* A magyarázat csak ott jelenik meg, ahol van mit mondani —
+                    jellemzően amikor a lámpa nem zöld, és tudni kell, miért. */}
+                {row.detail && (
+                  <dd className="mt-0.5 text-2xs leading-snug text-mist-500">{row.detail}</dd>
+                )}
               </div>
               <span
                 aria-hidden
-                className={`size-1.5 shrink-0 rounded-full ${
+                className={`mt-1.5 size-1.5 shrink-0 rounded-full ${
                   row.ok ? 'bg-success-400' : 'bg-ember-400'
                 }`}
               />

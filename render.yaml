@@ -78,15 +78,30 @@ services:
       - key: RATE_LIMIT_DRIVER
         value: memory
 
-      # `console` writes password-reset links to the log instead of sending
-      # them. Fine for a first deploy — the first registered account becomes the
-      # owner and is activated without an email, so you can log in and configure
-      # the site with no SMTP at all. Switch to `smtp` before real users arrive,
-      # or nobody else will be able to verify an address or reset a password.
+      # Mail goes through Resend's HTTP API — no SMTP egress, no extra
+      # dependency, and nothing to configure here beyond the key itself.
+      #
+      # Render asks for RESEND_API_KEY once while applying the blueprint, and
+      # that is the only mail field a human has to touch. It is `sync: false`
+      # rather than a committed value on purpose: a key in this file is a key in
+      # the repository, which GitHub's secret scanner reports and bots try within
+      # minutes of the first push. Revoking it later does not remove it from the
+      # history.
       - key: MAIL_DRIVER
-        value: console
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+
+      # The sender. **Its domain has to be verified in Resend**
+      # (https://resend.com/domains) or every send comes back 422 — which the
+      # driver logs with that exact instruction. Until the domain is verified,
+      # `onboarding@resend.dev` works, but only delivers to the address that owns
+      # the Resend account.
       - key: MAIL_FROM
         value: Yonagi Fansub <noreply@yonagifansub.hu>
+
+      # SMTP stays available as an alternative: set MAIL_DRIVER=smtp and fill
+      # these in instead. Left empty, they cost nothing.
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

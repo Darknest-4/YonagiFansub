@@ -3,6 +3,7 @@ import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { escapeHtml } from '@/lib/markdown';
 import { optionalImport } from '@/lib/optional-module';
+import { memoizeWithTtl } from '@/lib/cache';
 
 /**
  * Transactional mail.
@@ -141,10 +142,221 @@ class SmtpDriver implements MailDriver {
   }
 }
 
+/**
+ * Resend (https://resend.com) over its HTTP API.
+ *
+ * Chosen over SMTP for a fansub deployment because it needs no extra dependency,
+ * no long-lived connection, and no port 25/587 egress — which is exactly what a
+ * platform-as-a-service host tends to block. One `fetch` per message.
+ *
+ * ## Pacing, and why it is not optional
+ *
+ * Resend's free plan allows **two requests per second**. The notification
+ * fan-out sends in parallel chunks of fifty, which under that limit means two
+ * accepted messages and forty-eight rejections — and since `sendMail` swallows
+ * failures by design, the whole thing would look like it worked. So this driver
+ * serialises: every send joins a queue and waits out a minimum gap. A hundred
+ * announcement emails take about a minute, which is fine for work that is
+ * already detached from the request.
+ *
+ * A 429 that slips through anyway is retried once, honouring `Retry-After`.
+ *
+ * ## Failures are named, not swallowed
+ *
+ * `sendMail` deliberately never throws, so a rejected send would otherwise
+ * vanish. The three that actually happen are spelled out in the log with what to
+ * do about them — an unverified sender domain in particular is the one thing
+ * that silently stops every email on a fresh deployment.
+ */
+class ResendDriver implements MailDriver {
+  private static readonly ENDPOINT = 'https://api.resend.com/emails';
+
+  /** Minimum spacing between requests: two per second, with room to spare. */
+  private static readonly GAP_MS = 550;
+
+  /** Serialises sends across the whole process. */
+  private queue: Promise<unknown> = Promise.resolve();
+  private lastSentAt = 0;
+
+  async send(message: MailMessage): Promise<void> {
+    // Chain onto the queue so concurrent callers line up instead of racing.
+    const task = this.queue.then(() => this.dispatch(message));
+    // The queue must survive a failed send, or one error stalls every later mail.
+    this.queue = task.catch(() => undefined);
+    await task;
+  }
+
+  private async dispatch(message: MailMessage): Promise<void> {
+    const wait = ResendDriver.GAP_MS - (Date.now() - this.lastSentAt);
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+
+    let response = await this.post(message);
+
+    if (response.status === 429) {
+      const after = Number(response.headers.get('retry-after') ?? 1);
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.min(Number.isFinite(after) ? after * 1000 : 1000, 10_000)),
+      );
+      response = await this.post(message);
+    }
+
+    this.lastSentAt = Date.now();
+
+    if (response.ok) return;
+
+    const body = await response.text().catch(() => '');
+    logger.error('Resend elutasította a levelet', undefined, {
+      status: response.status,
+      to: message.to,
+      subject: message.subject,
+      hint: ResendDriver.hintFor(response.status),
+      body: body.slice(0, 400),
+    });
+  }
+
+  private post(message: MailMessage): Promise<Response> {
+    return fetch(ResendDriver.ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.MAIL_FROM,
+        to: [message.to],
+        subject: message.subject,
+        text: message.text,
+        html: renderEmailHtml(message),
+      }),
+    });
+  }
+
+  /** The three failures that actually happen, and what fixes each. */
+  private static hintFor(status: number): string {
+    if (status === 401) {
+      return 'A RESEND_API_KEY hibás vagy visszavonva — új kulcs: https://resend.com/api-keys';
+    }
+    if (status === 403) {
+      return 'Elutasított kapcsolat: rossz kulcs, vagy a szerver kimenő forgalma korlátozott az api.resend.com felé.';
+    }
+    if (status === 422) {
+      return `A MAIL_FROM feladó (${env.MAIL_FROM}) domainje nincs igazolva a Resendben. Igazold a https://resend.com/domains alatt, vagy teszteléshez használd az onboarding@resend.dev címet.`;
+    }
+    if (status === 429) {
+      return 'Elérted a Resend küldési korlátját (ingyenes csomag: 2 kérés/mp, 100 levél/nap).';
+    }
+    return 'Lásd a Resend válaszát alább.';
+  }
+}
+
+/**
+ * Can this instance actually send mail right now?
+ *
+ * There is one way for a correctly configured Resend deployment to still send
+ * nothing: the sender's domain is not verified, and every request comes back
+ * 422. Nothing about that is visible from the outside — the site works, accounts
+ * register, and password resets vanish. It is the single most likely reason mail
+ * is broken on a fresh deploy, and it is invisible precisely because sending is
+ * fire-and-forget.
+ *
+ * So the admin dashboard asks. `GET /domains` is a cheap, read-only call and the
+ * answer is exactly the question an operator has: *will my mail go out?*
+ *
+ * Memoised for five minutes: the dashboard is opened often, the answer changes
+ * about once in the life of an instance, and a broken key should not turn into a
+ * request per page view.
+ */
+export interface MailStatus {
+  driver: string;
+  /** False only when something concrete is wrong, and `detail` says what. */
+  ok: boolean;
+  detail: string;
+}
+
+async function probeResend(): Promise<MailStatus> {
+  const sender = env.MAIL_FROM.match(/<([^>]+)>/)?.[1] ?? env.MAIL_FROM;
+  const domain = sender.split('@')[1]?.toLowerCase() ?? '';
+
+  // Resend's own test sender always works, but only reaches the account owner.
+  if (domain === 'resend.dev') {
+    return {
+      driver: 'Resend',
+      ok: false,
+      detail: 'Teszt feladó — csak a Resend-fiók tulajdonosának kézbesít. Igazolj saját domaint.',
+    };
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}` },
+      signal: AbortSignal.timeout(6_000),
+    });
+
+    if (response.status === 401) {
+      return { driver: 'Resend', ok: false, detail: 'A RESEND_API_KEY érvénytelen vagy visszavonva.' };
+    }
+    // A 403 jöhet a Resendtől, de jöhet egy közbeékelt kimenő proxytól is —
+    // ezt innen nem lehet megkülönböztetni, és a rossz tipp órákat visz el.
+    if (response.status === 403) {
+      return {
+        driver: 'Resend',
+        ok: false,
+        detail: 'A Resend elutasította a kapcsolatot — vagy a kulcs rossz, vagy a kimenő forgalom korlátozott.',
+      };
+    }
+    if (!response.ok) {
+      return { driver: 'Resend', ok: true, detail: `Nem ellenőrizhető (HTTP ${response.status}).` };
+    }
+
+    const payload = (await response.json()) as { data?: Array<{ name?: string; status?: string }> };
+    const match = payload.data?.find((entry) => entry.name?.toLowerCase() === domain);
+
+    if (!match) {
+      return {
+        driver: 'Resend',
+        ok: false,
+        detail: `A(z) ${domain} domain nincs felvéve a Resendbe — a levelek elutasításra kerülnek.`,
+      };
+    }
+    if (match.status !== 'verified') {
+      return {
+        driver: 'Resend',
+        ok: false,
+        detail: `A(z) ${domain} domain még nincs igazolva (állapot: ${match.status ?? 'ismeretlen'}).`,
+      };
+    }
+
+    return { driver: 'Resend', ok: true, detail: `Kimenő feladó: ${domain}` };
+  } catch {
+    // A failed probe is not a failed configuration — the network may be the
+    // problem. Saying "unknown" beats a red light that sends someone hunting.
+    return { driver: 'Resend', ok: true, detail: 'A Resend most nem érhető el — az állapot ismeretlen.' };
+  }
+}
+
+export const getMailStatus = memoizeWithTtl<MailStatus>(async () => {
+  switch (env.MAIL_DRIVER) {
+    case 'resend':
+      return probeResend();
+    case 'smtp':
+      return { driver: 'SMTP', ok: true, detail: `Kimenő szerver: ${env.SMTP_HOST ?? '—'}` };
+    case 'noop':
+      return { driver: 'Kikapcsolva', ok: false, detail: 'Semmi nem megy ki.' };
+    default:
+      return {
+        driver: 'Konzol (fejlesztői)',
+        ok: false,
+        detail: 'A levelek a naplóba íródnak, nem mennek ki.',
+      };
+  }
+}, 5 * 60_000);
+
 function createDriver(): MailDriver {
   switch (env.MAIL_DRIVER) {
     case 'smtp':
       return new SmtpDriver();
+    case 'resend':
+      return new ResendDriver();
     case 'noop':
       return new NoopDriver();
     default:

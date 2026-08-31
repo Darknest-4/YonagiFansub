@@ -36,6 +36,8 @@ cp .env.example .env.local
 #    Kötelezően állítsd be:
 #      DATABASE_URL   – PostgreSQL 16+
 #      AUTH_SECRET    – openssl rand -base64 48
+#    Levélküldéshez (opcionális fejlesztéskor — enélkül a naplóba írja):
+#      MAIL_DRIVER=resend  +  RESEND_API_KEY=re_…
 
 # 3. Adatbázis
 npm run db:push                                   # séma
@@ -309,6 +311,13 @@ indexek, check megszorítások), ott nyers SQL egészíti ki — nem kerülgetj�
 `/api/v1` alatt. A nyilvános oldal szerver-komponensei közvetlenül a
 service rétegből olvasnak (egy hálózati ugrás megspórolva), a böngésző és
 bármely külső kliens ugyanazokon a végpontokon keresztül éri el ugyanazt.
+
+**Resend a levelekhez, nem SMTP.** Egy HTTP API-hívás levelenként: nincs hozzá
+külön csomag, nincs nyitva tartott kapcsolat, és nem kell a 25/587-es port —
+amit egy PaaS gyakran zár. Az ingyenes csomag másodpercenként két kérést enged,
+ezért a meghajtó sorba állítja a küldést; enélkül egy ötvenes értesítés-köteg
+két elfogadott és negyvennyolc eldobott levél lenne, csendben. Az SMTP továbbra
+is választható egy env változóval.
 
 **Saját auth, nem NextAuth.** Adatbázis-alapú, opak session token; a cookie-ban
 256 bit véletlen, az adatbázisban csak a SHA-256 lenyomata. Így egy

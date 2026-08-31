@@ -6,7 +6,8 @@
 - **Node 20.11+** (vagy Docker)
 - **TLS-terminálás** — a `__Host-` prefixű sütik és a HSTS https-t követelnek
 - *(opcionális)* Redis — csak több app példány esetén kötelező
-- *(opcionális)* SMTP — enélkül a jelszó-visszaállítás nem működik
+- **Levélküldés** — a blueprint alapból [Resend](https://resend.com)-et használ; enélkül
+  a jelszó-visszaállítás és az e-mail-megerősítés nem működik (SMTP is választható)
 
 ---
 
@@ -179,10 +180,32 @@ A `render.yaml` blueprint a teljes stacket leírja (Postgres 16, web service,
 napi cron job, feltöltéseknek lemez). Render → Blueprints → New Blueprint
 Instance, és a repóra mutatva alkalmazd.
 
-Amit **te** adsz meg (a fájl egyetlen titkot sem tartalmaz): a
-`NEXT_PUBLIC_SITE_URL` a valódi https origin, és ha éles levelezés kell, az
-`SMTP_*` értékek. Az `AUTH_SECRET` és a `CRON_SECRET` generálását a Render
-végzi, az adatbázis URL-eket a kezelt példány adja.
+Amit **te** adsz meg — a fájl egyetlen titkot sem tartalmaz, és nem is
+tartalmazhat: ami ide bekerül, az bekerül a repóba is, amit a GitHub
+titok-szkennere jelent és a botok percek alatt kipróbálnak. Két mező kell:
+
+| Mező | Mit írj bele |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | A valódi https origin (pl. `https://yonagifansub.hu`). A `__Host-` sütik és az azonos-eredet ellenőrzés is ezen múlik. |
+| `RESEND_API_KEY` | A Resend kulcsod a https://resend.com/api-keys oldalról. `re_`-vel kezdődik. |
+
+Minden más előre be van állítva: az `AUTH_SECRET` és a `CRON_SECRET`
+generálását a Render végzi, az adatbázis URL-eket a kezelt példány adja, a
+`MAIL_DRIVER=resend` pedig a blueprintben van.
+
+### A feladó domainje
+
+Egyetlen dolog van, ami emiatt még csendben elbukhat: a `MAIL_FROM` domainjét
+**igazolni kell a Resendben** (https://resend.com/domains), különben minden
+levél 422-vel jön vissza. Amíg nincs igazolva, két lehetőség van:
+
+- állítsd a `MAIL_FROM`-ot `onboarding@resend.dev`-re — ez azonnal működik, de
+  **csak a Resend-fiók tulajdonosának kézbesít**, tehát tesztelésre jó, élesre nem;
+- vagy vedd fel és igazold a saját domained (néhány DNS rekord, pár perc).
+
+Ezt nem kell fejben tartanod: az **admin vezérlőpult „Rendszer állapota”
+paneljén** ott az E-mail sor, ami megkérdezi a Resendet, és kiírja, hogy
+kimennek-e a levelek — igazolatlan domainnél sárga lámpával és a pontos okkal.
 
 Két Render-specifikus dolog:
 
@@ -284,7 +307,8 @@ Utána jelentkezz be a tulajdonosi fiókkal, **változtasd meg a jelszót**, és
 - [ ] `AUTH_SECRET` generált, nem másolt példa
 - [ ] Az adatbázis felhasználója nem szuperfelhasználó
 - [ ] TLS működik, HSTS fejléc megjelenik
-- [ ] `MAIL_DRIVER=smtp`, és egy teszt-visszaállítás megérkezik
+- [ ] A `RESEND_API_KEY` be van állítva, és az admin vezérlőpult E-mail sora zöld
+- [ ] A `MAIL_FROM` domainje igazolva a Resendben, és egy teszt-visszaállítás megérkezik
 - [ ] `RATE_LIMIT_DRIVER=redis`, ha egynél több példány fut
 - [ ] `MEDIA_DRIVER=s3`, ha egynél több példány fut — vagy csatolt kötet a
       `MEDIA_LOCAL_DIR`-en, és a mentés is viszi

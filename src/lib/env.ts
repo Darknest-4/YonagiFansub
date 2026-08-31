@@ -47,12 +47,21 @@ const schema = z.object({
   RATE_LIMIT_DRIVER: z.enum(['memory', 'redis']).default('memory'),
   REDIS_URL: z.string().optional(),
 
-  MAIL_DRIVER: z.enum(['console', 'smtp', 'noop']).default('console'),
+  MAIL_DRIVER: z.enum(['console', 'smtp', 'resend', 'noop']).default('console'),
   MAIL_FROM: z.string().default('Yonagi Fansub <noreply@yonagifansub.hu>'),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
+  /**
+   * Resend API key (`re_…`). Required when MAIL_DRIVER=resend.
+   *
+   * Never committed. It lives in `.env.local` for development and in the host's
+   * environment settings in production — a mail key in the repository is a key
+   * that GitHub's secret scanner finds, that bots try within minutes, and that
+   * stays in the history after it is revoked.
+   */
+  RESEND_API_KEY: z.string().startsWith('re_').optional(),
 
   /**
    * Upstream metadata APIs.
@@ -129,6 +138,13 @@ function loadEnv(): Env {
   }
   if (value.MAIL_DRIVER === 'smtp' && !value.SMTP_HOST) {
     throw new Error('MAIL_DRIVER=smtp mellett az SMTP_HOST is kötelező.');
+  }
+  if (value.MAIL_DRIVER === 'resend' && !value.RESEND_API_KEY) {
+    throw new Error(
+      'MAIL_DRIVER=resend mellett a RESEND_API_KEY is kötelező.\n' +
+        '  A kulcs a https://resend.com/api-keys oldalon készül, és `re_`-vel kezdődik.\n' +
+        '  Renderen: Service → Environment; helyben: .env.local.',
+    );
   }
   if (value.MEDIA_DRIVER === 's3' && !value.S3_BUCKET) {
     throw new Error('MEDIA_DRIVER=s3 mellett az S3_BUCKET is kötelező.');
