@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    // The integration suite needs a real Postgres and has its own config
+    // (vitest.integration.config.mts). `npm test` stays runnable on a bare
+    // checkout.
+    exclude: ['tests/integration/**'],
     // The scrypt tests intentionally run the real cost parameters.
     testTimeout: 20_000,
     env: {

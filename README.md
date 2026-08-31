@@ -395,7 +395,14 @@ npm start            # éles szerver
 npm run verify       # typecheck + lint + teszt  (ezt futtasd commit előtt)
 npm run typecheck
 npm run lint
-npm test
+npm test             # egységtesztek — nem kell hozzá adatbázis
+
+# Integrációs tesztek: valódi Postgres ellen futnak, és ürítik a táblákat.
+# Ezért külön változót olvasnak (soha nem a DATABASE_URL-t), és a névben
+# szerepelnie kell a "test" szónak — enélkül elutasítják a futást.
+createdb yonagi_test
+TEST_DATABASE_URL=postgresql://yonagi:yonagi@localhost:5432/yonagi_test \
+  npm run test:integration
 
 npm run db:push      # séma szinkronizálás (fejlesztés)
 npm run db:migrate   # migráció készítése
