@@ -13,6 +13,8 @@ import { DownloadPanel, type ReleaseView } from '@/components/site/download-pane
 import { VideoPlayer } from '@/components/site/video-player';
 import { Comments } from '@/components/site/comments';
 import { listEpisodeVideos } from '@/server/video';
+import { getCurrentUser } from '@/lib/auth/guards';
+import { db } from '@/lib/db';
 import { WorkflowProgress, buildWorkflowStages } from '@/components/ui/progress';
 
 type Params = Promise<{ slug: string; episode: string }>;
@@ -68,6 +70,16 @@ export default async function EpisodePage({ params }: { params: Params }) {
   // Every published source, in the order the team set. The player walks that
   // order on failure, so a dead filehost is a switch rather than a broken page.
   const videos = await listEpisodeVideos(episode.id);
+
+  // Hol hagyta abba. Kijelentkezve nincs mit folytatni és nincs hova menteni —
+  // a lejátszó ilyenkor egyáltalán nem jelent semmit.
+  const viewer = await getCurrentUser();
+  const watch = viewer
+    ? await db.watchProgress.findUnique({
+        where: { userId_episodeId: { userId: viewer.id, episodeId: episode.id } },
+        select: { positionSec: true },
+      })
+    : null;
 
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
   const accent = episode.project.accentColor ?? '#f761a8';
@@ -207,6 +219,8 @@ export default async function EpisodePage({ params }: { params: Params }) {
               <div className="mt-6">
                 <VideoPlayer
                   episodeId={episode.id}
+                  resumeAt={watch?.positionSec ?? 0}
+                  trackProgress={Boolean(viewer)}
                   sources={videos.map((source) => ({
                     id: source.id,
                     kind: source.kind,

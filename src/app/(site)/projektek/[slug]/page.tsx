@@ -23,6 +23,7 @@ import {
   incrementProjectView,
 } from '@/server/projects';
 import { getCurrentUser } from '@/lib/auth/guards';
+import { getProjectProgress, getRatingSummary } from '@/server/watch';
 import {
   AGE_RATING_LABEL,
   Badge,
@@ -38,6 +39,7 @@ import { ExternalLinks } from '@/components/site/external-links';
 import { OfficialLinks } from '@/components/site/official-links';
 import { ProductionCredits } from '@/components/site/production-credits';
 import { ProjectRelations } from '@/components/site/project-relations';
+import { RatingWidget } from '@/components/site/rating-widget';
 import {
   ProjectStatusCard,
   aggregateProgress,
@@ -97,7 +99,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
 
   const user = await getCurrentUser();
 
-  const [episodes, favourite] = await Promise.all([
+  const [episodes, favourite, rating, watched] = await Promise.all([
     getPublicEpisodes(project.id),
     user
       ? db.favorite.findUnique({
@@ -105,6 +107,10 @@ export default async function ProjectPage({ params }: { params: Params }) {
           select: { notify: true },
         })
       : null,
+    // Nem gyorsítótárazva: a saját pontszámnak látszania kell abban a
+    // pillanatban, ahogy leadták, és felhasználónként úgyis más.
+    getRatingSummary(project.id, user?.id ?? null),
+    user ? getProjectProgress(user.id, project.id) : null,
   ]);
 
   // Fire-and-forget: never awaited, never allowed to fail the render.
@@ -181,12 +187,24 @@ export default async function ProjectPage({ params }: { params: Params }) {
                   ? { '@type': 'Organization', name: primaryStudio }
                   : undefined,
             /*
-              Szándékosan nincs `aggregateRating`. A pontszám az AniListé, és a
-              schema.org-nak `ratingCount` vagy `reviewCount` is kellene hozzá —
-              olyan szám, ami nem a miénk, és amit kitalálni annyi lenne, mint
-              hamis adatot adni a keresőnek. A látogató látja a pontszámot az
-              oldalon; a strukturált adatba csak az kerül, amiért felelni tudunk.
+              Most már van `aggregateRating` — és pont azért, ami eddig hiányzott.
+
+              Korábban szándékosan kimaradt: az egyetlen pontszám az AniListé
+              volt, a schema.org-nak viszont darabszám is kell hozzá, és olyat
+              csak kitalálni lehetett volna. A saját értékelésekkel mindkét szám
+              a miénk, tehát felelni tudunk érte. Ha még senki nem szavazott,
+              továbbra sem írunk semmit — egy nulla elemű átlag nem adat.
             */
+            aggregateRating:
+              rating.count > 0 && rating.average !== null
+                ? {
+                    '@type': 'AggregateRating',
+                    ratingValue: rating.average.toFixed(1),
+                    ratingCount: rating.count,
+                    bestRating: '10',
+                    worstRating: '1',
+                  }
+                : undefined,
             startDate: toIsoString(project.startDate),
             endDate: toIsoString(project.endDate),
             countryOfOrigin: project.countryOfOrigin
@@ -388,7 +406,11 @@ export default async function ProjectPage({ params }: { params: Params }) {
           </div>
 
           <Suspense fallback={<ReleaseListSkeleton count={6} />}>
-            <EpisodeList episodes={episodes} projectSlug={project.slug} />
+            <EpisodeList
+              episodes={episodes}
+              projectSlug={project.slug}
+              progress={watched ?? undefined}
+            />
           </Suspense>
 
           <Comments
@@ -522,6 +544,14 @@ export default async function ProjectPage({ params }: { params: Params }) {
               </ul>
             </section>
           )}
+
+          <RatingWidget
+            projectId={project.id}
+            projectSlug={project.slug}
+            initial={rating}
+            canRate={Boolean(user?.emailVerifiedAt)}
+            isAuthenticated={Boolean(user)}
+          />
 
           <ProjectRelations relations={project.relations} currentSlug={project.slug} />
 

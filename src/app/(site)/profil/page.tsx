@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { AlertCircle, Download, Star } from 'lucide-react';
 import { db } from '@/lib/db';
 import { ensureAuthenticated } from '@/lib/auth/guards';
-import { formatDate, formatRelative } from '@/lib/utils';
+import { formatDate, formatEpisodeNumber, formatRelative } from '@/lib/utils';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ButtonLink } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/feedback';
 import { countUnread } from '@/server/notifications';
+import { getContinueWatching } from '@/server/watch';
 
 export const metadata: Metadata = {
   title: 'Profilom',
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
 export default async function ProfilePage() {
   const user = await ensureAuthenticated('/profil');
 
-  const [favoriteCount, downloadCount, unread, recentFavorites] = await Promise.all([
+  const [favoriteCount, downloadCount, unread, recentFavorites, continueWatching] = await Promise.all([
     db.favorite.count({ where: { userId: user.id } }),
     db.downloadEvent.count({ where: { userId: user.id } }),
     countUnread(user.id),
@@ -36,6 +37,7 @@ export default async function ProfilePage() {
         },
       },
     }),
+    getContinueWatching(user.id, 4),
   ]);
 
   return (
@@ -77,6 +79,59 @@ export default async function ProfilePage() {
           </ButtonLink>
         </CardBody>
       </Card>
+
+      {/*
+        „Hol tartok" — a legelső dolog, ha van mit folytatni.
+
+        Aki egy tizenkét részes sorozat közepén jár, azért jön vissza, hogy
+        onnan folytassa. Ha ez a lista lejjebb lenne a követett projektek alatt,
+        akkor a leggyakoribb szándékhoz kellene görgetni.
+      */}
+      {continueWatching.length > 0 && (
+        <Card>
+          <CardHeader title="Folytatás" description="Ahol abbahagytad." />
+          <CardBody>
+            <ul className="grid gap-2.5 sm:grid-cols-2">
+              {continueWatching.map((entry) => {
+                const number = formatEpisodeNumber(entry.episode.number.toString());
+                const percent = entry.episode.durationSec
+                  ? Math.min(100, Math.round((entry.positionSec / entry.episode.durationSec) * 100))
+                  : null;
+
+                return (
+                  <li key={entry.episode.id}>
+                    <Link
+                      href={`/projektek/${entry.episode.project.slug}/${number}`}
+                      className="group block rounded-xl border border-ink-800 bg-ink-900/40 px-3.5 py-3 transition-colors hover:border-bloom-400/30 hover:bg-ink-850"
+                    >
+                      <p className="truncate text-sm font-medium text-mist-100 group-hover:text-bloom-200">
+                        {entry.episode.project.title}
+                      </p>
+                      <p className="mt-0.5 truncate text-2xs text-mist-500">
+                        {number}. rész
+                        {entry.episode.title ? ` — ${entry.episode.title}` : ''}
+                      </p>
+
+                      {percent !== null && (
+                        <span
+                          className="mt-2 block h-1 overflow-hidden rounded-full bg-ink-800"
+                          role="img"
+                          aria-label={`${percent} százaléknál tartasz`}
+                        >
+                          <span
+                            className="block h-full rounded-full bg-bloom-400"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardBody>
+        </Card>
+      )}
 
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label="Követett projekt" value={favoriteCount} href="/profil/kedvencek" />

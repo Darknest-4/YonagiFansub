@@ -46,6 +46,10 @@ export const RATE_LIMITS = {
   'auth:verify-resend': { limit: 3, windowSec: 3600 },
   'contact:submit': { limit: 3, windowSec: 3600 },
   'comment:create': { limit: 12, windowSec: 600 },
+  // A lejátszó ritkítva jelent, de egy hosszú film alatt így is sokszor. Bőven
+  // a valós forgalom fölött, jóval a visszaélés alatt.
+  'watch:progress': { limit: 120, windowSec: 600 },
+  'rating:write': { limit: 30, windowSec: 3600 },
   'search:query': { limit: 60, windowSec: 60 },
   'download:resolve': { limit: 60, windowSec: 300 },
   'api:read': { limit: 240, windowSec: 60 },

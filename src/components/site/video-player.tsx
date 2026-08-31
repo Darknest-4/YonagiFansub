@@ -83,17 +83,29 @@ function writePreference(episodeId: string, sourceId: string): void {
   }
 }
 
+/** A CSRF sütijét a middleware állítja be; a `lib/client/api` ugyanezt olvassa. */
+function readCsrf(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)(?:__Host-)?yonagi_csrf=([^;]*)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
 type Phase = 'idle' | 'loading' | 'ready' | 'error';
 
 export function VideoPlayer({
   episodeId,
   sources,
   poster,
+  resumeAt = 0,
+  trackProgress = false,
   className,
 }: {
   episodeId: string;
   sources: PlayableSource[];
   poster?: string | null;
+  /** Hol hagyta abba a néző. Nulla, ha nincs mit folytatni. */
+  resumeAt?: number;
+  /** Csak bejelentkezett nézőnél: van hova menteni. */
+  trackProgress?: boolean;
   className?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -123,6 +135,72 @@ export function VideoPlayer({
   }, []);
 
   useEffect(() => teardown, [teardown]);
+
+  /*
+    Haladás mentése.
+
+    Harminc másodpercenként, és nem gyakrabban: ennél sűrűbben írni annyit
+    jelentene, hogy egy órányi film alatt százszor kérünk a szervertől valamit,
+    amiből egyszer is elég lenne.
+
+    A `keepalive` a lapzárásra való. Enélkül a böngésző eldobja a még futó kérést,
+    amikor a lap eltűnik — vagyis pont az utolsó, legpontosabb pozíció veszne el.
+    A `sendBeacon` ugyanezt tudná, de nem enged saját fejlécet, a CSRF-token
+    viszont fejlécben megy.
+
+    A `pagehide` és nem a `beforeunload`: utóbbi mobilon jellemzően el sem sül,
+    mert a lapot a rendszer a háttérből dobja el.
+
+    Beágyazott (harmadik feles) forrásnál nincs mit menteni: a lejátszás egy
+    idegen keretben zajlik, aminek a pozícióját nem látjuk. Ilyenkor a néző
+    inkább semmilyen jelölést ne kapjon, mint hamisat.
+  */
+  useEffect(() => {
+    if (!trackProgress) return;
+
+    const video = videoRef.current;
+    if (!video || plan?.mode === 'isolated') return;
+
+    let lastSent = 0;
+
+    const payload = () => ({
+      positionSec: Math.round(video.currentTime),
+      durationSec: Number.isFinite(video.duration) ? Math.round(video.duration) : null,
+    });
+
+    const send = () => {
+      if (!Number.isFinite(video.currentTime) || video.currentTime < 5) return;
+      lastSent = video.currentTime;
+
+      void fetch(`/api/v1/watch-progress/${episodeId}`, {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(readCsrf() ? { 'X-CSRF-Token': readCsrf()! } : {}),
+        },
+        body: JSON.stringify(payload()),
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+
+    const onTimeUpdate = () => {
+      if (video.currentTime - lastSent >= 30) send();
+    };
+
+    video.addEventListener('timeupdate', onTimeUpdate);
+    video.addEventListener('pause', send);
+    video.addEventListener('ended', send);
+    window.addEventListener('pagehide', send);
+
+    return () => {
+      video.removeEventListener('timeupdate', onTimeUpdate);
+      video.removeEventListener('pause', send);
+      video.removeEventListener('ended', send);
+      window.removeEventListener('pagehide', send);
+      send();
+    };
+  }, [episodeId, trackProgress, plan?.mode]);
 
   /** Moves to the next source that has not already failed. */
   const failover = useCallback(
@@ -186,6 +264,20 @@ export function VideoPlayer({
 
       const video = videoRef.current;
       if (!video) return;
+
+      /*
+        Folytatás onnan, ahol abbahagyta.
+
+        A `loadedmetadata` bevárása nem díszítés: a `currentTime` beállítása
+        addig, amíg a lejátszó nem tudja a hosszt, csendben elveszik. Egyszer
+        fut le — utána a néző dolga, hol tekereg.
+      */
+      const resume = () => {
+        if (resumeAt > 5 && Number.isFinite(video.duration) && resumeAt < video.duration - 10) {
+          video.currentTime = resumeAt;
+        }
+      };
+      video.addEventListener('loadedmetadata', resume, { once: true });
 
       // A proxied file is an ordinary media URL on our own origin.
       if (loaded.mode === 'file-proxy') {
@@ -313,7 +405,7 @@ export function VideoPlayer({
         failover(caught instanceof Error ? caught.message : 'A lejátszás nem indítható.');
       }
     },
-    [failover],
+    [failover, resumeAt],
   );
 
   const pick = (next: number) => {

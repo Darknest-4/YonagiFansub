@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarDays, ChevronRight, Download } from 'lucide-react';
+import { CalendarDays, Check, ChevronRight, Download } from 'lucide-react';
 import {
   cn,
   formatBytes,
@@ -25,13 +25,24 @@ import type { EpisodeListItem } from '@/server/projects';
  * A released row is a link; an unreleased one is not. Making a dead row look
  * clickable is the fastest way to lose a visitor's trust in the whole page.
  */
+export interface WatchState {
+  positionSec: number;
+  completed: boolean;
+}
+
 export function EpisodeList({
   episodes,
   projectSlug,
+  progress,
   className,
 }: {
   episodes: EpisodeListItem[];
   projectSlug: string;
+  /**
+   * Hol tart a néző, epizódazonosító szerint. Kijelentkezve üres — a lista
+   * ugyanúgy néz ki, csak a jelölések maradnak el.
+   */
+  progress?: Map<string, WatchState>;
   className?: string;
 }) {
   if (episodes.length === 0) {
@@ -50,7 +61,11 @@ export function EpisodeList({
     <ol className={cn('space-y-2.5', className)}>
       {episodes.map((episode) => (
         <li key={episode.id}>
-          <EpisodeRow episode={episode} projectSlug={projectSlug} />
+          <EpisodeRow
+            episode={episode}
+            projectSlug={projectSlug}
+            watch={progress?.get(episode.id)}
+          />
         </li>
       ))}
     </ol>
@@ -60,28 +75,49 @@ export function EpisodeList({
 function EpisodeRow({
   episode,
   projectSlug,
+  watch,
 }: {
   episode: EpisodeListItem;
   projectSlug: string;
+  watch?: WatchState;
 }) {
   const number = formatEpisodeNumber(episode.number.toString());
   const released = episode.status === 'RELEASED' && episode.releases.length > 0;
   const stages = buildWorkflowStages(episode);
   const progress = overallProgress(stages);
 
+  /*
+    Félbehagyott rész csak akkor, ha van mihez viszonyítani.
+
+    Hossz nélkül nem tudunk százalékot mondani, és egy csík, ami tetszőleges
+    helyen áll meg, rosszabb a semminél — azt sugallná, hogy tudjuk, hol tart,
+    pedig nem.
+  */
+  const partial =
+    watch && !watch.completed && watch.positionSec > 30 && episode.durationSec
+      ? Math.min(100, Math.round((watch.positionSec / episode.durationSec) * 100))
+      : null;
+
   const body = (
     <>
       <div className="flex items-start gap-3.5 sm:gap-4">
+        {/*
+          A megnézett rész pipát kap a sorszám helyett — így egy tizenkét részes
+          listán egy pillantással látszik, hol tartasz, anélkül hogy minden sort
+          végig kellene olvasni.
+        */}
         <span
           className={cn(
             'nums grid size-11 shrink-0 place-items-center rounded-lg font-display text-sm font-bold',
-            released
-              ? 'bg-bloom-400/12 text-bloom-200 ring-1 ring-bloom-400/25'
-              : 'bg-ink-800 text-mist-500',
+            watch?.completed
+              ? 'bg-success-400/12 text-success-400 ring-1 ring-success-400/25'
+              : released
+                ? 'bg-bloom-400/12 text-bloom-200 ring-1 ring-bloom-400/25'
+                : 'bg-ink-800 text-mist-500',
           )}
           aria-hidden
         >
-          {number}
+          {watch?.completed ? <Check className="size-5" /> : number}
         </span>
 
         {episode.thumbnailUrl && (
@@ -108,6 +144,16 @@ function EpisodeRow({
               {episode.title ?? `${number}. rész`}
             </h3>
             <EpisodeStatusBadge status={episode.status} />
+
+            {watch?.completed && (
+              <span className="inline-flex items-center gap-1 text-2xs font-medium text-success-400">
+                <Check className="size-3" aria-hidden />
+                Megnézve
+              </span>
+            )}
+            {partial !== null && (
+              <span className="text-2xs font-medium text-bloom-300">{partial}%-nál tartasz</span>
+            )}
           </div>
 
           {episode.titleNative && (
