@@ -49,6 +49,7 @@ export const ADMIN_NAV: AdminNavSection[] = [
         permission: 'project:write',
       },
       { href: '/admin/kiadasok', label: 'Kiadások', icon: 'Package', permission: 'release:write' },
+      { href: '/admin/videok', label: 'Videóforrások', icon: 'Film', permission: 'episode:write' },
       {
         href: '/admin/videoszolgaltatok',
         label: 'Videó-szolgáltatók',

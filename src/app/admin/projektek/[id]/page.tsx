@@ -17,9 +17,23 @@ export const metadata: Metadata = { title: 'Projekt szerkesztése' };
 export const dynamic = 'force-dynamic';
 
 type Params = Promise<{ id: string }>;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export default async function EditProjectPage({ params }: { params: Params }) {
+export default async function EditProjectPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const { id } = await params;
+
+  // `?video=<episodeId>` is how the coverage overview hands off: the episode's
+  // source panel opens on arrival, so a missing source is one click from the
+  // list that found it rather than a hunt through the episode list.
+  const query = await searchParams;
+  const rawVideo = query.video;
+  const openVideoFor = Array.isArray(rawVideo) ? (rawVideo[0] ?? null) : (rawVideo ?? null);
   const user = await ensurePermission('project:write', `/admin/projektek/${id}`);
   const actor = toActor(user);
 
@@ -110,6 +124,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
 
       <EpisodeManager
         projectId={project.id}
+        openVideoFor={openVideoFor}
         canDelete={hasPermission(actor, 'episode:delete')}
         episodes={episodes.map((episode) => ({
           id: episode.id,

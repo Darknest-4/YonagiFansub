@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EpisodeStatus } from '@prisma/client';
 import { Film, Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatDate, formatEpisodeNumber } from '@/lib/utils';
@@ -55,10 +55,13 @@ export function EpisodeManager({
   projectId,
   episodes,
   canDelete,
+  openVideoFor = null,
 }: {
   projectId: string;
   episodes: EpisodeRow[];
   canDelete: boolean;
+  /** Episode whose source panel should be open on arrival, from `?video=`. */
+  openVideoFor?: string | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -66,7 +69,18 @@ export function EpisodeManager({
   const [deleting, setDeleting] = useState<EpisodeRow | null>(null);
   // One panel open at a time: each fetches its own sources, and half a dozen
   // open at once would be half a dozen requests for something nobody is reading.
-  const [videoFor, setVideoFor] = useState<string | null>(null);
+  const [videoFor, setVideoFor] = useState<string | null>(openVideoFor);
+
+  // Scroll the linked-to panel into view once, on arrival. Deliberately not
+  // tied to `videoFor`: a panel the admin opened by clicking is already where
+  // they are looking, and yanking the page under them would be the bug.
+  const arrival = useRef(openVideoFor);
+  useEffect(() => {
+    if (!arrival.current) return;
+    const target = document.getElementById(`epizod-${arrival.current}`);
+    arrival.current = null;
+    target?.scrollIntoView({ block: 'center' });
+  }, []);
 
   const nextNumber =
     episodes.length > 0 ? Math.floor(Math.max(...episodes.map((e) => e.number))) + 1 : 1;
@@ -112,6 +126,7 @@ export function EpisodeManager({
                 return (
                   <li
                     key={episode.id}
+                    id={`epizod-${episode.id}`}
                     className="rounded-xl border border-ink-800 bg-ink-900/40 p-3.5"
                   >
                     <div className="flex flex-wrap items-start gap-3">
