@@ -2,6 +2,8 @@ import 'server-only';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
+import { logger } from '@/lib/logger';
+import { notifyNewsPost } from '@/server/notifications';
 import {
   DEFAULT_PER_PAGE,
   paginationMeta,
@@ -177,11 +179,35 @@ export async function incrementNewsView(id: string): Promise<void> {
     .catch(() => undefined);
 }
 
-/** Sweep for scheduled posts – mirrors `publishDueReleases`. */
+/**
+ * Sweep for scheduled posts – mirrors `publishDueReleases`.
+ *
+ * The ids are collected before the update rather than counted after it, because
+ * a post going live has to reach the people who asked to hear about it. A
+ * scheduled publish that notifies nobody is the same bug as a manual one that
+ * notifies nobody — and scheduling is exactly when nobody is watching to notice.
+ *
+ * Announcements are awaited but individually guarded: one failure must not stop
+ * the rest of the sweep, and it must not fail the nightly run either.
+ */
 export async function publishDueNews(): Promise<number> {
-  const result = await db.newsPost.updateMany({
+  const due = await db.newsPost.findMany({
     where: { status: 'SCHEDULED', deletedAt: null, publishedAt: { lte: new Date() } },
+    select: { id: true },
+  });
+
+  if (due.length === 0) return 0;
+
+  const result = await db.newsPost.updateMany({
+    where: { id: { in: due.map((post) => post.id) }, status: 'SCHEDULED' },
     data: { status: 'PUBLISHED' },
   });
+
+  for (const post of due) {
+    await notifyNewsPost(post.id).catch((error) =>
+      logger.error('Ütemezett hír értesítése nem sikerült', error, { postId: post.id }),
+    );
+  }
+
   return result.count;
 }

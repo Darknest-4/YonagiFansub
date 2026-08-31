@@ -55,6 +55,11 @@ model User {
   // Per-user preferences (notification channels, locale, motion, theme).
   preferences Json @default("{}")
 
+  /// Last digest email. The nightly job reads this to decide whether a daily or
+  /// weekly summary is due, so a missed run delays a digest rather than skipping
+  /// it, and two runs on the same day cannot send it twice.
+  digestSentAt DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -833,6 +838,11 @@ model NewsPost {
   isPinned       Boolean       @default(false)
   viewCount      Int           @default(0)
   readingMinutes Int           @default(1)
+
+  /// When the announcement fan-out ran. Set once and never cleared, so a post
+  /// that is unpublished and published again does not notify everyone twice —
+  /// which is the failure mode people actually notice, and unsubscribe over.
+  notifiedAt DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

@@ -330,12 +330,34 @@ ha az előző verzió már nincs sehol futásban.
 0 3 * * *  curl -fsS -H "X-Cron-Secret: $CRON_SECRET" https://.../api/cron/daily
 ```
 
-Egy futás elvégzi: esedékes kiadások és hírek publikálása, lejárt munkamenetek
-és tokenek törlése, értesítések (90 nap), letöltési események (12 hónap),
-archivált üzenetek (24 hónap) és audit napló (12 hónap) nyesése.
+Egy futás elvégzi:
+
+| Lépés | Mit csinál |
+| --- | --- |
+| `publishedReleases`, `publishedNews` | Esedékes kiadások és hírek publikálása. A hír publikálása értesíti is a tagokat. |
+| `prunedSessions`, `prunedExpiredTokens` | Lejárt munkamenetek és tokenek törlése. |
+| `prunedNotifications` | Értesítések nyesése (90 nap). |
+| `prunedDownloadEvents` | Letöltési események (12 hónap — az adatkezelési tájékoztatóban ígért retenció). |
+| `prunedContactMessages` | Archivált és spam üzenetek (24 hónap). |
+| `prunedAuditLogs` | Audit napló (12 hónap). |
+| `checkedLinks` | A legrégebben ellenőrzött 60 letöltési link állapotának frissítése. |
+| `sentDigests` | Esedékes napi és heti e-mail összefoglalók kiküldése. |
+| `syncedMetadata` | AniList/Jikan újraszinkron a legelavultabb projektekre. |
 
 Minden lépés külön hibatűrő: ha egy elhasal, a többi lefut, és a hiba a logba
 kerül. Kimaradt futás nem okoz kárt — a következő behozza.
+
+**Letöltési tükrök.** A `checkedLinks` HEAD-kérést küld minden linkre (ha a
+tárhely nem tud HEAD-et, egy egybájtos GET-et), és ez alapján állítja az
+állapotát. Szándékosan csak a 404 és a 410 minősít halottnak: a 403 és a 429
+botvédelem, az 5xx pedig egy rossz éjszaka — ezekből *akadozó* lesz, nem halott.
+Egy élő tükör téves letiltása valódi letöltésbe kerül, egy halott meghagyása
+egyetlen félrekattintásba. A halott linkekről figyelmeztetés kerül a naplóba.
+
+**Összefoglalók.** A `sentDigests` a felhasználó beállítása szerint napi vagy
+heti levelet küld a saját értesítéseiből, és csak akkor, ha van mit. Az
+esedékességet a `users.digestSentAt` mező dönti el, tehát egy kimaradt futás
+késlelteti a levelet, nem hagyja ki — két futás pedig nem küldi ki kétszer.
 
 ---
 

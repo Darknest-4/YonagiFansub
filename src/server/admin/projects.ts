@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { CACHE_TAGS, invalidate, invalidateProject } from '@/lib/cache';
+import { logger } from '@/lib/logger';
+import { notifyProjectStatusChange } from '@/server/notifications';
 import type { ProjectWriteInput, EpisodeWriteInput } from '@/lib/validation/schemas';
 import { assertPublishAllowed, nullable, type MutationContext } from '@/server/admin/context';
 
@@ -169,6 +171,21 @@ export async function updateProject(
   // The old slug must be invalidated too, or its cached page survives a rename.
   invalidateProject(current.slug);
   invalidateProject(project.slug);
+
+  /*
+    "Is there a second season, and did they drop it?" is the question followers
+    actually have, and until now the only way to answer it was to keep checking
+    the page. A status change is the one project edit worth telling people
+    about — a synopsis fix is not.
+
+    Detached, like the release fan-out: a follower list should never be able to
+    make the editor's save time out.
+  */
+  if (current.status !== input.status) {
+    void notifyProjectStatusChange(id, input.status).catch((error) =>
+      logger.error('Projektállapot-értesítés nem sikerült', error, { projectId: id }),
+    );
+  }
 
   await context.audit({
     action: 'UPDATE',

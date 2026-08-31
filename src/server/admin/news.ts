@@ -1,8 +1,10 @@
 import 'server-only';
-import { Prisma } from '@prisma/client';
+import { Prisma, type PublishStatus } from '@prisma/client';
 import { db } from '@/lib/db';
 import { ConflictError, NotFoundError } from '@/lib/errors';
 import { invalidateNews } from '@/lib/cache';
+import { logger } from '@/lib/logger';
+import { notifyNewsPost } from '@/server/notifications';
 import { readingMinutes, stripMarkdown, truncate } from '@/lib/utils';
 import type { NewsWriteInput } from '@/lib/validation/schemas';
 import { assertPublishAllowed, nullable, type MutationContext } from '@/server/admin/context';
@@ -69,6 +71,22 @@ function resolvePublishedAt(
   return current?.publishedAt ?? null;
 }
 
+/**
+ * Announces a post, if it just became public.
+ *
+ * Fire-and-forget: an announcement is a side effect of publishing, and a mail
+ * server having a bad minute must not fail the editor's save. `notifyNewsPost`
+ * is idempotent — it claims the post before writing anything — so calling it on
+ * every save of an already-published post is free.
+ */
+function announce(postId: string, status: PublishStatus): void {
+  if (status !== 'PUBLISHED') return;
+
+  void notifyNewsPost(postId).catch((error) =>
+    logger.error('Hírértesítés kiküldése nem sikerült', error, { postId }),
+  );
+}
+
 export async function createNews(
   input: NewsWriteInput,
   context: MutationContext,
@@ -91,6 +109,7 @@ export async function createNews(
   });
 
   invalidateNews(post.slug);
+  announce(post.id, input.status);
 
   await context.audit({
     action: 'CREATE',
@@ -127,6 +146,7 @@ export async function updateNews(
 
   invalidateNews(current.slug);
   invalidateNews(post.slug);
+  announce(post.id, input.status);
 
   await context.audit({
     action: 'UPDATE',

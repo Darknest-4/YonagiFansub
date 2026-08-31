@@ -17,6 +17,7 @@ import {
   type PaginationInput,
 } from '@/lib/api/pagination';
 import type { MutationContext } from '@/server/admin/context';
+import { notifySystem } from '@/server/notifications';
 import { nullable } from '@/server/admin/context';
 import type { RoleWriteInput, UserWriteInput } from '@/server/admin/types';
 
@@ -148,6 +149,36 @@ export async function updateUser(
   }
 
   const roleChanged = target.role.id !== input.roleId;
+
+  /*
+    Tell the person what happened to their account.
+
+    A role change and a suspension are both things somebody finds out by
+    discovering that a button is gone, or that they cannot log in — and then
+    they write to us to ask why. One line in their notifications answers the
+    question before it is asked, and gives the team a record that it was said.
+
+    A ban is the exception: the account is gone as far as the person is
+    concerned, sessions are already revoked above, and there is no bell left for
+    them to read it in.
+  */
+  if (roleChanged && input.status !== 'BANNED') {
+    void notifySystem(
+      id,
+      'A szerepköröd megváltozott',
+      `Az új szerepköröd: ${nextRole.name}.`,
+      '/profil',
+    );
+  }
+
+  if (input.status === 'SUSPENDED' && target.status !== 'SUSPENDED') {
+    void notifySystem(
+      id,
+      'A fiókod fel lett függesztve',
+      'Ha kérdésed van, írj nekünk a kapcsolati űrlapon.',
+      '/kapcsolat',
+    );
+  }
 
   await context.audit({
     action: roleChanged ? 'PERMISSION_CHANGE' : 'UPDATE',

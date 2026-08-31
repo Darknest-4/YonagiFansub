@@ -6,6 +6,8 @@ import { pruneExpiredSessions } from '@/lib/auth/session';
 import { pruneNotifications } from '@/server/notifications';
 import { publishDueReleases } from '@/server/releases';
 import { publishDueNews } from '@/server/news';
+import { sendDigests } from '@/server/digest';
+import { checkDownloadLinks } from '@/server/link-check';
 import { runScheduledSync } from '@/server/admin/metadata-sync';
 import { env } from '@/lib/env';
 import { db } from '@/lib/db';
@@ -94,6 +96,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]);
     return reset.count + verify.count;
   });
+
+  /*
+    Mirror check, before the metadata sync.
+
+    Ordered here on purpose: it is the step whose result the team acts on
+    tomorrow morning, so it should not be behind the one step that depends on
+    somebody else's API being up. `checkDownloadLinks` takes the stalest links,
+    so the whole catalogue comes round over a few nights.
+  */
+  await step('checkedLinks', async () => {
+    const outcome = await checkDownloadLinks();
+    if (outcome.offline > 0) {
+      logger.warn('Halott letöltési linkek', { offline: outcome.offline, checked: outcome.checked });
+    }
+    return outcome.checked;
+  });
+
+  /*
+    Digests.
+
+    After the publishing steps above, so a release that goes live tonight is in
+    tonight's digest rather than tomorrow's. `sendDigests` decides for itself who
+    is due — a missed run delays a summary, it does not skip one.
+  */
+  await step('sentDigests', async () => (await sendDigests()).sent);
 
   /*
     Metadata resync, last in the run and batched.
