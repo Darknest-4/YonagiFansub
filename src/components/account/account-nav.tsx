@@ -31,7 +31,22 @@ export function AccountNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Fiók navigáció">
+    /*
+      `min-w-0` is load-bearing, not tidying.
+
+      This nav is a grid item in the account layout, and a grid item defaults to
+      `min-width: auto` — it refuses to shrink below its content. The four tabs
+      come to about 530px, so on a phone the column became 530px wide, the page
+      picked up 140px of horizontal scroll, and the `overflow-x-auto` below never
+      got the chance to do its job: the rail was never narrower than its content,
+      so there was nothing to scroll.
+
+      The symptom is easy to misread, too. On mobile the layout viewport widens
+      to fit the overflow, and the fixed bottom bar stretches with it — so the
+      thing that *looks* broken is the tab bar, several components away from the
+      cause.
+    */
+    <nav aria-label="Fiók navigáció" className="min-w-0">
       <ul className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
         {ITEMS.map((item) => {
           const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);

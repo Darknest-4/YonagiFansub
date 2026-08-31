@@ -8,6 +8,7 @@ import {
   type PreferenceValues,
 } from '@/components/account/settings-forms';
 import { SessionList } from '@/components/account/session-list';
+import { VerifyEmailCard } from '@/components/account/verify-email-card';
 
 export const metadata: Metadata = {
   title: 'Beállítások',
@@ -45,6 +46,10 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* First, because for an unconfirmed account it is the only thing on this
+          page that matters — half the features are off until it is done. */}
+      {!user.emailVerifiedAt && <VerifyEmailCard email={user.email} />}
+
       <ProfileForm
         initial={{
           displayName: profile.displayName,

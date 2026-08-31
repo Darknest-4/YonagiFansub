@@ -193,6 +193,21 @@ export function LoginForm() {
           Regisztrálj
         </Link>
       </p>
+
+      {/*
+        Aki regisztrált, de nem kapta meg a megerősítő levelet, itt akad el —
+        és eddig nem volt hova mennie. Halványabb, mint a regisztráció: nem ez a
+        gyakori eset, de aki keresi, annak pont itt kell lennie.
+      */}
+      <p className="mt-2 text-center text-2xs text-mist-600">
+        Nem jött meg a megerősítő e-mail?{' '}
+        <Link
+          href="/megerosites-ujrakuldes"
+          className="text-mist-400 underline-offset-4 hover:text-bloom-300 hover:underline"
+        >
+          Küldjük újra
+        </Link>
+      </p>
     </div>
   );
 }

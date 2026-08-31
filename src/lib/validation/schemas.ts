@@ -67,6 +67,9 @@ export const loginSchema = z.object({
 
 export const forgotPasswordSchema = z.object({ email, website: honeypot });
 
+/** Same shape as the reset request, and for the same reasons — honeypot included. */
+export const resendVerificationSchema = z.object({ email, website: honeypot });
+
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(20, 'Érvénytelen token.'),

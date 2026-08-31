@@ -60,6 +60,12 @@ model User {
   /// it, and two runs on the same day cannot send it twice.
   digestSentAt DateTime?
 
+  /// When the nightly catch-up re-sent this account's confirmation link.
+  /// Set at most once per account, ever: it exists so a registration that lost
+  /// its email to an outage still gets one, without turning into a reminder
+  /// that arrives every night until the person gives up and blocks us.
+  verificationRemindedAt DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?

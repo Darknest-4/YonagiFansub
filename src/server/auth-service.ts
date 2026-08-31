@@ -306,6 +306,101 @@ export async function issueVerificationEmail(
   });
 }
 
+/**
+ * Sends the verification link again.
+ *
+ * Registration issued this mail exactly once, and there was no second chance:
+ * a message that landed in spam, went to a mistyped address, or — as happened
+ * here — was never sent at all because mail was misconfigured, left the account
+ * stuck as `PENDING` with no way out. The account could still log in, but never
+ * comment, and nothing on the site explained why.
+ *
+ * **Silent about whether the address exists**, exactly like the password reset
+ * beside it: the caller gets the same answer either way. An endpoint that
+ * answers "no such user" faster than "sent" is a membership oracle, and this one
+ * would be an unauthenticated one.
+ *
+ * Already-verified addresses are also a no-op. Re-sending to them would be a
+ * confusing email at best, and at worst a way to have somebody else's inbox
+ * mailed on demand.
+ */
+export async function resendVerificationEmail(email: string): Promise<void> {
+  const user = await db.user.findFirst({
+    where: {
+      email: email.toLowerCase(),
+      deletedAt: null,
+      emailVerifiedAt: null,
+      // A banned or suspended account does not get to re-open itself by mail.
+      status: 'PENDING',
+    },
+    select: { id: true, email: true, displayName: true },
+  });
+
+  if (!user) return;
+
+  await issueVerificationEmail(user.id, user.email, user.displayName);
+}
+
+/**
+ * Nightly catch-up for confirmations that never arrived.
+ *
+ * The manual "send it again" above is the real fix, but it only helps people
+ * who come looking for it. Somebody who registered during a mail outage got
+ * nothing, has no reason to suspect a link was ever sent, and will simply
+ * assume the site is broken. This finds them.
+ *
+ * Three limits keep it from becoming a nuisance, which is the failure mode of
+ * every well-meant reminder job:
+ *
+ *   • **Once per account, ever.** `verificationRemindedAt` is stamped whether or
+ *     not the mail succeeds, so nothing here can loop.
+ *   • **Recent registrations only.** Past the window, an unconfirmed account is
+ *     somebody who changed their mind, and mailing them is unsolicited.
+ *   • **A per-run cap**, so a backlog is worked through over several nights
+ *     instead of emptying a sending quota in one go.
+ *
+ * The order matters: the stamp is written *before* the mail is sent. A crash
+ * halfway therefore costs one reminder rather than sending it every night from
+ * then on.
+ */
+const REMINDER_WINDOW_DAYS = 14;
+const REMINDER_BATCH = 25;
+
+export async function resendMissedVerifications(): Promise<number> {
+  const cutoff = new Date(Date.now() - REMINDER_WINDOW_DAYS * 86_400_000);
+
+  const pending = await db.user.findMany({
+    where: {
+      deletedAt: null,
+      status: 'PENDING',
+      emailVerifiedAt: null,
+      verificationRemindedAt: null,
+      createdAt: { gte: cutoff },
+    },
+    select: { id: true, email: true, displayName: true },
+    orderBy: { createdAt: 'asc' },
+    take: REMINDER_BATCH,
+  });
+
+  let sent = 0;
+
+  for (const user of pending) {
+    await db.user.update({
+      where: { id: user.id },
+      data: { verificationRemindedAt: new Date() },
+    });
+
+    try {
+      await issueVerificationEmail(user.id, user.email, user.displayName);
+      sent += 1;
+    } catch (error) {
+      logger.error('A pótlólagos megerősítő levél nem ment ki', error, { userId: user.id });
+    }
+  }
+
+  return sent;
+}
+
 export async function verifyEmail(token: string): Promise<{ userId: string }> {
   const record = await db.emailVerificationToken.findUnique({
     where: { tokenHash: hashToken(token) },

@@ -7,6 +7,7 @@ import { pruneNotifications } from '@/server/notifications';
 import { publishDueReleases } from '@/server/releases';
 import { publishDueNews } from '@/server/news';
 import { sendDigests } from '@/server/digest';
+import { resendMissedVerifications } from '@/server/auth-service';
 import { checkDownloadLinks } from '@/server/link-check';
 import { runScheduledSync } from '@/server/admin/metadata-sync';
 import { env } from '@/lib/env';
@@ -112,6 +113,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
     return outcome.checked;
   });
+
+  /*
+    Confirmation links that never arrived.
+
+    Deliberately before the digests, because it is the more urgent of the two:
+    an account waiting on a confirmation cannot fully use the site, while a
+    missed digest is a day of latency on things the person can already see.
+  */
+  await step('resentVerifications', resendMissedVerifications);
 
   /*
     Digests.

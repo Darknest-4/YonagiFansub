@@ -41,6 +41,9 @@ export const RATE_LIMITS = {
   'auth:password-forgot': { limit: 4, windowSec: 3600 },
   'auth:password-reset': { limit: 6, windowSec: 3600 },
   'auth:verify': { limit: 10, windowSec: 3600 },
+  // Tighter than the reset: this one sends mail to an address the caller typed,
+  // so an unlimited version is a way to have somebody's inbox filled for them.
+  'auth:verify-resend': { limit: 3, windowSec: 3600 },
   'contact:submit': { limit: 3, windowSec: 3600 },
   'comment:create': { limit: 12, windowSec: 600 },
   'search:query': { limit: 60, windowSec: 60 },

@@ -341,6 +341,7 @@ Egy futás elvégzi:
 | `prunedContactMessages` | Archivált és spam üzenetek (24 hónap). |
 | `prunedAuditLogs` | Audit napló (12 hónap). |
 | `checkedLinks` | A legrégebben ellenőrzött 60 letöltési link állapotának frissítése. |
+| `resentVerifications` | Pótlólagos megerősítő levél azoknak, akik regisztráltak, de nem kapták meg. |
 | `sentDigests` | Esedékes napi és heti e-mail összefoglalók kiküldése. |
 | `syncedMetadata` | AniList/Jikan újraszinkron a legelavultabb projektekre. |
 
@@ -353,6 +354,14 @@ tárhely nem tud HEAD-et, egy egybájtos GET-et), és ez alapján állítja az
 botvédelem, az 5xx pedig egy rossz éjszaka — ezekből *akadozó* lesz, nem halott.
 Egy élő tükör téves letiltása valódi letöltésbe kerül, egy halott meghagyása
 egyetlen félrekattintásba. A halott linkekről figyelmeztetés kerül a naplóba.
+
+**Megerősítő levél pótlása.** A `resendVerifications` azokat a fiókokat keresi
+meg, amelyek az elmúlt 14 napban regisztráltak, de még mindig megerősítetlenek
+— jellemzően azért, mert a levél elveszett vagy a levelezés éppen nem működött.
+**Fiókonként legfeljebb egyszer** küld, futásonként legfeljebb 25-öt. Aki maga
+keresi a megoldást, annak ott a `/megerosites-ujrakuldes` oldal és a
+fiókbeállításokban megjelenő kártya — a pótlás azoknak szól, akik nem is tudják,
+hogy kellett volna levelet kapniuk.
 
 **Összefoglalók.** A `sentDigests` a felhasználó beállítása szerint napi vagy
 heti levelet küld a saját értesítéseiből, és csak akkor, ha van mit. Az
