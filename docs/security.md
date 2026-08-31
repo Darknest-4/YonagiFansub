@@ -322,9 +322,44 @@ médiatároló kulcsa sosem jut el a böngészőig.
 | Tömeges letöltés | Nézőnként és videónként rate limit, a lejátszás és a scrapelés sebessége közé állítva |
 | „Videó címének másolása" a jobb gombos menüben | A `<video>` `src`-je `blob:` URL, nincs benne médiacím |
 
+### Harmadik féltől származó források
+
+Három forrástípus van, és nem egyforma a védelmük — ezt érdemes tudni, mielőtt
+valamit „védettnek" hiszel:
+
+| Típus | Ki szolgálja ki | Mit rejt el |
+| --- | --- | --- |
+| **Saját tároló (HLS)** | Mi, aláírt tokennel | Mindent — semmilyen URL nem jut a böngészőig |
+| **Külső fájl, proxyval** | Mi, aláírt tokennel | A fájl eredetét. Cserébe minden bájt a te sávszélességed |
+| **Külső fájl, proxy nélkül** | A szolgáltató | Semmit — a cím látszik. Az ő védelmi szintjük érvényes |
+| **Beágyazás (iframe)** | A szolgáltató | Semmit, de **izolálva** — lásd lent |
+
+Az embed és a proxy nélküli fájl nem a mi kiszolgálásunk, ezért nem rejtjük el,
+hanem **elszigeteljük**. A szolgáltató lejátszója egy `/beagyazas/[id]` alatti,
+saját domainünkön futó dokumentumban él, aminek külön CSP-je van, és az pontosan
+azt az egy hosztot nevezi meg, amit az adott forrás bejelentett. Ennek két
+következménye van:
+
+- **Új szolgáltató nem igényel deployt.** Az oldal `frame-src` direktívája
+  `'self'` marad örökre; a bővítés egy eldobható keretben történik.
+- **Egy feltört szolgáltató semmit nem ér el nálunk.** Abban a keretben nincs
+  munkamenet, nincs oldalscript, és a CSP `script-src 'none'` — még ha akarna,
+  se tudna semmit lekérni.
+
+A sandbox alapból nem engedi a felugró ablakokat és azt, hogy a keret kirángassa
+a látogatót az oldalról. Néhány makacs host eltörik ettől; azoknál forrásonként
+lazítható.
+
+**Karbantartási figyelmeztetés:** ha egy szolgáltató `domains` listájából
+kikerül egy hoszt, az azon futó források nem fognak lejátszani — a keret CSP-je
+onnantól nem engedi. Ez szándékos, de a hibakép „a szolgáltató nem megy", ezért
+érdemes először itt keresni.
+
 **Amit NEM akadályoz meg — és ezt fontos kimondani:**
 
-Ha a böngésző lejátssza, a bájtok a gépen vannak. Fejlesztői eszközökkel vagy
+Ha a böngésző lejátssza, a bájtok a gépen vannak. Beágyazott és proxy nélküli
+forrásnál ráadásul a cím is látszik — ott a szolgáltató védelmén kívül nincs
+semmink, és ezt nem is állítjuk másképp. Fejlesztői eszközökkel vagy
 egy olyan bővítménnyel, ami az MSE-be köt be (nem a DOM-ot olvassa), a fájl
 kinyerhető. Ezen csak valódi DRM változtat — Widevine, PlayReady, FairPlay —,
 ami licencszervert és címenkénti csomagolást igényel, tehát külön projekt és

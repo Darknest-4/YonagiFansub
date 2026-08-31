@@ -65,8 +65,9 @@ export default async function EpisodePage({ params }: { params: Params }) {
 
   const { previous, next } = await getEpisodeNeighbours(episode.project.id, number);
 
-  // Best available published source; the list is already ordered by resolution.
-  const [video] = await listEpisodeVideos(episode.id);
+  // Every published source, in the order the team set. The player walks that
+  // order on failure, so a dead filehost is a switch rather than a broken page.
+  const videos = await listEpisodeVideos(episode.id);
 
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
   const accent = episode.project.accentColor ?? '#f761a8';
@@ -169,12 +170,23 @@ export default async function EpisodePage({ params }: { params: Params }) {
               play — the still is a stand-in for the video, so showing both would
               be showing the same frame twice.
             */}
-            {video ? (
+            {videos.length > 0 ? (
               <div className="mt-6">
-                <VideoPlayer videoId={video.id} poster={episode.thumbnailUrl} />
-                {video.requiresAuth && (
+                <VideoPlayer
+                  episodeId={episode.id}
+                  sources={videos.map((source) => ({
+                    id: source.id,
+                    kind: source.kind,
+                    label: source.label,
+                    resolution: source.resolution,
+                    requiresAuth: source.requiresAuth,
+                    provider: source.provider,
+                  }))}
+                  poster={episode.thumbnailUrl}
+                />
+                {videos.some((source) => source.requiresAuth) && (
                   <p className="mt-2 text-2xs text-mist-500">
-                    A lejátszáshoz bejelentkezés szükséges.
+                    Egyes források lejátszásához bejelentkezés szükséges.
                   </p>
                 )}
               </div>

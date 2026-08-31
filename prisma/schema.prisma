@@ -648,14 +648,100 @@ model TeamMember {
 /// concern, not this application's. Storing the key rather than a URL is what
 /// makes protected playback possible: nothing the browser receives ever names
 /// the underlying object.
+/// How a playback source reaches the viewer.
+///
+/// The three differ in who serves the bytes, which decides both what protection
+/// is possible and whose bandwidth pays for it.
+enum VideoSourceKind {
+  /// An HLS package in our own storage, served through the signing proxy.
+  /// The only kind where no URL of any sort reaches the browser.
+  HLS_PROXY
+
+  /// A direct file URL somewhere else (mp4, or m3u8 on another host).
+  /// `proxied` decides whether it goes through us or straight to the viewer.
+  DIRECT_FILE
+
+  /// A third-party player embedded in an iframe. Their page, their player,
+  /// their bandwidth — and their ads, which is why sandboxing matters.
+  EMBED
+}
+
+/// A place videos can come from.
+///
+/// A table rather than a hard-coded list because the set of working filehosts
+/// changes constantly, and a fansub should be able to add one at 2am without a
+/// deploy. `urlPatterns` is what makes that practical: paste the page URL you
+/// already have, and the file id is extracted from it.
+model VideoProvider {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  kind VideoSourceKind @default(EMBED)
+
+  /// `https://example.com/e/{id}` — `{id}` is replaced with the source's
+  /// `externalId`. Null for providers used only as direct file hosts.
+  embedTemplate String?
+
+  /// Regular expressions tried in order against a pasted URL; the first
+  /// capture group is taken as the id. Stored as strings so they are editable
+  /// in the admin — a provider changing its URL shape is a five-minute fix.
+  urlPatterns String[] @default([])
+
+  /// Hosts the embed document is allowed to reach. Becomes that one frame's
+  /// own `frame-src`, so the site-wide policy never has to be widened.
+  domains String[] @default([])
+
+  /// A few hosts deliberately break under a strict sandbox. Off by default:
+  /// popup ads on our own page are our problem, not the provider's.
+  allowPopups Boolean @default(false)
+
+  isEnabled Boolean @default(true)
+  sortOrder Int     @default(0)
+  color     String?
+  notes     String? @db.Text
+
+  sources VideoSource[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isEnabled, sortOrder])
+  @@map("video_providers")
+}
+
 model VideoSource {
   id        String  @id @default(cuid())
   episodeId String
   episode   Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
 
-  /// Storage key of the master playlist, e.g. `video/yoru-01/master.m3u8`.
-  /// Segments are resolved relative to it and never leave the same prefix.
-  masterKey String
+  kind VideoSourceKind @default(HLS_PROXY)
+
+  providerId String?
+  provider   VideoProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+
+  /// HLS_PROXY only: storage key of the master playlist, e.g.
+  /// `video/yoru-01/master.m3u8`. Segments resolve relative to it and never
+  /// leave the same prefix.
+  masterKey String?
+
+  /// EMBED only: the provider's own file id, substituted into `embedTemplate`.
+  externalId String?
+
+  /// DIRECT_FILE only: the full URL of the file.
+  sourceUrl String? @db.Text
+
+  /// DIRECT_FILE only: stream through our server instead of handing the URL to
+  /// the browser. Hides the origin and applies the same signed-token scheme, at
+  /// the cost of every byte crossing our bandwidth — so it is a per-source
+  /// decision rather than a site-wide policy.
+  proxied Boolean @default(false)
+
+  /// Overrides the provider's sandbox setting for this one source.
+  allowPopups Boolean?
+
+  /// Lower plays first, and is the order the player falls back through.
+  sortOrder Int @default(0)
 
   label       String? // "1080p BD", "TV rip"
   resolution  Resolution @default(FHD_1080P)
@@ -675,8 +761,8 @@ model VideoSource {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  @@unique([episodeId, masterKey])
-  @@index([episodeId, status])
+  @@index([episodeId, status, sortOrder])
+  @@index([providerId])
   @@map("video_sources")
 }
 

@@ -1,5 +1,6 @@
 import 'server-only';
 import { db } from '@/lib/db';
+import type { VideoSourceKind } from '@prisma/client';
 import { NotFoundError } from '@/lib/errors';
 
 /**
@@ -14,7 +15,12 @@ import { NotFoundError } from '@/lib/errors';
 
 export interface PlayableVideo {
   id: string;
-  masterKey: string;
+  kind: VideoSourceKind;
+  masterKey: string | null;
+  externalId: string | null;
+  sourceUrl: string | null;
+  proxied: boolean;
+  allowPopups: boolean;
   requiresAuth: boolean;
   durationSec: number | null;
   label: string | null;
@@ -23,6 +29,13 @@ export interface PlayableVideo {
   episodeNumber: string;
   projectTitle: string;
   episodeTitle: string | null;
+  provider: {
+    slug: string;
+    name: string;
+    embedTemplate: string | null;
+    urlPatterns: string[];
+    domains: string[];
+  } | null;
 }
 
 /**
@@ -45,11 +58,27 @@ export async function getPlayableVideo(videoId: string): Promise<PlayableVideo |
     },
     select: {
       id: true,
+      kind: true,
       masterKey: true,
+      externalId: true,
+      sourceUrl: true,
+      proxied: true,
+      allowPopups: true,
       requiresAuth: true,
       durationSec: true,
       label: true,
       episodeId: true,
+      provider: {
+        select: {
+          slug: true,
+          name: true,
+          embedTemplate: true,
+          urlPatterns: true,
+          domains: true,
+          allowPopups: true,
+          isEnabled: true,
+        },
+      },
       episode: {
         select: {
           number: true,
@@ -62,9 +91,29 @@ export async function getPlayableVideo(videoId: string): Promise<PlayableVideo |
 
   if (!video) return null;
 
+  // A disabled provider takes its sources offline with it: turning one off is
+  // how a team reacts to a host going bad, and it would be useless if the
+  // sources it serves kept playing.
+  if (video.provider && !video.provider.isEnabled) return null;
+
   return {
     id: video.id,
+    kind: video.kind,
     masterKey: video.masterKey,
+    externalId: video.externalId,
+    sourceUrl: video.sourceUrl,
+    proxied: video.proxied,
+    // Per-source override wins; otherwise the provider's own setting.
+    allowPopups: video.allowPopups ?? video.provider?.allowPopups ?? false,
+    provider: video.provider
+      ? {
+          slug: video.provider.slug,
+          name: video.provider.name,
+          embedTemplate: video.provider.embedTemplate,
+          urlPatterns: video.provider.urlPatterns,
+          domains: video.provider.domains,
+        }
+      : null,
     requiresAuth: video.requiresAuth,
     durationSec: video.durationSec,
     label: video.label,
@@ -76,19 +125,35 @@ export async function getPlayableVideo(videoId: string): Promise<PlayableVideo |
   };
 }
 
-/** Published video sources for one episode, best first. */
+/**
+ * Published sources for one episode, in fallback order.
+ *
+ * Ordered by `sortOrder` rather than resolution: which source is *reliable* is
+ * not the same question as which is sharpest, and the team knows the answer.
+ * Sources whose provider has been disabled are dropped here so the player never
+ * offers one that cannot play.
+ */
 export async function listEpisodeVideos(episodeId: string) {
-  return db.videoSource.findMany({
-    where: { episodeId, deletedAt: null, status: 'PUBLISHED' },
+  const sources = await db.videoSource.findMany({
+    where: {
+      episodeId,
+      deletedAt: null,
+      status: 'PUBLISHED',
+      OR: [{ providerId: null }, { provider: { isEnabled: true } }],
+    },
     select: {
       id: true,
+      kind: true,
       label: true,
       resolution: true,
       durationSec: true,
       requiresAuth: true,
+      provider: { select: { name: true, slug: true, color: true } },
     },
-    orderBy: [{ resolution: 'asc' }, { createdAt: 'asc' }],
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   });
+
+  return sources;
 }
 
 export async function getAdminVideo(id: string) {

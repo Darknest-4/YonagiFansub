@@ -207,6 +207,180 @@ const GENRES = [
   ['szeletek', 'Hétköznapok', '#94a3b8'],
 ] as const;
 
+
+/**
+ * Video providers shipped as a starting point.
+ *
+ * Not an endorsement and not a fixed list — every one of these is editable and
+ * deletable in the admin, and new ones are added there without a deploy. They
+ * are here so a fresh install can paste a link and have it work, instead of
+ * first having to reverse-engineer a URL pattern.
+ *
+ * `urlPatterns` are what make "paste the link" work: the first capture group is
+ * taken as the file id. When a host changes its URL shape, the fix is editing
+ * one string in the admin.
+ */
+const VIDEO_PROVIDERS = [
+  // ── Klasszikus filehostok ────────────────────────────────────────────────
+  {
+    slug: 'streamtape',
+    name: 'Streamtape',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://streamtape.com/e/{id}',
+    urlPatterns: ['streamtape\\.[a-z.]+/(?:e|v)/([A-Za-z0-9]+)'],
+    domains: ['streamtape.com', 'streamtape.net', 'streamtape.to'],
+    sortOrder: 10,
+    color: '#f2a900',
+  },
+  {
+    slug: 'doodstream',
+    name: 'DoodStream',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://dood.to/e/{id}',
+    urlPatterns: ['do(?:od|d)[a-z]*\\.[a-z.]+/(?:e|d)/([A-Za-z0-9]+)'],
+    domains: ['dood.to', 'dood.la', 'dood.watch', 'doodstream.com', 'd000d.com'],
+    sortOrder: 20,
+    color: '#f5c518',
+  },
+  {
+    slug: 'mp4upload',
+    name: 'Mp4upload',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://www.mp4upload.com/embed-{id}.html',
+    urlPatterns: ['mp4upload\\.com/(?:embed-)?([A-Za-z0-9]+)'],
+    domains: ['mp4upload.com'],
+    sortOrder: 30,
+    color: '#3aa0e0',
+  },
+  {
+    slug: 'filemoon',
+    name: 'Filemoon',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://filemoon.sx/e/{id}',
+    urlPatterns: ['filemoon\\.[a-z.]+/(?:e|d)/([A-Za-z0-9]+)'],
+    domains: ['filemoon.sx', 'filemoon.to', 'filemoon.in'],
+    sortOrder: 40,
+    color: '#7b5cff',
+  },
+  {
+    slug: 'vidmoly',
+    name: 'Vidmoly',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://vidmoly.to/embed-{id}.html',
+    urlPatterns: ['vidmoly\\.[a-z.]+/(?:embed-|w/)?([A-Za-z0-9]+)'],
+    domains: ['vidmoly.to', 'vidmoly.me'],
+    sortOrder: 50,
+    color: '#4ade80',
+  },
+  {
+    slug: 'streamwish',
+    name: 'StreamWish',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://streamwish.to/e/{id}',
+    urlPatterns: ['stream(?:wish|hls)\\.[a-z.]+/(?:e/|f/)?([A-Za-z0-9]+)'],
+    domains: ['streamwish.to', 'streamwish.com', 'swishsrv.com'],
+    sortOrder: 60,
+    color: '#ec4899',
+  },
+
+  // ── Nagy platformok ──────────────────────────────────────────────────────
+  {
+    slug: 'youtube',
+    name: 'YouTube',
+    kind: 'EMBED' as const,
+    // `nocookie` is the privacy-preserving host and embeds identically.
+    embedTemplate: 'https://www.youtube-nocookie.com/embed/{id}',
+    urlPatterns: [
+      'youtube\\.com/watch\\?v=([A-Za-z0-9_-]{11})',
+      'youtu\\.be/([A-Za-z0-9_-]{11})',
+      'youtube(?:-nocookie)?\\.com/embed/([A-Za-z0-9_-]{11})',
+    ],
+    domains: ['youtube-nocookie.com', 'youtube.com', 'ytimg.com'],
+    sortOrder: 70,
+    color: '#ff0000',
+  },
+  {
+    slug: 'dailymotion',
+    name: 'Dailymotion',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://www.dailymotion.com/embed/video/{id}',
+    urlPatterns: ['dailymotion\\.com/(?:video|embed/video)/([A-Za-z0-9]+)', 'dai\\.ly/([A-Za-z0-9]+)'],
+    domains: ['dailymotion.com', 'dmcdn.net'],
+    sortOrder: 80,
+    color: '#0066dc',
+  },
+  {
+    slug: 'vimeo',
+    name: 'Vimeo',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://player.vimeo.com/video/{id}',
+    urlPatterns: ['vimeo\\.com/(?:video/)?(\\d+)'],
+    domains: ['vimeo.com', 'player.vimeo.com', 'vimeocdn.com'],
+    sortOrder: 90,
+    color: '#1ab7ea',
+  },
+  {
+    slug: 'odysee',
+    name: 'Odysee',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://odysee.com/$/embed/{id}',
+    urlPatterns: ['odysee\\.com/(?:\\$/embed/)?([^?#]+)'],
+    domains: ['odysee.com'],
+    sortOrder: 100,
+    color: '#ef4444',
+  },
+
+  // ── Felhőtárak ───────────────────────────────────────────────────────────
+  {
+    slug: 'google-drive',
+    name: 'Google Drive',
+    kind: 'EMBED' as const,
+    embedTemplate: 'https://drive.google.com/file/d/{id}/preview',
+    urlPatterns: ['drive\\.google\\.com/file/d/([A-Za-z0-9_-]+)', '[?&]id=([A-Za-z0-9_-]{20,})'],
+    domains: ['drive.google.com', 'googleusercontent.com'],
+    sortOrder: 110,
+    color: '#34a853',
+  },
+  {
+    slug: 'mega',
+    name: 'Mega',
+    kind: 'EMBED' as const,
+    // Mega's embed keeps the decryption key in the fragment, which is why the
+    // whole `file/<id>#<key>` tail is stored as the id.
+    embedTemplate: 'https://mega.nz/embed/{id}',
+    urlPatterns: ['mega\\.nz/(?:embed|file)/([A-Za-z0-9_-]+#[A-Za-z0-9_-]+)'],
+    domains: ['mega.nz'],
+    sortOrder: 120,
+    color: '#d9272e',
+  },
+  {
+    slug: 'pixeldrain',
+    name: 'Pixeldrain',
+    kind: 'DIRECT_FILE' as const,
+    embedTemplate: null,
+    urlPatterns: ['pixeldrain\\.com/(?:u|api/file)/([A-Za-z0-9]+)'],
+    domains: ['pixeldrain.com'],
+    sortOrder: 130,
+    color: '#f97316',
+  },
+
+  // ── Saját szerver ────────────────────────────────────────────────────────
+  {
+    slug: 'sajat-szerver',
+    name: 'Saját szerver',
+    kind: 'DIRECT_FILE' as const,
+    embedTemplate: null,
+    urlPatterns: [],
+    // Deliberately empty: with no declared domains a direct file is validated
+    // as "any https URL", which is what a self-hosted VPS needs. Fill it in to
+    // lock this provider down to your own hostnames.
+    domains: [],
+    sortOrder: 200,
+    color: '#f761a8',
+    notes: 'Saját mp4 vagy HLS URL. A domainek üresen hagyva bármilyen https cím elfogadott.',
+  },
+];
+
 const RELEASE_FORMATS = [
   {
     key: 'mkv-softsub',
@@ -415,6 +589,27 @@ async function seedReferenceData() {
     });
   }
 
+  for (const provider of VIDEO_PROVIDERS) {
+    await db.videoProvider.upsert({
+      where: { slug: provider.slug },
+      create: provider,
+      /*
+        `isEnabled` and `sortOrder` are deliberately absent from the update: a
+        team that turned a host off, or reordered its priority, has made an
+        operational decision, and a reseed after a deploy must not quietly undo
+        it. Templates and patterns do refresh, since those are the part that
+        breaks when a provider changes its URLs.
+      */
+      update: {
+        name: provider.name,
+        kind: provider.kind,
+        embedTemplate: provider.embedTemplate,
+        urlPatterns: provider.urlPatterns,
+        domains: provider.domains,
+      },
+    });
+  }
+
   for (const [slug, name, color] of GENRES) {
     await db.genre.upsert({
       where: { slug },
@@ -464,7 +659,7 @@ async function seedReferenceData() {
   }
 
   console.log(
-    `  ${POSITIONS.length} pozíció, ${GENRES.length} műfaj, ${RELEASE_FORMATS.length} formátum, ${FAQ.length} GYIK`,
+    `  ${POSITIONS.length} pozíció, ${GENRES.length} műfaj, ${RELEASE_FORMATS.length} formátum, ${VIDEO_PROVIDERS.length} videó-szolgáltató, ${FAQ.length} GYIK`,
   );
 }
 

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
-import { createPlaybackToken, MANIFEST_TTL_SECONDS } from '@/lib/video/token';
+import { buildPlaybackPlan } from '@/lib/video/plan';
 import { recordView } from '@/server/video';
 
 export const runtime = 'nodejs';
@@ -29,22 +29,11 @@ export async function GET(
     );
   }
 
-  const token = createPlaybackToken(
-    { scope: 'manifest', sid: gate.video.id, res: '', vb: gate.binding },
-    MANIFEST_TTL_SECONDS,
-  );
+  // Resolution can fail on a misconfigured source (no template, wrong domain);
+  // that is a 400 with a readable reason, not a 500.
+  const plan = buildPlaybackPlan(gate.video, gate.binding);
 
   await recordView(gate.video.id);
 
-  return NextResponse.json(
-    {
-      data: {
-        url: `/api/v1/watch/${videoId}/playlist?t=${encodeURIComponent(token)}`,
-        expiresIn: MANIFEST_TTL_SECONDS,
-        title: `${gate.video.projectTitle} — ${gate.video.episodeNumber}. rész`,
-        durationSec: gate.video.durationSec,
-      },
-    },
-    { headers: playbackHeaders('application/json') },
-  );
+  return NextResponse.json({ data: plan }, { headers: playbackHeaders('application/json') });
 }

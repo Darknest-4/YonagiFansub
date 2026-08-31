@@ -57,7 +57,15 @@ export async function GET(
   }
 
   // The manifest token addresses the package; a variant token names its own key.
+  // Only HLS_PROXY sources have one — anything else reaching this route is a
+  // source whose kind was changed after a playlist URL was handed out.
   const key = requested || gate.video.masterKey;
+  if (!key) {
+    return new NextResponse('Ez a forrás nem saját tárolóból játszik.', {
+      status: 409,
+      headers: playbackHeaders('text/plain'),
+    });
+  }
   const stored = await mediaDriver().get(key);
 
   if (!stored) {

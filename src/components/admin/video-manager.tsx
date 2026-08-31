@@ -14,14 +14,47 @@ import { ApiError, apiFetch, type FieldErrors } from '@/lib/client/api';
 
 interface VideoRow {
   id: string;
-  masterKey: string;
+  kind: 'HLS_PROXY' | 'DIRECT_FILE' | 'EMBED';
+  masterKey: string | null;
+  externalId: string | null;
+  sourceUrl: string | null;
+  providerId: string | null;
+  proxied: boolean;
+  allowPopups: boolean | null;
+  sortOrder: number;
   label: string | null;
   resolution: string;
   durationSec: number | null;
   requiresAuth: boolean;
   status: string;
   viewCount: number;
+  provider: { id: string; name: string; slug: string } | null;
 }
+
+interface ProviderOption {
+  id: string;
+  slug: string;
+  name: string;
+  kind: 'HLS_PROXY' | 'DIRECT_FILE' | 'EMBED';
+}
+
+const KINDS = [
+  {
+    value: 'EMBED',
+    label: 'Beágyazás (iframe)',
+    hint: 'A szolgáltató lejátszója fut, izolált keretben. A leggyorsabb út — nincs sávszélesség-költséged.',
+  },
+  {
+    value: 'DIRECT_FILE',
+    label: 'Külső fájl (mp4 / m3u8)',
+    hint: 'Közvetlen fájl-URL máshol. A proxy kapcsolóval eldöntöd, ki szolgálja ki.',
+  },
+  {
+    value: 'HLS_PROXY',
+    label: 'Saját tároló (HLS)',
+    hint: 'Feltöltött HLS csomag. Egyedül itt nem jut el semmilyen URL a böngészőig.',
+  },
+] as const;
 
 const RESOLUTIONS = [
   { value: 'SD_480P', label: '480p' },
@@ -38,7 +71,14 @@ const STATUSES = [
 ];
 
 interface Draft {
+  kind: 'HLS_PROXY' | 'DIRECT_FILE' | 'EMBED';
+  providerId: string;
   masterKey: string;
+  externalId: string;
+  sourceUrl: string;
+  proxied: boolean;
+  allowPopups: boolean;
+  sortOrder: string;
   label: string;
   resolution: string;
   durationSec: string;
@@ -47,7 +87,14 @@ interface Draft {
 }
 
 const EMPTY: Draft = {
+  kind: 'EMBED',
+  providerId: '',
   masterKey: '',
+  externalId: '',
+  sourceUrl: '',
+  proxied: false,
+  allowPopups: false,
+  sortOrder: '0',
   label: '',
   resolution: 'FHD_1080P',
   durationSec: '',
@@ -80,6 +127,7 @@ export function VideoManager({
   const toast = useToast();
 
   const [videos, setVideos] = useState<VideoRow[] | null>(null);
+  const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [editing, setEditing] = useState<VideoRow | 'new' | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [pending, setPending] = useState(false);
@@ -92,6 +140,13 @@ export function VideoManager({
       setVideos(await apiFetch<VideoRow[]>(`/api/v1/admin/videos?episodeId=${episodeId}`));
     } catch {
       setVideos([]);
+    }
+    try {
+      // Enabled providers only: offering a disabled one would let somebody
+      // create a source that cannot play.
+      setProviders(await apiFetch<ProviderOption[]>('/api/v1/admin/videos/providers'));
+    } catch {
+      setProviders([]);
     }
   };
 
@@ -110,7 +165,14 @@ export function VideoManager({
 
   const openEdit = (video: VideoRow) => {
     setDraft({
-      masterKey: video.masterKey,
+      kind: video.kind,
+      providerId: video.providerId ?? '',
+      masterKey: video.masterKey ?? '',
+      externalId: video.externalId ?? '',
+      sourceUrl: video.sourceUrl ?? '',
+      proxied: video.proxied,
+      allowPopups: video.allowPopups ?? false,
+      sortOrder: String(video.sortOrder),
       label: video.label ?? '',
       resolution: video.resolution,
       durationSec: video.durationSec ? String(video.durationSec) : '',
@@ -129,7 +191,14 @@ export function VideoManager({
 
     const body = {
       episodeId,
-      masterKey: draft.masterKey.trim(),
+      kind: draft.kind,
+      providerId: draft.providerId || null,
+      masterKey: draft.masterKey.trim() || null,
+      externalId: draft.externalId.trim() || null,
+      sourceUrl: draft.sourceUrl.trim() || null,
+      proxied: draft.proxied,
+      allowPopups: draft.allowPopups ? true : null,
+      sortOrder: Number(draft.sortOrder) || 0,
       label: draft.label.trim() || null,
       resolution: draft.resolution,
       durationSec: draft.durationSec ? Number(draft.durationSec) : null,
@@ -216,6 +285,16 @@ export function VideoManager({
                   <Badge tone={video.status === 'PUBLISHED' ? 'success' : 'neutral'} size="sm">
                     {STATUSES.find((s) => s.value === video.status)?.label ?? video.status}
                   </Badge>
+                  {video.provider && (
+                    <Badge tone="accent" size="sm">
+                      {video.provider.name}
+                    </Badge>
+                  )}
+                  {video.kind === 'DIRECT_FILE' && video.proxied && (
+                    <Badge tone="neutral" size="sm">
+                      proxy
+                    </Badge>
+                  )}
                   {video.requiresAuth && (
                     <span title="Bejelentkezés szükséges">
                       <Lock className="size-3 text-ember-400" aria-label="Bejelentkezés szükséges" />
@@ -223,7 +302,7 @@ export function VideoManager({
                   )}
                 </span>
                 <span className="nums mt-0.5 block truncate font-mono text-2xs text-mist-600">
-                  {video.masterKey}
+                  {video.masterKey ?? video.sourceUrl ?? video.externalId ?? '—'}
                 </span>
               </span>
 
@@ -273,24 +352,134 @@ export function VideoManager({
           <div className="space-y-4">
             {formError && <InlineError message={formError} />}
 
-            <Field
-              label="Tárolási kulcs"
-              required
-              hint="A master.m3u8 útvonala a médiatárolóban — nem URL. Pl. video/yoru-01/master.m3u8"
-              error={fieldErrors.masterKey}
-            >
-              {({ id, invalid, describedBy }) => (
-                <Input
-                  id={id}
-                  value={draft.masterKey}
-                  invalid={invalid}
-                  aria-describedby={describedBy}
-                  placeholder="video/yoru-01/master.m3u8"
-                  className="font-mono"
-                  onChange={(event) => setDraft({ ...draft, masterKey: event.target.value })}
-                />
+            <Field label="Forrás típusa" required error={fieldErrors.kind}>
+              {({ id, describedBy }) => (
+                <>
+                  <Select
+                    id={id}
+                    value={draft.kind}
+                    aria-describedby={describedBy}
+                    onChange={(event) =>
+                      setDraft({ ...draft, kind: event.target.value as Draft['kind'] })
+                    }
+                  >
+                    {KINDS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <p className="mt-1.5 text-2xs text-mist-500">
+                    {KINDS.find((option) => option.value === draft.kind)?.hint}
+                  </p>
+                </>
               )}
             </Field>
+
+            {draft.kind !== 'HLS_PROXY' && (
+              <Field
+                label="Szolgáltató"
+                required={draft.kind === 'EMBED'}
+                hint={
+                  draft.kind === 'DIRECT_FILE'
+                    ? 'Elhagyható — saját szervernél nem kell szolgáltató.'
+                    : undefined
+                }
+                error={fieldErrors.providerId}
+              >
+                {({ id, describedBy }) => (
+                  <Select
+                    id={id}
+                    value={draft.providerId}
+                    aria-describedby={describedBy}
+                    onChange={(event) => setDraft({ ...draft, providerId: event.target.value })}
+                  >
+                    <option value="">— nincs —</option>
+                    {providers
+                      .filter((provider) =>
+                        draft.kind === 'EMBED' ? provider.kind === 'EMBED' : true,
+                      )
+                      .map((provider) => (
+                        <option key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </option>
+                      ))}
+                  </Select>
+                )}
+              </Field>
+            )}
+
+            {draft.kind === 'EMBED' && (
+              <Field
+                label="Videó linkje vagy azonosítója"
+                required
+                hint="Elég bemásolni a szolgáltató oldalának linkjét — az azonosítót kinyerjük belőle."
+                error={fieldErrors.externalId}
+              >
+                {({ id, invalid, describedBy }) => (
+                  <Input
+                    id={id}
+                    value={draft.externalId}
+                    invalid={invalid}
+                    aria-describedby={describedBy}
+                    placeholder="https://streamtape.com/v/abc123/ep1.mp4"
+                    className="font-mono"
+                    onChange={(event) => setDraft({ ...draft, externalId: event.target.value })}
+                  />
+                )}
+              </Field>
+            )}
+
+            {draft.kind === 'DIRECT_FILE' && (
+              <>
+                <Field
+                  label="Fájl URL"
+                  required
+                  hint="Közvetlen mp4 vagy m3u8 cím. Csak https."
+                  error={fieldErrors.sourceUrl}
+                >
+                  {({ id, invalid, describedBy }) => (
+                    <Input
+                      id={id}
+                      value={draft.sourceUrl}
+                      invalid={invalid}
+                      aria-describedby={describedBy}
+                      placeholder="https://sajat-szerver.hu/video/ep1.mp4"
+                      className="font-mono"
+                      onChange={(event) => setDraft({ ...draft, sourceUrl: event.target.value })}
+                    />
+                  )}
+                </Field>
+
+                <Switch
+                  checked={draft.proxied}
+                  onChange={(proxied) => setDraft({ ...draft, proxied })}
+                  label="Szerveren keresztül szolgáljuk ki"
+                  description="Bekapcsolva a fájl címe rejtve marad és aláírt, lejáró URL-t kap — cserébe minden bájt a te sávszélességedet terheli. Kikapcsolva a néző közvetlenül a szolgáltatótól tölt: gyors és ingyenes, de a cím látszik."
+                />
+              </>
+            )}
+
+            {draft.kind === 'HLS_PROXY' && (
+              <Field
+                label="Tárolási kulcs"
+                required
+                hint="A master.m3u8 útvonala a médiatárolóban — nem URL. Pl. video/yoru-01/master.m3u8"
+                error={fieldErrors.masterKey}
+              >
+                {({ id, invalid, describedBy }) => (
+                  <Input
+                    id={id}
+                    value={draft.masterKey}
+                    invalid={invalid}
+                    aria-describedby={describedBy}
+                    placeholder="video/yoru-01/master.m3u8"
+                    className="font-mono"
+                    onChange={(event) => setDraft({ ...draft, masterKey: event.target.value })}
+                  />
+                )}
+              </Field>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Felirat" hint="Pl. „1080p BD”." error={fieldErrors.label}>
@@ -349,12 +538,34 @@ export function VideoManager({
               </Field>
             </div>
 
+            <Field label="Sorrend" hint="Kisebb szám előbb. A lejátszó ebben a sorrendben vált hibára." error={fieldErrors.sortOrder}>
+              {({ id, describedBy }) => (
+                <Input
+                  id={id}
+                  type="number"
+                  min={0}
+                  value={draft.sortOrder}
+                  aria-describedby={describedBy}
+                  onChange={(event) => setDraft({ ...draft, sortOrder: event.target.value })}
+                />
+              )}
+            </Field>
+
             <Switch
               checked={draft.requiresAuth}
               onChange={(requiresAuth) => setDraft({ ...draft, requiresAuth })}
               label="Bejelentkezés szükséges"
               description="Csak belépett felhasználók indíthatják el a lejátszást."
             />
+
+            {draft.kind === 'EMBED' && (
+              <Switch
+                checked={draft.allowPopups}
+                onChange={(allowPopups) => setDraft({ ...draft, allowPopups })}
+                label="Felugró ablakok engedélyezése"
+                description="Alapból tiltjuk, mert a reklám-popup a te oldaladon rontja az élményt. Néhány szolgáltató viszont szándékosan eltörik ettől — csak akkor kapcsold be, ha e nélkül nem indul el."
+              />
+            )}
           </div>
         </Modal>
       )}

@@ -50,6 +50,13 @@ function contentSecurityPolicy(nonce: string): string {
     "worker-src 'self' blob:",
     "base-uri 'self'",
     "object-src 'none'",
+    /*
+      `frame-src 'self'` and not a provider list. Third-party players are framed
+      through `/beagyazas/[id]`, a same-origin document that carries its own
+      one-host policy — so adding a provider never touches this line, and a
+      compromised host is confined to a frame with no session and no site script.
+    */
+    "frame-src 'self'",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "img-src 'self' data: blob: https:",
@@ -103,6 +110,15 @@ export async function middleware(request: NextRequest) {
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
+
+  /*
+    The isolated playback frame writes its own Content-Security-Policy, naming
+    the one host that source is allowed to reach. Two policies on one response
+    are intersected, so ours would override its `frame-ancestors 'self'` with
+    `'none'` and the frame would refuse to render inside our own page. It is
+    left alone here on purpose.
+  */
+  if (pathname.startsWith('/beagyazas/')) return NextResponse.next();
 
   const nonce = btoa(crypto.randomUUID());
   const csp = contentSecurityPolicy(nonce);
