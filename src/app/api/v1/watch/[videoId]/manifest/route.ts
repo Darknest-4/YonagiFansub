@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
 import { buildPlaybackPlan } from '@/lib/video/plan';
+import { checkRateLimit } from '@/lib/api/rate-limit';
 import { recordView } from '@/server/video';
 
 export const runtime = 'nodejs';
@@ -26,6 +27,29 @@ export async function GET(
     return NextResponse.json(
       { error: { code: 'PLAYBACK_DENIED', message: gate.reason } },
       { status: gate.status, headers: playbackHeaders('application/json') },
+    );
+  }
+
+  /*
+    Rate limited, and not only to protect the endpoint.
+
+    This is where `recordView` fires, so without a limit the view counter is a
+    number anyone can set by holding down refresh — a statistic nobody could
+    trust, which is worse than not having one. Thirty a minute is far above what
+    opening an episode and switching sources costs, and far below what inflating
+    a count needs.
+  */
+  /*
+    `checkRateLimit`, not `enforceRateLimit`: the latter throws a RateLimitError,
+    which `defineRoute` maps to a 429 — but these playback routes are raw
+    handlers with no such mapping, so a throw escaped as a 500. The caller could
+    not tell "slow down" from "the server broke", and neither could a log reader.
+  */
+  const limit = await checkRateLimit('video:manifest', `${gate.binding}:${gate.video.id}`);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: { code: 'RATE_LIMITED', message: 'Túl sok kérés. Várj egy kicsit.' } },
+      { status: 429, headers: playbackHeaders('application/json') },
     );
   }
 

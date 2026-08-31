@@ -3,7 +3,7 @@ import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
 import { verifyPlaybackToken } from '@/lib/video/token';
 import { contentTypeFor, mediaDriver } from '@/lib/media/driver';
 
-import { enforceRateLimit } from '@/lib/api/rate-limit';
+import { checkRateLimit } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -46,7 +46,13 @@ export async function GET(
     return new NextResponse(null, { status: 403, headers: playbackHeaders(null) });
   }
 
-  const limit = await enforceRateLimit(
+  /*
+    `checkRateLimit`, not `enforceRateLimit`: the latter throws a RateLimitError,
+    which `defineRoute` maps to a 429 — but these playback routes are raw
+    handlers with no such mapping, so a throw escaped as a 500. The caller could
+    not tell "slow down" from "the server broke", and neither could a log reader.
+  */
+  const limit = await checkRateLimit(
     'video:segment',
     `${gate.binding}:${gate.video.id}`,
   );

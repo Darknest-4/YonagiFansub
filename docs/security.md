@@ -350,6 +350,26 @@ A sandbox alapból nem engedi a felugró ablakokat és azt, hogy a keret kiráng
 a látogatót az oldalról. Néhány makacs host eltörik ettől; azoknál forrásonként
 lazítható.
 
+### A proxy és a belső hálózat
+
+A „szerveren keresztül kiszolgálva" kapcsoló egy olyan URL-t kér le, amit egy
+stábtag írt be. Védelem nélkül ez azt jelentené, hogy egy `episode:write` jogú
+szerkesztő **bármit elolvashat, amit a szerver elér** — felhő-metaadatot, belső
+admin felületet, adatbázis HTTP-portját.
+
+Ezért minden kimenő kapcsolat előtt ellenőrizzük a cél **IP-címét**, nem a
+hosztnevet:
+
+- IP-literálok (`https://169.254.169.254/`) a kérés előtt elbuknak
+- Hosztnevek a DNS-feloldás után, a `lookup` hookban — így a socket meg sem
+  nyílik, és nincs rés, ahol a DNS másodszorra mást válaszolhatna
+- Az átirányításokat nem követjük: egy 302 kilépés lenne az imént ellenőrzött
+  címtartományból
+
+Tiltott: loopback, link-local (metaadat!), RFC1918, CGNAT, multicast, a
+fenntartott és dokumentációs tartományok, valamint ugyanezek IPv6-ba csomagolt
+alakja (`::ffff:127.0.0.1`).
+
 **Karbantartási figyelmeztetés:** ha egy szolgáltató `domains` listájából
 kikerül egy hoszt, az azon futó források nem fognak lejátszani — a keret CSP-je
 onnantól nem engedi. Ez szándékos, de a hibakép „a szolgáltató nem megy", ezért

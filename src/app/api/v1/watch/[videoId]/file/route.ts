@@ -1,8 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { request as httpsRequest } from 'node:https';
+import { Readable } from 'node:stream';
 import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
 import { verifyPlaybackToken } from '@/lib/video/token';
 import { resolveExternalUrl } from '@/lib/video/plan';
-import { enforceRateLimit } from '@/lib/api/rate-limit';
+import { assertPublicHost, BlockedAddressError, guardedLookup } from '@/lib/video/ssrf';
+import { checkRateLimit } from '@/lib/api/rate-limit';
 import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
@@ -13,17 +16,25 @@ export const dynamic = 'force-dynamic';
  *
  * This is the "hide the origin" half of the per-source proxy switch: the viewer
  * sees a token URL on our domain, and the host it actually comes from never
- * reaches the browser. Every byte crosses our bandwidth, which is exactly why
- * it is a per-source decision rather than the default.
+ * reaches the browser. Every byte crosses our bandwidth, which is exactly why it
+ * is a per-source decision rather than the default.
  *
- * The `Range` header is passed straight through and the upstream's answer is
- * relayed unchanged. Seeking in a two-gigabyte file is the whole reason range
- * requests exist, and a proxy that swallowed them would turn every seek into a
- * full re-download.
+ * ## Why `https.request` and not `fetch`
  *
- * The body is piped, never buffered. Reading a film into memory before
- * answering would put the entire file through the heap for no benefit, since
- * the client consumes it in order anyway.
+ * Because this endpoint fetches a URL somebody typed, it is an SSRF primitive
+ * unless the destination is constrained — and constraining it properly means
+ * inspecting the address the socket is about to connect to, not the hostname in
+ * the URL. `fetch` gives no hook for that; `https.request` takes a `lookup`, so
+ * every resolved address is checked and a private one is refused before the
+ * connection opens. Validating the hostname up front and then calling `fetch`
+ * would leave the gap where DNS answers differently the second time.
+ *
+ * Redirects are not followed, for the same reason: a 302 is an invitation to
+ * leave the address space we just validated.
+ *
+ * The body is piped, never buffered. A film is thousands of megabytes and the
+ * client consumes it in order; putting it through the server's heap first buys
+ * nothing.
  */
 export async function GET(
   request: NextRequest,
@@ -47,66 +58,118 @@ export async function GET(
     return new NextResponse(null, { status: 403, headers: playbackHeaders(null) });
   }
 
-  const limit = await enforceRateLimit('video:segment', `${gate.binding}:${gate.video.id}`);
+  /*
+    `checkRateLimit`, not `enforceRateLimit`: the latter throws a RateLimitError,
+    which `defineRoute` maps to a 429 — but these playback routes are raw
+    handlers with no such mapping, so a throw escaped as a 500. The caller could
+    not tell "slow down" from "the server broke", and neither could a log reader.
+  */
+  const limit = await checkRateLimit('video:segment', `${gate.binding}:${gate.video.id}`);
   if (!limit.allowed) {
     return new NextResponse(null, { status: 429, headers: playbackHeaders(null) });
   }
 
-  // The URL comes from the database and is re-validated against the provider's
-  // declared domains on every request — a source edited to point somewhere else
-  // must not turn this into an open forward proxy.
-  let target: string;
+  // Re-validated against the provider's declared domains on every request: a
+  // source edited to point elsewhere must not turn this into an open proxy.
+  let target: URL;
   try {
-    target = resolveExternalUrl(gate.video);
+    target = new URL(resolveExternalUrl(gate.video));
   } catch {
     return new NextResponse(null, { status: 409, headers: playbackHeaders(null) });
   }
 
-  const range = request.headers.get('range');
+  if (target.protocol !== 'https:') {
+    return new NextResponse(null, { status: 409, headers: playbackHeaders(null) });
+  }
 
-  let upstream: Response;
   try {
-    upstream = await fetch(target, {
-      headers: {
-        ...(range ? { range } : {}),
-        // Some filehosts refuse a request with no referer, and others refuse one
-        // pointing at a different site. Sending the file's own origin is what a
-        // browser opening the page would do.
-        referer: new URL(target).origin,
-        'user-agent': 'Mozilla/5.0 (compatible; YonagiFansub/1.0)',
-      },
-      // No redirect following: a redirect could leave the domains the source was
-      // validated against, and this proxy would follow it without noticing.
-      redirect: 'manual',
-      cache: 'no-store',
-      signal: AbortSignal.timeout(30_000),
-    });
+    // Literals never reach the resolver, so they are checked before the request.
+    assertPublicHost(target.hostname);
+
+    const upstream = await fetchUpstream(target, request.headers.get('range'));
+
+    const headers = playbackHeaders(upstream.contentType ?? 'video/mp4');
+    if (upstream.contentLength) headers.set('Content-Length', upstream.contentLength);
+    if (upstream.contentRange) headers.set('Content-Range', upstream.contentRange);
+    headers.set('Accept-Ranges', 'bytes');
+
+    return new NextResponse(upstream.body, { status: upstream.status, headers });
   } catch (error) {
+    if (error instanceof BlockedAddressError) {
+      // Worth a warning rather than a debug line: on a healthy instance this
+      // only fires when somebody has pointed a source at the private network.
+      logger.warn('A videóforrás belső címre mutat — a kérés elutasítva', {
+        videoId,
+        host: target.hostname,
+        address: error.address,
+      });
+      return new NextResponse(null, { status: 409, headers: playbackHeaders(null) });
+    }
+
     logger.warn('A külső videóforrás nem érhető el', { videoId, error: String(error) });
     return new NextResponse(null, { status: 502, headers: playbackHeaders(null) });
   }
+}
 
-  if (upstream.status >= 300 && upstream.status < 400) {
-    logger.warn('A külső videóforrás átirányítást küldött', {
-      videoId,
-      location: upstream.headers.get('location'),
+interface UpstreamResponse {
+  status: 200 | 206;
+  body: ReadableStream<Uint8Array>;
+  contentType: string | null;
+  contentLength: string | null;
+  contentRange: string | null;
+}
+
+function fetchUpstream(target: URL, range: string | null): Promise<UpstreamResponse> {
+  return new Promise((resolve, reject) => {
+    const upstream = httpsRequest(
+      {
+        protocol: target.protocol,
+        hostname: target.hostname,
+        port: target.port || 443,
+        path: `${target.pathname}${target.search}`,
+        method: 'GET',
+        // The whole point of this file: no socket opens to a private address.
+        lookup: guardedLookup,
+        timeout: 30_000,
+        headers: {
+          ...(range ? { range } : {}),
+          // Some filehosts refuse a request with no referer, others refuse one
+          // naming a different site. Sending the file's own origin is what a
+          // browser opening that page would do.
+          referer: target.origin,
+          'user-agent': 'Mozilla/5.0 (compatible; YonagiFansub/1.0)',
+          accept: '*/*',
+        },
+      },
+      (response) => {
+        const status = response.statusCode ?? 0;
+
+        if (status >= 300 && status < 400) {
+          response.resume();
+          reject(new Error(`átirányítás (${status}) — nem követjük`));
+          return;
+        }
+
+        if (status !== 200 && status !== 206) {
+          response.resume();
+          reject(new Error(`HTTP ${status}`));
+          return;
+        }
+
+        resolve({
+          status,
+          body: Readable.toWeb(response) as ReadableStream<Uint8Array>,
+          contentType: response.headers['content-type'] ?? null,
+          contentLength: response.headers['content-length'] ?? null,
+          contentRange: response.headers['content-range'] ?? null,
+        });
+      },
+    );
+
+    upstream.on('error', reject);
+    upstream.on('timeout', () => {
+      upstream.destroy(new Error('időtúllépés'));
     });
-    return new NextResponse(null, { status: 502, headers: playbackHeaders(null) });
-  }
-
-  if (!upstream.ok && upstream.status !== 206) {
-    return new NextResponse(null, { status: upstream.status === 404 ? 404 : 502, headers: playbackHeaders(null) });
-  }
-
-  const headers = playbackHeaders(upstream.headers.get('content-type') ?? 'video/mp4');
-  for (const header of ['content-length', 'content-range', 'accept-ranges'] as const) {
-    const value = upstream.headers.get(header);
-    if (value) headers.set(header, value);
-  }
-  if (!headers.has('accept-ranges')) headers.set('Accept-Ranges', 'bytes');
-
-  return new NextResponse(upstream.body, {
-    status: upstream.status === 206 ? 206 : 200,
-    headers,
+    upstream.end();
   });
 }
