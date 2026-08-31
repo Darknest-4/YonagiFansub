@@ -143,10 +143,17 @@ export function Hero({
             Üdvözlünk a
           </p>
 
-          {/* The wordmark, at the one size where the tracking reads as design
-              rather than as a spacing bug. `clamp` rather than breakpoints:
-              between 390 and 1440 there is no width where a step would be right. */}
-          <p className="font-display leading-[0.95] font-bold text-mist-50 uppercase">
+          {/*
+            The wordmark, at the one size where the tracking reads as design
+            rather than as a spacing bug. `clamp` rather than breakpoints:
+            between 390 and 1440 there is no width where a step would be right.
+
+            An `h1`, not a `p`: this is the home page's heading, and it was the
+            only page on the site without one. Nothing about it looks different —
+            the element carries its own type scale — but a screen reader now has
+            a document outline to start from, and so does a crawler.
+          */}
+          <h1 className="font-display leading-[0.95] font-bold text-mist-50 uppercase">
             <span
               className="block"
               style={{ fontSize: 'clamp(2.75rem, 7vw, 5.5rem)', letterSpacing: '0.1em' }}
@@ -159,7 +166,7 @@ export function Hero({
             >
               Fansub
             </span>
-          </p>
+          </h1>
 
           <p className="mt-7 max-w-md text-base leading-relaxed text-mist-300">
             {active?.synopsis
