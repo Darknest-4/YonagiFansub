@@ -164,6 +164,20 @@ export const projectDetailArgs = Prisma.validator<Prisma.ProjectDefaultArgs>()({
     studio: true,
     source: true,
     durationMin: true,
+    // Imported metadata. Stored by the AniList/Jikan sync and rendered on the
+    // detail page — a field written every night and shown nowhere is just a
+    // slower way of having no data.
+    studios: true,
+    producers: true,
+    licensors: true,
+    tags: true,
+    averageScore: true,
+    malScore: true,
+    startDate: true,
+    endDate: true,
+    countryOfOrigin: true,
+    externalLinks: true,
+    relations: true,
     coverImageUrl: true,
     bannerImageUrl: true,
     trailerUrl: true,

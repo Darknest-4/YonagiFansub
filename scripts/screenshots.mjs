@@ -42,7 +42,7 @@ const PUBLIC_PAGES = [
   { file: '01-fooldal', path: '/', title: 'Főoldal', mobile: true },
   { file: '02-projektek', path: '/projektek', title: 'Projektek (katalógus)', mobile: true },
   { file: '03-projekt-reszletek', path: '/projektek/yoru-no-shizuku', title: 'Projekt adatlap', mobile: true },
-  { file: '04-epizod', path: '/projektek/yoru-no-shizuku/1', title: 'Epizód és letöltések' },
+  { file: '04-epizod', path: '/projektek/yoru-no-shizuku/1', title: 'Epizód, lejátszó és letöltések', mobile: true },
   { file: '05-kiadasok', path: '/kiadasok', title: 'Kiadások', mobile: true },
   { file: '06-hirek', path: '/hirek', title: 'Hírek' },
   { file: '07-hir', path: '/hirek/yoru-no-shizuku-bejelentes', title: 'Hír' },
@@ -75,19 +75,29 @@ const ADMIN_PAGES = (ids) => [
   { file: '42-admin-projektek', path: '/admin/projektek', title: 'Projektek' },
   { file: '43-admin-projekt-szerkeszto', path: `/admin/projektek/${ids.projectId}`, title: 'Projekt szerkesztő' },
   { file: '44-admin-projekt-uj', path: '/admin/projektek/uj', title: 'Új projekt' },
+  {
+    file: '44b-admin-metaadat-import',
+    path: '/admin/projektek/import',
+    title: 'Metaadat-import (AniList + Jikan)',
+  },
   { file: '45-admin-kiadasok', path: '/admin/kiadasok', title: 'Kiadások' },
   { file: '46-admin-kiadas-uj', path: '/admin/kiadasok/uj', title: 'Új kiadás' },
   { file: '47-admin-hirek', path: '/admin/hirek', title: 'Hírek' },
   { file: '48-admin-hir-szerkeszto', path: `/admin/hirek/${ids.newsId}`, title: 'Hír szerkesztő' },
-  { file: '49-admin-csapat', path: '/admin/csapat', title: 'Csapat' },
+  { file: '49-admin-csapat', path: '/admin/csapat', title: 'Csapat', mobile: true },
   { file: '50-admin-mediatar', path: '/admin/media', title: 'Médiatár' },
   { file: '51-admin-gyik', path: '/admin/gyik', title: 'GYIK kezelés' },
   { file: '52-admin-uzenetek', path: '/admin/uzenetek', title: 'Kapcsolati üzenetek' },
   { file: '53-admin-hozzaszolasok', path: '/admin/hozzaszolasok', title: 'Hozzászólás-moderálás' },
-  { file: '54-admin-felhasznalok', path: '/admin/felhasznalok', title: 'Felhasználók' },
+  { file: '54-admin-felhasznalok', path: '/admin/felhasznalok', title: 'Felhasználók', mobile: true },
   { file: '55-admin-szerepkorok', path: '/admin/szerepkorok', title: 'Szerepkörök és jogosultságok' },
   { file: '56-admin-beallitasok', path: '/admin/beallitasok', title: 'Beállítások' },
   { file: '57-admin-naplo', path: '/admin/naplo', title: 'Audit napló' },
+  {
+    file: '58-admin-videoszolgaltatok',
+    path: '/admin/videoszolgaltatok',
+    title: 'Videószolgáltatók',
+  },
 ];
 
 /**
@@ -158,7 +168,7 @@ async function main() {
   // ── Nyilvános oldalak ──────────────────────────────────────────────────────
   for (const item of PUBLIC_PAGES) {
     const status = await shoot(page, `${BASE}${item.path}`, item.file);
-    results.push({ ...item, status });
+    results.push({ ...item, status, group: 'public' });
     console.log(`  ${String(status).padEnd(4)} ${item.file}  ${item.path}`);
   }
 
@@ -178,9 +188,11 @@ async function main() {
     newsId: process.env.SHOT_NEWS_ID ?? '',
   };
 
+  const accountFiles = new Set(ACCOUNT_PAGES.map((item) => item.file));
+
   for (const item of [...ACCOUNT_PAGES, ...ADMIN_PAGES(ids)]) {
     const status = await shoot(page, `${BASE}${item.path}`, item.file);
-    results.push({ ...item, status });
+    results.push({ ...item, status, group: accountFiles.has(item.file) ? 'account' : 'admin' });
     console.log(`  ${String(status).padEnd(4)} ${item.file}  ${item.path}`);
   }
 
@@ -206,6 +218,7 @@ async function main() {
   await browser.close();
 
   await optimise();
+  await writeIndex(results);
 
   const files = (await readdir(OUT)).filter((name) => name.endsWith('.png'));
   const failed = results.filter((entry) => entry.status !== 200 && !entry.file.startsWith('20-'));
@@ -215,6 +228,52 @@ async function main() {
     console.error('Nem 200-as válasz:', failed.map((entry) => `${entry.path} (${entry.status})`).join(', '));
     process.exitCode = 1;
   }
+}
+
+/**
+ * A mappa tartalomjegyzéke.
+ *
+ * A gyökér README ide hivatkozik, a szkript viszont minden futás elején törli a
+ * mappát — így a hivatkozás addig törött volt, amíg a fájl kézzel írva létezett
+ * volna. Ha a szkript írja, nem tud elavulni és nem tud eltűnni: ugyanabból a
+ * listából készül, amiből a képek.
+ */
+async function writeIndex(results) {
+  const mobile = new Set(
+    (await readdir(OUT))
+      .filter((name) => name.endsWith('-mobil.png'))
+      .map((name) => name.replace(/-mobil\.png$/, '')),
+  );
+
+  const section = (title, items) =>
+    [
+      `## ${title}`,
+      '',
+      ...items.map((item) => {
+        const phone = mobile.has(item.file) ? ` · [mobil](${item.file}-mobil.png)` : '';
+        return `- **${item.title}** — [${item.file}.png](${item.file}.png)${phone}  \n  \`${item.path}\``;
+      }),
+      '',
+    ].join('\n');
+
+  const pick = (group) => results.filter((item) => item.group === group);
+
+  const content = [
+    '# Képernyőképek',
+    '',
+    'Ezt a mappát a `npm run screenshots` állítja elő — kézzel ne szerkeszd, mert',
+    'a következő futás törli. Minden kép azonos viewportról, azonos',
+    'adatbázis-állapotról és sötét témával készül, hogy a képek összehasonlíthatók',
+    'legyenek. Ahol a mobil elrendezés érdemben más, arról telefonos kép is van.',
+    '',
+    `Legutóbbi futás: ${results.length} oldal.`,
+    '',
+    section('Nyilvános oldalak', pick('public')),
+    section('Fiók', pick('account')),
+    section('Admin', pick('admin')),
+  ].join('\n');
+
+  await writeFile(path.join(OUT, 'README.md'), `${content}\n`, 'utf8');
 }
 
 /**

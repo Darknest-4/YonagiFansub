@@ -3,9 +3,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { Building2, CalendarDays, Clapperboard, Download, ExternalLink, Users } from 'lucide-react';
+import {
+  Building2,
+  CalendarDays,
+  Clapperboard,
+  Download,
+  ExternalLink,
+  Star,
+  Timer,
+  Users,
+} from 'lucide-react';
 import { env } from '@/lib/env';
-import { formatCount, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
+import { formatCount, formatDate, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
 import { db } from '@/lib/db';
 import {
   getPublicEpisodes,
@@ -24,6 +33,9 @@ import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeList } from '@/components/site/episode-list';
 import { FollowButton } from '@/components/site/follow-button';
 import { ExternalLinks } from '@/components/site/external-links';
+import { OfficialLinks } from '@/components/site/official-links';
+import { ProductionCredits } from '@/components/site/production-credits';
+import { ProjectRelations } from '@/components/site/project-relations';
 import {
   ProjectStatusCard,
   aggregateProgress,
@@ -102,6 +114,27 @@ export default async function ProjectPage({ params }: { params: Params }) {
   // A legmagasabb sorszámú megjelent rész — az `episodes` szám szerint növekvő.
   const latestRelease = released.at(-1) ?? null;
 
+  /*
+    A `malScore` a sémában Decimal, a data cache viszont sztringgé alakítja
+    (lásd `lib/cache.ts`), így a találat és a hiba két különböző típust adna
+    vissza. A `Number()` mindkettőt kezeli — a Decimal `valueOf`-ja is sztringet
+    ad —, a `Number.isFinite` pedig kiszűri, ha egyik sem értelmezhető.
+  */
+  const malScore = project.malScore === null ? null : Number(project.malScore);
+
+  const scoreLabel = [
+    project.averageScore ? `${project.averageScore}%` : null,
+    malScore !== null && Number.isFinite(malScore)
+      ? `MAL ${malScore.toFixed(2).replace('.', ',')}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  // Az importált stúdiólista pontosabb, de a kézzel felvett mező erősebb: ha
+  // valaki átírta, annak oka volt.
+  const primaryStudio = project.studio ?? project.studios[0] ?? null;
+
   const staffByPosition = [...project.staff]
     .sort((a, b) => a.position.sortOrder - b.position.sortOrder)
     .reduce<Map<string, { name: string; color: string | null; members: typeof project.staff }>>(
@@ -138,7 +171,25 @@ export default async function ProjectPage({ params }: { params: Params }) {
             url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${project.slug}`,
             numberOfEpisodes: project.totalEpisodes ?? undefined,
             genre: project.genres.map(({ genre }) => genre.name),
-            productionCompany: project.studio ? { '@type': 'Organization', name: project.studio } : undefined,
+            keywords: project.tags.length > 0 ? project.tags.join(', ') : undefined,
+            productionCompany:
+              project.studios.length > 0
+                ? project.studios.map((name) => ({ '@type': 'Organization', name }))
+                : primaryStudio
+                  ? { '@type': 'Organization', name: primaryStudio }
+                  : undefined,
+            /*
+              Szándékosan nincs `aggregateRating`. A pontszám az AniListé, és a
+              schema.org-nak `ratingCount` vagy `reviewCount` is kellene hozzá —
+              olyan szám, ami nem a miénk, és amit kitalálni annyi lenne, mint
+              hamis adatot adni a keresőnek. A látogató látja a pontszámot az
+              oldalon; a strukturált adatba csak az kerül, amiért felelni tudunk.
+            */
+            startDate: toIsoString(project.startDate),
+            endDate: toIsoString(project.endDate),
+            countryOfOrigin: project.countryOfOrigin
+              ? { '@type': 'Country', name: project.countryOfOrigin }
+              : undefined,
             datePublished: toIsoString(project.publishedAt),
             inLanguage: 'ja',
             subtitleLanguage: 'hu',
@@ -291,11 +342,25 @@ export default async function ProjectPage({ params }: { params: Params }) {
                     value={`${project.season ? `${SEASON_LABEL[project.season]} ` : ''}${project.seasonYear}`}
                   />
                 )}
-                {project.studio && (
+                {primaryStudio && (
                   <Fact
                     icon={<Building2 className="size-3.5" aria-hidden />}
                     label="Stúdió"
-                    value={project.studio}
+                    value={primaryStudio}
+                  />
+                )}
+                {scoreLabel && (
+                  <Fact
+                    icon={<Star className="size-3.5" aria-hidden />}
+                    label="Értékelés"
+                    value={scoreLabel}
+                  />
+                )}
+                {project.durationMin && (
+                  <Fact
+                    icon={<Timer className="size-3.5" aria-hidden />}
+                    label="Hossz"
+                    value={`${project.durationMin} perc`}
                   />
                 )}
                 <Fact
@@ -357,6 +422,55 @@ export default async function ProjectPage({ params }: { params: Params }) {
             </section>
           )}
 
+          {/*
+            A címkék nem műfajok: az AniList finomabb bontása ("Időugrás", "Női
+            főszereplő") az, ami alapján egy néző valójában válogat. Nem linkek,
+            mert nincs mögöttük böngészhető lista — egy kattinthatónak látszó,
+            sehová nem vezető címke rosszabb, mint egy sima szó.
+          */}
+          {project.tags.length > 0 && (
+            <section aria-labelledby="tags">
+              <h2
+                id="tags"
+                className="mb-3 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase"
+              >
+                Címkék
+              </h2>
+              <ul className="flex flex-wrap gap-1.5">
+                {project.tags.slice(0, 18).map((tag) => (
+                  <li
+                    key={tag}
+                    className="rounded-md border border-ink-800 bg-ink-900/40 px-2 py-0.5 text-2xs text-mist-400"
+                  >
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {project.startDate && (
+            <section aria-labelledby="airing">
+              <h2
+                id="airing"
+                className="mb-3 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase"
+              >
+                Sugárzás
+              </h2>
+              <p className="text-sm text-mist-300">
+                {formatDate(project.startDate)}
+                {project.endDate ? ` – ${formatDate(project.endDate)}` : ' –'}
+              </p>
+            </section>
+          )}
+
+          <ProductionCredits
+            studios={project.studios}
+            producers={project.producers}
+            licensors={project.licensors}
+            countryOfOrigin={project.countryOfOrigin}
+          />
+
           {staffByPosition.size > 0 && (
             <section aria-labelledby="credits">
               <h2
@@ -402,11 +516,15 @@ export default async function ProjectPage({ params }: { params: Params }) {
             </section>
           )}
 
+          <ProjectRelations relations={project.relations} currentSlug={project.slug} />
+
           <ExternalLinks
             malId={project.malId}
             anilistId={project.anilistId}
             title={project.titleRomaji ?? project.title}
           />
+
+          <OfficialLinks links={project.externalLinks} />
 
           {project.source && (
             <section>

@@ -30,6 +30,25 @@ export const CACHE_TAGS = {
   stats: 'stats',
 } as const;
 
+/**
+ * Cache payload version. **Bump this whenever a cached loader's shape changes.**
+ *
+ * Every key built by `cached()` carries this prefix, so bumping it makes the
+ * whole data cache unreadable in one step rather than one loader at a time.
+ *
+ * This is not housekeeping — it is a correctness fix for a bug that reached a
+ * production build here: a `select` gained fields, the cache still held an entry
+ * written before that, and the new render read `project.tags.length` off a value
+ * that no longer had `tags`. The page 500'd, and the types said it could not,
+ * because a cache entry is the one place where TypeScript's guarantee does not
+ * reach: it was serialised by different code than the code reading it back.
+ *
+ * The failure is also the nastiest kind to catch — invisible on a cold cache, so
+ * it passes locally and in CI, then fires on the first deploy that restores a
+ * warm one. A stale entry cannot be read by newer code if the key never matches.
+ */
+export const CACHE_VERSION = 'v2';
+
 export const CACHE_TTL = {
   /** Content that changes on a human timescale. */
   short: 60,
@@ -67,6 +86,10 @@ export const CACHE_TTL = {
  *
  * Anything cached must therefore be plain-JSON-safe, and anything read back
  * must tolerate the serialised shape.
+ *
+ * Keys are prefixed with `CACHE_VERSION`, which is what keeps an entry written
+ * by an older deploy from being handed to code that expects a wider shape. See
+ * the note on that constant before changing what a cached loader returns.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see the note above.
 export function cached<T extends (...args: any[]) => Promise<unknown>>(
@@ -74,7 +97,9 @@ export function cached<T extends (...args: any[]) => Promise<unknown>>(
   keyParts: string[],
   options: { tags: string[]; revalidate?: number },
 ): T {
-  return unstable_cache(loader, keyParts, {
+  // The prefix is added here rather than at the call sites: twenty-one callers
+  // is twenty-one chances to forget, and forgetting is a 500 on a warm cache.
+  return unstable_cache(loader, [CACHE_VERSION, ...keyParts], {
     tags: options.tags,
     revalidate: options.revalidate ?? CACHE_TTL.medium,
   }) as T;

@@ -93,7 +93,10 @@ A munkafolyamat állapota epizódonként — fordítás, időzítés, formázás
 lektorálás, enkódolás, QC.
 ![Projekt adatlap](docs/screenshots/03-projekt-reszletek.png)
 
-### Epizód és letöltések
+### Epizód, lejátszó és letöltések
+Online nézés és letöltés egy oldalon. A lejátszó forrásonként dönti el, hogyan
+játssza le: saját tárhelyről MSE-n át (a videó URL-je nem jelenik meg a DOM-ban),
+harmadik féltől pedig saját CSP-vel elzárt keretben.
 ![Epizód](docs/screenshots/04-epizod.png)
 
 ### Kiadások
@@ -169,7 +172,7 @@ bármelyik külön visszavonható.
 </details>
 
 <details>
-<summary><b>Admin</b> — 18 oldal</summary>
+<summary><b>Admin</b> — 20 oldal</summary>
 
 ### Vezérlőpult
 ![Vezérlőpult](docs/screenshots/40-admin-vezerlopult.png)
@@ -187,6 +190,13 @@ automatikusan mentődik, és a mentetlen munka újratöltés után visszakérhet
 
 ### Új projekt
 ![Új projekt](docs/screenshots/44-admin-projekt-uj.png)
+
+### Metaadat-import
+AniList és MyAnimeList azonosítóból behúzza a címeket, a leírást, a borítót, az
+epizódlistát és a kapcsolódó évadokat. A két forrás egymástól függetlenül fut:
+ha az egyik nem elérhető, a másikból kapott adat akkor is beolvasható, és az
+importáló megmondja, melyik nem válaszolt.
+![Metaadat-import](docs/screenshots/44b-admin-metaadat-import.png)
 
 ### Kiadások
 ![Admin kiadások](docs/screenshots/45-admin-kiadasok.png)
@@ -235,6 +245,13 @@ Minden admin írás mezőnkénti diff-fel. A tábla csak bővül: a kódban ninc
 út, ami módosítaná vagy törölné.
 ![Audit napló](docs/screenshots/57-admin-naplo.png)
 
+### Videó-szolgáltatók
+Egy új filehost vagy videómegosztó felvétele egy sor a felületen, nem kódmódosítás:
+a beágyazási sablon, a felismerő URL-minták és az engedélyezett domainek adják meg,
+mit fogadunk el és hová engedjük a keretet. Ha egy tárhely elromlik, egy kapcsolóval
+kikapcsolható, és minden hozzá tartozó forrás azonnal kiesik a lejátszásból.
+![Videó-szolgáltatók](docs/screenshots/58-admin-videoszolgaltatok.png)
+
 </details>
 
 <details>
@@ -255,8 +272,17 @@ külön elrendezést kapnak. Ezek az oldalak azok, ahol a különbség érdemi.
 ### Kiadások
 ![Kiadások mobilon](docs/screenshots/05-kiadasok-mobil.png)
 
+### Epizód és lejátszó
+![Epizód mobilon](docs/screenshots/04-epizod-mobil.png)
+
 ### Admin vezérlőpult
 ![Admin mobilon](docs/screenshots/40-admin-vezerlopult-mobil.png)
+
+### Admin csapat
+![Admin csapat mobilon](docs/screenshots/49-admin-csapat-mobil.png)
+
+### Admin felhasználók
+![Admin felhasználók mobilon](docs/screenshots/54-admin-felhasznalok-mobil.png)
 
 </details>
 
