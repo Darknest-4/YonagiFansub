@@ -41,7 +41,7 @@ cp .env.example .env.local
 
 # 3. Adatbázis
 npm run db:push                                   # séma
-npm run db:sql                                    # kiterjesztések, trigram indexek, CHECK-ek
+npm run db:sql                                    # kiterjesztések, indexek, teljes szöveges keresés, CHECK-ek
 npm run db:seed                                   # szerepkörök + demó tartalom
 
 # 4. Indítás
@@ -400,7 +400,7 @@ npm test
 npm run db:push      # séma szinkronizálás (fejlesztés)
 npm run db:migrate   # migráció készítése
 npm run db:deploy    # migráció alkalmazása (éles)
-npm run db:sql       # trigram indexek, kiterjesztések, CHECK megszorítások
+npm run db:sql       # kiterjesztések, trigram + teljes szöveges indexek, CHECK megszorítások
 npm run db:seed      # szerepkörök, jogosultságok, törzsadat
 npm run db:studio    # Prisma Studio
 

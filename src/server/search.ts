@@ -2,25 +2,31 @@ import 'server-only';
 import { db } from '@/lib/db';
 import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
 import { formatEpisodeNumber, truncate } from '@/lib/utils';
+import { fullTextSearch, type FtsHit } from '@/server/search-fts';
 
 /**
  * Global search.
  *
- * Deliberately a two-tier design:
+ * Two tiers that run together rather than one replacing the other, because they
+ * fail in opposite directions:
  *
- *   • Tier 1 (this file, default) — `ILIKE`-based prefix/substring matching over
- *     the indexed title columns. It is exact, predictable, needs no extra
- *     infrastructure, and at the catalogue size a fansub actually has (hundreds
- *     of projects, thousands of episodes) it returns in single-digit
- *     milliseconds off the trigram indexes created in `prisma/sql/search.sql`.
+ *   • Tier 1 — `ILIKE` substring matching over the trigram-indexed title
+ *     columns (`prisma/sql/02-search-indexes.sql`). Exact, predictable, and the
+ *     only one of the two that finds "kaze" inside "Shiokaze".
  *
- *   • Tier 2 (documented in `docs/architecture.md`) — Postgres full-text search
- *     with a materialised `tsvector`, behind the same interface. Worth adopting
- *     when the corpus grows enough that ranking matters more than exactness.
+ *   • Tier 2 — Postgres full-text, ranked (`src/server/search-fts.ts`, indexes
+ *     in `prisma/sql/04-fulltext.sql`). Handles stemming, multi-word queries as
+ *     independent requirements, and prose: it finds a post about "nyári
+ *     fesztiválok" from the word "fesztivál", which no substring match can.
  *
- * Results are scored in application code so that a title prefix always beats a
- * mid-word match, and a project always beats an episode of the same relevance —
- * without which "steins" would surface episode 7 above the series itself.
+ * Tier 2 is optional infrastructure. A database that never ran `npm run db:sql`
+ * gets tier-1 results and a single log line saying so — search never breaks over
+ * a missing deployment step.
+ *
+ * Final ordering is computed in application code from both signals, so that a
+ * title prefix always beats a mid-word match, and a project always beats an
+ * episode of the same relevance — without which "steins" would surface episode 7
+ * above the series itself.
  */
 
 export type SearchResultType = 'project' | 'episode' | 'news' | 'team';
@@ -57,6 +63,17 @@ const TYPE_WEIGHT: Record<SearchResultType, number> = {
   episode: 50,
 };
 
+/**
+ * How much a `ts_rank_cd` score is worth on the tier-1 scale.
+ *
+ * Cover density with the default weights tops out around 1 for a strong title
+ * hit and sits near 0.1 for a lone synopsis word, so this maps the useful range
+ * onto roughly the same 0–60 band the substring bonuses use. Deliberately a
+ * little below a substring hit at the top: when both signals fire, the one that
+ * matched the literal characters somebody typed is the more certain of the two.
+ */
+const FTS_WEIGHT = 45;
+
 function score(type: SearchResultType, haystack: string, needle: string): number {
   const value = haystack.toLowerCase();
   const query = needle.toLowerCase();
@@ -76,6 +93,22 @@ function score(type: SearchResultType, haystack: string, needle: string): number
   return TYPE_WEIGHT[type] + bonus + Math.max(0, 20 - value.length / 4);
 }
 
+/**
+ * The better of the two signals, not their sum.
+ *
+ * Adding them would let a row that scrapes a weak hit from each outrank a row
+ * that is an outright title match — two maybes beating one certainty, which is
+ * the wrong answer every time.
+ */
+function combine(base: number, type: SearchResultType, ftsRank: number | undefined): number {
+  if (ftsRank === undefined) return base;
+  return Math.max(base, TYPE_WEIGHT[type] + Math.min(60, ftsRank * FTS_WEIGHT));
+}
+
+function rankMap(hits: FtsHit[]): Map<string, number> {
+  return new Map(hits.map((hit) => [hit.id, hit.rank]));
+}
+
 export async function search(
   query: string,
   options: { limit?: number; type?: 'all' | SearchResultType } = {},
@@ -90,6 +123,15 @@ export async function search(
 
   const wants = (candidate: SearchResultType) => type === 'all' || type === candidate;
 
+  // Tier 2 runs first so its hits can be folded into the same queries that
+  // fetch the tier-1 rows. One extra sequential round trip buys a single select
+  // shape per entity — the alternative, running both in parallel and then
+  // back-filling the ids only full-text found, means writing every select twice.
+  const fts = await fullTextSearch(term, limit, wants);
+  const projectRank = rankMap(fts.projects);
+  const episodeRank = rankMap(fts.episodes);
+  const newsRank = rankMap(fts.news);
+
   const [projects, episodes, news, team] = await Promise.all([
     wants('project')
       ? db.project.findMany({
@@ -103,6 +145,7 @@ export async function search(
               { titleNative: { contains: term } },
               { synonyms: { has: term } },
               { studio: { contains: term, mode: 'insensitive' } },
+              { id: { in: [...projectRank.keys()] } },
             ],
           },
           select: {
@@ -114,7 +157,10 @@ export async function search(
             seasonYear: true,
             coverImageUrl: true,
           },
-          take: limit * 2,
+          // Wide enough that the full-text hits folded into the OR above cannot
+          // be cut off before scoring: `findMany` has no ordering here, so a
+          // tight `take` would hand back an arbitrary subset.
+          take: limit * 3,
         })
       : [],
 
@@ -126,6 +172,7 @@ export async function search(
             OR: [
               { title: { contains: term, mode: 'insensitive' } },
               { titleNative: { contains: term } },
+              { id: { in: [...episodeRank.keys()] } },
             ],
           },
           select: {
@@ -135,7 +182,7 @@ export async function search(
             thumbnailUrl: true,
             project: { select: { slug: true, title: true } },
           },
-          take: limit,
+          take: limit * 3,
         })
       : [],
 
@@ -148,6 +195,7 @@ export async function search(
             OR: [
               { title: { contains: term, mode: 'insensitive' } },
               { excerpt: { contains: term, mode: 'insensitive' } },
+              { id: { in: [...newsRank.keys()] } },
             ],
           },
           select: {
@@ -158,7 +206,7 @@ export async function search(
             coverImageUrl: true,
             publishedAt: true,
           },
-          take: limit,
+          take: limit * 3,
         })
       : [],
 
@@ -188,7 +236,7 @@ export async function search(
         .join(' · '),
       imageUrl: project.coverImageUrl,
       href: `/projektek/${project.slug}`,
-      score: score('project', project.title, term),
+      score: combine(score('project', project.title, term), 'project', projectRank.get(project.id)),
     })),
 
     ...episodes.map((episode) => ({
@@ -198,7 +246,11 @@ export async function search(
       subtitle: episode.title,
       imageUrl: episode.thumbnailUrl,
       href: `/projektek/${episode.project.slug}/${formatEpisodeNumber(episode.number.toString())}`,
-      score: score('episode', episode.title ?? episode.project.title, term),
+      score: combine(
+        score('episode', episode.title ?? episode.project.title, term),
+        'episode',
+        episodeRank.get(episode.id),
+      ),
     })),
 
     ...news.map((post) => ({
@@ -208,7 +260,7 @@ export async function search(
       subtitle: post.excerpt ? truncate(post.excerpt, 90) : null,
       imageUrl: post.coverImageUrl,
       href: `/hirek/${post.slug}`,
-      score: score('news', post.title, term),
+      score: combine(score('news', post.title, term), 'news', newsRank.get(post.id)),
     })),
 
     ...team.map((member) => ({

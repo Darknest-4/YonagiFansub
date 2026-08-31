@@ -159,11 +159,12 @@ a saját lemezére ír, amit a többi példány nem lát. Egyik sem kódváltoz�
 pooler mögé (PgBouncer, Neon, Supabase) mutathat, a `DIRECT_DATABASE_URL` pedig
 a migrációkhoz marad direkt.
 
-**4. Teljes szöveges keresés.** A jelenlegi `ILIKE` + trigram index több ezer
-projektig gyors marad. Amikor a rangsorolás fontosabbá válik az egyezésnél,
-Postgres `tsvector` oszlop generálható, ugyanazon a `search()` interfészen
-belül — a `src/server/search.ts` szándékosan úgy van megírva, hogy a
-lekérdezési stratégia cserélhető legyen a hívók érintése nélkül.
+**4. Elosztott keresőmotor.** A teljes szöveges keresés már megvan
+(`prisma/sql/04-fulltext.sql` + `src/server/search-fts.ts`), és a trigram
+egyezés *mellett* fut, nem helyette — a kettő ellentétes irányban hibázik. Ha a
+katalógus akkorára nő, hogy ez sem elég, a következő lépcső egy külön
+keresőszolgáltatás (Meilisearch, Typesense); addig egy Postgres-en kívüli
+komponens csak üzemeltetni való.
 
 **5. Háttérsorok.** Az értesítési fan-out jelenleg detached promise. Nagyságrendi
 növekedésnél ez egy job queue-ba kerül (BullMQ a már meglévő Redis fölött), a

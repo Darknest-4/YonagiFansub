@@ -48,7 +48,7 @@ közben.
 
 ```bash
 npx prisma migrate deploy                                  # séma
-npm run db:sql                                             # kiterjesztések, indexek, CHECK-ek
+npm run db:sql                                             # kiterjesztések, indexek, keresés, CHECK-ek
 NODE_ENV=production npx tsx prisma/seed.ts                 # szerepkörök, törzsadat
 ```
 

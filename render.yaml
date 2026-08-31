@@ -36,7 +36,8 @@ services:
     buildCommand: npm ci && npm run build
 
     # Runs after the build, with the database reachable and before traffic
-    # switches over. `db:sql` carries the trigram indexes and CHECK constraints
+    # switches over. `db:sql` carries the trigram and full-text indexes, the
+    # search functions, and the CHECK constraints
     # Prisma's schema language cannot express; the seed syncs permissions,
     # roles and reference data. Both are idempotent, so a redeploy is safe.
     preDeployCommand: npx prisma migrate deploy && npm run db:sql && npx tsx prisma/seed.ts
