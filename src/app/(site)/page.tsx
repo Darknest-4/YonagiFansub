@@ -24,6 +24,8 @@ import { getFeaturedProjects, getOngoingProjects } from '@/server/projects';
 import { getLatestReleases } from '@/server/releases';
 import { listPublicNews } from '@/server/news';
 import { getPublicStats } from '@/server/stats';
+import { getPublicSettings } from '@/server/settings';
+import { siteJsonLd } from '@/lib/seo';
 
 /**
  * Home page.
@@ -40,10 +42,36 @@ export default async function HomePage() {
   // Három kiemelt projekt: a hero ennyi közt vált. Nem több — a negyedik diát
   // már mérhetően senki nem nézi meg, viszont minden dia egy teljes borítókép,
   // amit be kell tölteni.
-  const [featured, stats] = await Promise.all([getFeaturedProjects(3), getPublicStats()]);
+  const [featured, stats, settings] = await Promise.all([
+    getFeaturedProjects(3),
+    getPublicStats(),
+    getPublicSettings(),
+  ]);
 
   return (
     <>
+      {/*
+        Az oldal önazonossága, egy helyen kimondva.
+
+        Enélkül a kereső szemében ez egy névtelen domain. Az `Organization` az,
+        amihez a nevet és a logót hozzá tudja kötni; a `WebSite` a
+        `SearchAction`-nel pedig a keresődobozt kínálja fel közvetlenül a
+        találati listában — a `/kereses?q=` amúgy is megvan, ez csak szól róla.
+
+        Csak a főoldalon, mert egy oldal egyszer mondja meg, hogy kicsoda.
+      */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          // A beállítások szerkeszthetők, tehát üresre is állíthatók; a
+          // strukturált adat nem maradhat félkész emiatt.
+          __html: siteJsonLd(
+            settings.siteName ?? 'Yonagi Fansub',
+            settings.siteDescription ?? 'Magyar anime feliratok.',
+          ),
+        }}
+      />
+
       <Hero
         projects={featured.map((project) => ({
           slug: project.slug,

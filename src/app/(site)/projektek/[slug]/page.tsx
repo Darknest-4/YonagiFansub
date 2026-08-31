@@ -14,6 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import { env } from '@/lib/env';
+import { ogImages, twitterImages } from '@/lib/seo';
 import { formatCount, formatDate, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
 import { db } from '@/lib/db';
 import {
@@ -70,13 +71,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       title: project.title,
       description,
       url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${project.slug}`,
-      images: images ? [{ url: images, width: 1200, height: 630, alt: project.title }] : undefined,
+      ...ogImages(images, project.title),
     },
     twitter: {
       card: 'summary_large_image',
       title: project.title,
       description,
-      images: images ? [images] : undefined,
+      ...twitterImages(images),
     },
   };
 }

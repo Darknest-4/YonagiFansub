@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { breadcrumbJsonLd } from '@/lib/seo';
 
 /**
  * Page header.
@@ -61,8 +62,28 @@ export function PageHeader({
 }
 
 export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  /*
+    A strukturált adat ugyanabból a tömbből készül, amiből a látható nyomvonal.
+
+    Ez nem kényelmi kérdés. Egy morzsamenü-jelölés, ami mást mond, mint ami az
+    oldalon látszik, rosszabb, mint a semmi: a kereső eltérésként kezeli, és
+    onnantól az oldal többi strukturált adatában sem bízik. Ha egy forrásból
+    származnak, nem tudnak széttartani.
+
+    A „Kezdőlap" itt is az első elem, ahogy a listában — a jelölésnek a teljes
+    utat kell leírnia, nem csak a láthatóan linkelt részét.
+  */
+  const jsonLd = breadcrumbJsonLd([
+    { name: 'Kezdőlap', path: '/' },
+    // A `href` nélküli morzsa — jellemzően az utolsó, az aktuális oldal — cím
+    // nélkül kerül a jelölésbe. Kitalálni neki egyet annyi lenne, mint rossz
+    // helyre mutatni.
+    ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
+  ]);
+
   return (
     <nav aria-label="Morzsamenü" className="mb-5">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <ol className="flex flex-wrap items-center gap-1.5 text-2xs text-mist-500">
         <li>
           <Link href="/" className="transition-colors hover:text-bloom-300">

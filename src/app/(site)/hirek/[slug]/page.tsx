@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock, Eye } from 'lucide-react';
 import { env } from '@/lib/env';
+import { ogImages, twitterImages } from '@/lib/seo';
 import { formatDate, formatCount, truncate, stripMarkdown, toIsoString } from '@/lib/utils';
 import { renderMarkdown } from '@/lib/markdown';
 import { getPublicNewsBySlug, getRelatedNews, incrementNewsView } from '@/server/news';
@@ -34,15 +35,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       publishedTime: toIsoString(post.publishedAt),
       modifiedTime: toIsoString(post.updatedAt),
       authors: post.author ? [post.author.displayName] : undefined,
-      images: post.coverImageUrl
-        ? [{ url: post.coverImageUrl, width: 1200, height: 630, alt: post.title }]
-        : undefined,
+      ...ogImages(post.coverImageUrl, post.title),
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description,
-      images: post.coverImageUrl ? [post.coverImageUrl] : undefined,
+      ...twitterImages(post.coverImageUrl),
     },
   };
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, ExternalLink } from 'lucide-react';
 import { env } from '@/lib/env';
+import { ogImages } from '@/lib/seo';
 import { formatDate, truncate } from '@/lib/utils';
 import { renderMarkdown } from '@/lib/markdown';
 import { getPublicTeamMember } from '@/server/team';
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       title: `${member.name} · Yonagi Fansub`,
       description,
       url: `${env.NEXT_PUBLIC_SITE_URL}/csapat/${member.slug}`,
-      images: member.avatarUrl ? [{ url: member.avatarUrl }] : undefined,
+      ...ogImages(member.avatarUrl, member.name),
     },
   };
 }
@@ -73,6 +74,32 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
 
   return (
     <div className="relative isolate">
+      {/*
+        A csapattag mint személy, a csapathoz kötve.
+
+        Egy fansubnál a stáblista nem adminisztráció: ez az egyetlen hely, ahol
+        egy fordító munkája név szerint látszik. A `memberOf` az, amitől ez a
+        kereső számára is összefügg a csapattal, nem csak egy különálló oldal.
+      */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Person',
+            name: member.name,
+            description: member.tagline ?? undefined,
+            image: member.avatarUrl ?? undefined,
+            url: `${env.NEXT_PUBLIC_SITE_URL}/csapat/${member.slug}`,
+            memberOf: {
+              '@type': 'Organization',
+              name: 'Yonagi Fansub',
+              url: env.NEXT_PUBLIC_SITE_URL,
+            },
+          }),
+        }}
+      />
+
       <div className="absolute inset-x-0 top-0 -z-10 h-64 overflow-hidden">
         {member.bannerUrl && (
           <Image src={member.bannerUrl} alt="" fill sizes="100vw" className="object-cover opacity-30" />

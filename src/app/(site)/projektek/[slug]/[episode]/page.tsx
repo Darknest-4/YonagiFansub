@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarDays, Clock } from 'lucide-react';
 import { env } from '@/lib/env';
-import { formatDate, formatDuration, formatEpisodeNumber, truncate } from '@/lib/utils';
+import { ogImages } from '@/lib/seo';
+import { formatDate, formatDuration, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
 import { getEpisode, getEpisodeNeighbours } from '@/server/projects';
 import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeStatusBadge } from '@/components/ui/badge';
@@ -47,11 +48,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       title,
       description,
       url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`,
-      images: episode.thumbnailUrl
-        ? [{ url: episode.thumbnailUrl, width: 1200, height: 630, alt: title }]
-        : episode.project.coverImageUrl
-          ? [{ url: episode.project.coverImageUrl }]
-          : undefined,
+      // A rész saját képe, ha van; különben a sorozat borítója. Ha egyik sincs,
+      // a kulcs elmarad, és az oldal a site-szintű OG-képet örökli.
+      ...ogImages(episode.thumbnailUrl ?? episode.project.coverImageUrl, title),
     },
   };
 }
@@ -96,6 +95,39 @@ export default async function EpisodePage({ params }: { params: Params }) {
 
   return (
     <div className="relative isolate">
+      {/*
+        A rész mint önálló egység, a sorozathoz kötve.
+
+        A `partOfSeries` az, amitől a kereső nem különálló oldalak halmazát
+        látja, hanem egy sorozat epizódjait — enélkül minden rész magában áll,
+        és egyikük sem erősíti a másikat.
+      */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'TVEpisode',
+            name: episode.title ?? `${formatEpisodeNumber(episode.number.toString())}. rész`,
+            episodeNumber: Number(episode.number),
+            description: episode.synopsis ?? undefined,
+            image: episode.thumbnailUrl ?? episode.project.coverImageUrl ?? undefined,
+            url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`,
+            datePublished: toIsoString(episode.airedAt),
+            timeRequired: episode.durationSec
+              ? `PT${Math.round(episode.durationSec / 60)}M`
+              : undefined,
+            partOfSeries: {
+              '@type': 'TVSeries',
+              name: episode.project.title,
+              url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${slug}`,
+            },
+            inLanguage: 'ja',
+            subtitleLanguage: 'hu',
+          }),
+        }}
+      />
+
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 -z-10 h-64"
