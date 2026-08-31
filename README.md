@@ -236,7 +236,7 @@ képválasztóként a projekt- és híradatlapon.
 ![Felhasználók](docs/screenshots/54-admin-felhasznalok.png)
 
 ### Szerepkörök és jogosultságok
-29 jogosultság, 6 rendszerszerepkör. A mátrix mutatja, melyik szerepkör mit tud.
+30 jogosultság, 6 rendszerszerepkör. A mátrix mutatja, melyik szerepkör mit tud.
 ![Szerepkörök](docs/screenshots/55-admin-szerepkorok.png)
 
 ### Beállítások
