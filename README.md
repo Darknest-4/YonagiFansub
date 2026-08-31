@@ -413,6 +413,10 @@ npm run db:studio    # Prisma Studio
 
 npm run hls -- --input ep01.mkv --key video/projekt/01
                      # HLS-csomagolás + feltöltés online nézéshez (ffmpeg kell)
+npm run hls -- --input ep01.mkv --key video/projekt/01 \
+  --register --project projekt-slug --episode 1
+                     # ugyanaz, de a videóforrást is bejegyzi — a kulcsot nem
+                     # kell kézzel átmásolni az admin űrlapra
 npm run smoke        # böngészős füstpróba futó szerver ellen
 npm run screenshots  # docs/screenshots/ újragenerálása
 ```

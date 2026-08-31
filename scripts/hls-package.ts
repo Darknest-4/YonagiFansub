@@ -32,6 +32,27 @@
  *   --dry-run               csak kiírja, mit csinálna
  *   --keep                  a munkakönyvtárat nem törli
  *
+ * ## Automatikus regisztráció
+ *
+ * A `--register` kapcsolóval a szkript a feltöltés után be is jegyzi a forrást,
+ * tehát a kulcsot nem kell kézzel átmásolni az admin űrlapra — ez az a lépés,
+ * amiből elgépelt kulcs, és néma lejátszási hiba szokott lenni:
+ *
+ *     npm run hls -- --input ./yoru-01.mkv --key video/yoru-no-shizuku/01 \
+ *       --register --project yoru-no-shizuku --episode 1
+ *
+ *   --register              regisztrálja a forrást a csomagoláshoz tartozó epizódra
+ *   --project <slug>        melyik projekt (a nyilvános oldal slugja)
+ *   --episode <szám>        hányadik rész
+ *   --publish               azonnal publikálja (alapból piszkozat)
+ *   --site <url>            melyik példányra (alapból NEXT_PUBLIC_SITE_URL)
+ *   --user <e-mail>         kinek a nevében (alapból YONAGI_EMAIL)
+ *
+ * A jelszót a szkript a terminálon kéri be, echo nélkül; a `YONAGI_PASSWORD`
+ * környezeti változóval kihagyható a kérdés, de tárolni nem kell. A bejelentkező
+ * fióknak `episode:write` jogosultsága kell legyen, és a művelet ugyanúgy
+ * bekerül az audit naplóba, mint az admin felületről.
+ *
  * A tárhelyet ugyanaz a környezet írja le, amit az alkalmazás használ
  * (`MEDIA_DRIVER`, `MEDIA_LOCAL_DIR`, `S3_*`) — a szkript a `.env.local`-t és a
  * `.env`-et is beolvassa, tehát ugyanabból a konfigurációból dolgozik, mint a
@@ -43,6 +64,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { contentTypeFor } from '../src/lib/media/content-type';
 import { signRequest } from '../src/lib/media/s3-signature';
+import { registerSource } from './lib/hls-register';
 
 // ── Környezet ────────────────────────────────────────────────────────────────
 
@@ -94,6 +116,15 @@ interface Options {
   audioLang: string | null;
   dryRun: boolean;
   keep: boolean;
+  /** Registration: null when --register was not given. */
+  register: {
+    projectSlug: string;
+    episodeNumber: number;
+    publish: boolean;
+    baseUrl: string;
+    email: string;
+    password: string | null;
+  } | null;
 }
 
 /** Az alapértelmezett minőségi lépcső. A forrásnál magasabb fokok kiesnek. */
@@ -189,6 +220,64 @@ function parseArgs(argv: string[]): Options {
     audioLang: values.get('audio-lang') ?? null,
     dryRun: flags.has('dry-run'),
     keep: flags.has('keep'),
+    register: parseRegister(values, flags),
+  };
+}
+
+/**
+ * A `--register` kapcsoló feldolgozása.
+ *
+ * A projektet slug + epizódszám azonosítja, nem cuid: ezt a kettőt az enkóder
+ * fejből tudja, a cuid-ot a böngésző címsorából kellene kimásolnia — pont az a
+ * kézi lépés, amit ez a funkció megszüntet.
+ *
+ * A jelszó szándékosan lehet hiányzó: ilyenkor a szkript bekéri a terminálon,
+ * echo nélkül. Egy alkalmi parancshoz nem kell jelszót fájlba írni.
+ */
+function parseRegister(values: Map<string, string>, flags: Set<string>): Options['register'] {
+  if (!flags.has('register') && !values.has('register')) return null;
+
+  const projectSlug = values.get('project');
+  const rawNumber = values.get('episode');
+
+  if (!projectSlug || rawNumber === undefined) {
+    fail(
+      'A --register mellé kell --project <slug> és --episode <szám>.\n' +
+        '  Példa: npm run hls -- --input ./yoru-01.mkv --key video/yoru/01 \\\n' +
+        '           --register --project yoru-no-shizuku --episode 1',
+    );
+  }
+
+  const episodeNumber = Number(rawNumber);
+  if (!Number.isFinite(episodeNumber) || episodeNumber < 0) {
+    fail(`A --episode nem szám: ${rawNumber}`);
+  }
+
+  const baseUrl =
+    values.get('site') ?? process.env.YONAGI_API_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? '';
+  if (!baseUrl) {
+    fail(
+      'Nem tudom, melyik oldalra regisztráljak.\n' +
+        '  Add meg a --site kapcsolóval, vagy állítsd be a NEXT_PUBLIC_SITE_URL-t.',
+    );
+  }
+
+  const email = values.get('user') ?? process.env.YONAGI_EMAIL ?? '';
+  if (!email) {
+    fail(
+      'Nem tudom, ki nevében regisztráljak.\n' +
+        '  Add meg a --user <e-mail> kapcsolóval, vagy állítsd be a YONAGI_EMAIL-t.',
+    );
+  }
+
+  return {
+    projectSlug,
+    episodeNumber,
+    publish: flags.has('publish'),
+    baseUrl,
+    email,
+    // Csak ha tényleg meg van adva — különben a terminálon kérjük be.
+    password: process.env.YONAGI_PASSWORD || null,
   };
 }
 
@@ -576,8 +665,26 @@ async function main(): Promise<void> {
     }
 
     console.log('\n');
-    console.log('  Kész. Az adminban a videóforrás „Master playlist kulcsa” mezőjébe:\n');
-    console.log(`      ${options.key}/master.m3u8\n`);
+
+    const masterKey = `${options.key}/master.m3u8`;
+
+    if (options.register) {
+      /*
+        A regisztráció a feltöltés *után* fut. Fordítva a forrás egy ideig egy
+        még nem létező csomagra mutatna, és egy megszakadt feltöltés otthagyna
+        egy lejátszhatatlan bejegyzést — ami rosszabb, mint a semmi.
+      */
+      await registerSource({
+        ...options.register,
+        masterKey,
+        height: rungs[0] ?? source.height,
+        durationSec: source.durationSec,
+      });
+    } else {
+      console.log('  Kész. Az adminban a videóforrás „Master playlist kulcsa” mezőjébe:\n');
+      console.log(`      ${masterKey}\n`);
+      console.log('  (A --register kapcsolóval ezt a lépést is elvégzi a szkript.)\n');
+    }
   } finally {
     if (options.keep) console.log(`  Munkakönyvtár megtartva: ${workDir}\n`);
     else await rm(workDir, { recursive: true, force: true });

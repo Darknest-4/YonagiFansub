@@ -263,6 +263,41 @@ function toEpisodeData(input: EpisodeWriteInput) {
   };
 }
 
+/**
+ * One episode, by the pair a person actually knows: project slug and episode
+ * number.
+ *
+ * Every other admin path reaches an episode through a screen that already has
+ * its id. A script does not — `npm run hls` is invoked with a filename and a
+ * storage key, and asking an encoder to copy a cuid out of a browser URL is
+ * exactly the manual step the auto-registration exists to remove.
+ *
+ * Returns the episode's existing sources too, so a caller can tell "this
+ * package is already registered" from "this episode has nothing".
+ */
+export async function lookupEpisode(projectSlug: string, number: number) {
+  return db.episode.findFirst({
+    where: {
+      deletedAt: null,
+      number: new Prisma.Decimal(number),
+      project: { slug: projectSlug, deletedAt: null },
+    },
+    select: {
+      id: true,
+      number: true,
+      title: true,
+      durationSec: true,
+      status: true,
+      project: { select: { id: true, slug: true, title: true } },
+      videos: {
+        where: { deletedAt: null },
+        select: { id: true, kind: true, masterKey: true, label: true, status: true },
+        orderBy: { sortOrder: 'asc' },
+      },
+    },
+  });
+}
+
 export async function createEpisode(input: EpisodeWriteInput, context: MutationContext) {
   const project = await db.project.findFirst({
     where: { id: input.projectId, deletedAt: null },
