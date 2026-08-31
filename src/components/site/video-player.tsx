@@ -216,29 +216,99 @@ export function VideoPlayer({
           maxBufferLength: 60,
         });
 
-        hls.on(Hls.Events.ERROR, (_event, payload) => {
-          if (!payload.fatal) return;
+        /*
+          Recovery, with a limit.
 
-          // A 403 usually means the token aged out while paused; reloading the
-          // playlist is the correct, invisible recovery.
-          if (payload.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          The first version retried every fatal network error by calling
+          `startLoad()` — right for the common case (a token that aged out while
+          the viewer was paused) and wrong for everything else. hls.js reports a
+          playlist it cannot parse as a *network* error too, and `startLoad()` on
+          a session with no parsed manifest does nothing at all: no request, no
+          event, no message. The player sat on "Betöltés…" forever, and the log
+          was empty because nothing had failed loudly.
+
+          So each recovery gets a budget. Past it the source is declared dead and
+          failover moves on, which is the honest outcome and the one that lets
+          the viewer reach a working source instead of watching a spinner.
+        */
+        let networkRetries = 0;
+        let mediaRetries = 0;
+
+        /*
+          Last line of defence: a source that neither starts nor fails.
+
+          Every hang we have actually seen had its own cause, and each got its
+          own handling above — but the failure mode they shared is the one the
+          viewer suffers: a spinner that never resolves and no way forward. A
+          watchdog turns any future variant of that into a normal failover,
+          without having to predict what the cause will be.
+        */
+        let settled = false;
+        const watchdog = window.setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          hls.destroy();
+          failover('A forrás nem válaszol.');
+        }, 30_000);
+
+        const finish = (): void => {
+          settled = true;
+          window.clearTimeout(watchdog);
+        };
+
+        hls.on(Hls.Events.ERROR, (_event, payload) => {
+          if (!payload.fatal || settled) return;
+
+          /*
+            A codec the browser cannot decode is not a transient failure, and
+            `recoverMediaError()` cannot conjure a decoder — retrying only turns
+            a clear problem into a spinner. Chromium builds without the
+            proprietary codecs (and some Linux distribution builds) reject
+            H.264/AAC exactly this way, which is worth naming in the message:
+            "it does not work" sends the viewer to us, "your browser cannot play
+            H.264" sends them to a browser that can.
+          */
+          if (
+            payload.details === Hls.ErrorDetails.MANIFEST_INCOMPATIBLE_CODECS_ERROR ||
+            payload.details === Hls.ErrorDetails.BUFFER_INCOMPATIBLE_CODECS_ERROR
+          ) {
+            finish();
+            hls.destroy();
+            failover('Ez a böngésző nem tudja lejátszani ezt a videót (hiányzó H.264/AAC kodek).');
+            return;
+          }
+
+          if (payload.type === Hls.ErrorTypes.NETWORK_ERROR && networkRetries < 3) {
+            networkRetries += 1;
             hls.startLoad();
             return;
           }
-          if (payload.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          if (payload.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetries < 2) {
+            mediaRetries += 1;
             hls.recoverMediaError();
             return;
           }
 
+          finish();
           hls.destroy();
-          failover('A lejátszás megszakadt.');
+          // `details` names the actual failure ("manifestParsingError",
+          // "levelLoadError"); without it every playback problem looks the same
+          // in a bug report.
+          failover(`A lejátszás megszakadt (${payload.details}).`);
         });
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => setPhase('ready'));
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          finish();
+          setPhase('ready');
+        });
+
         hls.loadSource(loaded.url);
         hls.attachMedia(video);
 
-        destroyRef.current = () => hls.destroy();
+        destroyRef.current = () => {
+          finish();
+          hls.destroy();
+        };
       } catch (caught) {
         failover(caught instanceof Error ? caught.message : 'A lejátszás nem indítható.');
       }

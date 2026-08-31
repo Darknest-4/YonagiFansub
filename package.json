@@ -21,6 +21,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:sql": "tsx scripts/apply-sql.ts",
+    "hls": "tsx scripts/hls-package.ts",
     "verify": "npm run typecheck && npm run lint && npm run test",
     "smoke": "node scripts/smoke.mjs",
     "screenshots": "node scripts/screenshots.mjs"

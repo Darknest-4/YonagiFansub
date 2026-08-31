@@ -254,6 +254,45 @@ az appot.
 
 ---
 
+## Videó előkészítése online nézéshez
+
+A saját tárhelyről játszott videó HLS-csomagként áll a tárhelyen: egy
+`master.m3u8`, alatta változatonként egy playlist és a szegmensek. Ezt a
+`npm run hls` állítja elő és tölti fel:
+
+```bash
+npm run hls -- --input ./yoru-01.mkv --key video/yoru-no-shizuku/01
+```
+
+A végén kiírt kulcsot (`video/yoru-no-shizuku/01/master.m3u8`) kell beírni az
+adminban a videóforrás **Master playlist kulcsa** mezőjébe, a forrás típusa
+pedig `HLS_PROXY`.
+
+Hasznos kapcsolók:
+
+| Kapcsoló | Mit csinál |
+| --- | --- |
+| `--ladder 1080,720,480` | Milyen felbontások készüljenek. A forrásnál nagyobb fokokat kihagyja. |
+| `--subs felirat.ass` | Ráégeti a feliratot (libass). |
+| `--segment 6` | Szegmenshossz másodpercben. |
+| `--preset slow` | Lassabb, de kisebb fájl. |
+| `--audio-lang hun` | Melyik hangsávot vigye, ha több van. |
+| `--dry-run` | Csak kiírja az ffmpeg-parancsot. |
+
+**A kódolás az enkóder gépén fut, nem a szerveren.** Egy epizód átkódolása
+percekig-órákig tartó, több magot lekötő munka; a webszolgáltatás ettől
+használhatatlanná válna. A szkriptnek ugyanaz a környezet kell, mint az
+alkalmazásnak (`MEDIA_DRIVER`, `MEDIA_LOCAL_DIR` vagy `S3_*`) — a `.env.local`-t
+magától beolvassa.
+
+Előfeltétel: `ffmpeg` és `ffprobe` a `PATH`-on (`apt install ffmpeg`).
+
+A master playlist szándékosan utoljára töltődik fel: ha a feltöltés félbeszakad,
+a lejátszó nem talál olyan csomagot, aminek hiányoznak a szegmensei — a rossz
+eset egy még nem látható epizód, nem egy 404-ekkel teli lejátszás.
+
+---
+
 ## Deploy
 
 ```bash

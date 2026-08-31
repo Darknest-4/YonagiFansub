@@ -392,6 +392,11 @@ npm run db:deploy    # migráció alkalmazása (éles)
 npm run db:sql       # trigram indexek, kiterjesztések, CHECK megszorítások
 npm run db:seed      # szerepkörök, jogosultságok, törzsadat
 npm run db:studio    # Prisma Studio
+
+npm run hls -- --input ep01.mkv --key video/projekt/01
+                     # HLS-csomagolás + feltöltés online nézéshez (ffmpeg kell)
+npm run smoke        # böngészős füstpróba futó szerver ellen
+npm run screenshots  # docs/screenshots/ újragenerálása
 ```
 
 ---

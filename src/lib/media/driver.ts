@@ -4,6 +4,7 @@ import path from 'node:path';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { signRequest } from '@/lib/media/s3-signature';
+import { contentTypeFor } from '@/lib/media/content-type';
 
 /**
  * Object storage, behind one interface with two implementations.
@@ -37,27 +38,12 @@ export interface MediaDriver {
   get(key: string, range?: string | null): Promise<StoredBytes | null>;
 }
 
-/**
- * Content types for the objects protected playback serves.
- *
- * Kept to what an HLS package contains. Guessing broadly here would mean this
- * proxy could be pointed at arbitrary keys and asked to label them helpfully,
- * which is the sort of thing that turns a media route into a file server.
- */
-const VIDEO_CONTENT_TYPES: Record<string, string> = {
-  '.m3u8': 'application/vnd.apple.mpegurl',
-  '.ts': 'video/mp2t',
-  '.m4s': 'video/iso.segment',
-  '.mp4': 'video/mp4',
-  '.vtt': 'text/vtt',
-  '.key': 'application/octet-stream',
-};
-
-export function contentTypeFor(key: string): string | null {
-  const dot = key.lastIndexOf('.');
-  if (dot < 0) return null;
-  return VIDEO_CONTENT_TYPES[key.slice(dot).toLowerCase()] ?? null;
-}
+/*
+  Re-exported so callers keep importing it from the driver, while the table
+  itself lives in a module the packaging script can import too — see
+  `media/content-type.ts`.
+*/
+export { contentTypeFor };
 
 /**
  * Parses a single-range `Range` header.

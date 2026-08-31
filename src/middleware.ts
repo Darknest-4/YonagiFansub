@@ -37,11 +37,23 @@ import { NextResponse, type NextRequest } from 'next/server';
  * `'strict-dynamic'` lets the nonced bootstrap load Next's chunks without
  * listing each one; `'self'` stays as the fallback for browsers that do not
  * implement it.
+ *
+ * ## `'unsafe-eval'` in development
+ *
+ * The dev bundler compiles modules through `eval` for hot reloading and for
+ * usable stack traces. Under this policy the browser refuses every one of them,
+ * and the symptom is the same blank page described above — with the difference
+ * that it only happens in `npm run dev`, so it looks like the app is broken
+ * rather than the policy. It is added for development only; a production build
+ * evaluates no strings, and granting it there would hand an injected script the
+ * one primitive this policy exists to deny.
  */
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 function contentSecurityPolicy(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${IS_DEV ? " 'unsafe-eval'" : ''}`,
     /*
       hls.js parses segments in a Web Worker created from a blob. `worker-src`
       falls back to `script-src`, which is nonce-based and would reject it, so it
