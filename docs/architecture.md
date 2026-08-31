@@ -176,6 +176,33 @@ dolga.
 
 ---
 
+## Nyelvek
+
+A felület **egynyelvű, magyar**, és ez döntés, nem hiányosság.
+
+Egy magyar fansub közönsége magyar. Egy angol nyelvi réteg annak az olvasónak
+szólna, aki a magyar feliratot úgysem tudja használni — cserébe minden
+szövegdarabot kulcsok mögé kellene tenni. A jelenlegi szövegek nem
+címkék: gondosan megírt, magyarul jól hangzó mondatok, tucatnyi
+helyen ragozással, számnévi egyeztetéssel, egyes-többes szám szerinti
+alakváltással. Kulcs–érték katalógusban ezek elszegényednek, és a fordítás
+elkészülte után is folyamatos karbantartást kérnek: minden új képernyő két
+nyelven kész, vagy egyik nyelven sem.
+
+Amit viszont **kell** és meg is van: a *tartalom* nyelvének jelölése. A
+`<html lang="hu">` mellett minden japán cím `lang="ja"`, a romaji
+`lang="ja-Latn"` jelölést kap. Enélkül a képernyőolvasó magyar hanggal
+próbálja felolvasni a kandzsit, és a böngésző rossz betűkészletet választ.
+Ez a rész az internacionalizációból az, amiből ennek az oldalnak haszna van.
+
+Ha egyszer mégis kell a többnyelvűség, a beillesztési pont a Next
+`app/[locale]/` szegmense, alatta egy üzenetkatalógussal (`next-intl` vagy
+saját megoldás). A szerverrétegen nem változtat semmit: az adatbázisban már ott
+van a `titleRomaji`, `titleEnglish` és `titleNative` mező, tehát a katalógus
+adatai eleve többnyelvűek — csak a felület szövegei nem.
+
+---
+
 ## Hibakezelés
 
 Három szint, három viselkedéssel:

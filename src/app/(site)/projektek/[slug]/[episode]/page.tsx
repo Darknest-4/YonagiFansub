@@ -191,7 +191,9 @@ export default async function EpisodePage({ params }: { params: Params }) {
               </h1>
 
               {episode.titleNative && (
-                <p className="mt-2 font-jp text-sm text-mist-500">{episode.titleNative}</p>
+                <p lang="ja" className="mt-2 font-jp text-sm text-mist-500">
+                  {episode.titleNative}
+                </p>
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-2xs text-mist-500">
@@ -334,7 +336,10 @@ export default async function EpisodePage({ params }: { params: Params }) {
                     {episode.project.title}
                   </span>
                   {episode.project.titleNative && (
-                    <span className="mt-0.5 block truncate font-jp text-2xs text-mist-600">
+                    <span
+                      lang="ja"
+                      className="mt-0.5 block truncate font-jp text-2xs text-mist-600"
+                    >
                       {episode.project.titleNative}
                     </span>
                   )}

@@ -157,7 +157,7 @@ function EpisodeRow({
           </div>
 
           {episode.titleNative && (
-            <p className="mt-0.5 truncate font-jp text-2xs text-mist-600">
+            <p lang="ja" className="mt-0.5 truncate font-jp text-2xs text-mist-600">
               {episode.titleNative}
             </p>
           )}

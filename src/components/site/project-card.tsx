@@ -120,7 +120,7 @@ export function ProjectCard({
           </h3>
 
           {project.titleNative && (
-            <p className="mt-1 line-clamp-1 font-jp text-2xs text-mist-600">
+            <p lang="ja" className="mt-1 line-clamp-1 font-jp text-2xs text-mist-600">
               {project.titleNative}
             </p>
           )}

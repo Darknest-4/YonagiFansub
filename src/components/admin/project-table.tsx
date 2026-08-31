@@ -35,7 +35,7 @@ const columns: Column<AdminProjectRow>[] = [
         <span className="min-w-0">
           <span className="block truncate">{row.title}</span>
           {row.titleNative && (
-            <span className="block truncate font-jp text-2xs text-mist-600">
+            <span lang="ja" className="block truncate font-jp text-2xs text-mist-600">
               {row.titleNative}
             </span>
           )}

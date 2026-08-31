@@ -43,7 +43,9 @@ export default async function MaintenancePage() {
             'Éppen dolgozunk az oldalon. Hamarosan visszatérünk — a kiadások nem mennek sehova.'}
         </p>
 
-        <p className="mt-8 font-jp text-xs tracking-[0.3em] text-mist-700">しばらくお待ちください</p>
+        <p lang="ja" className="mt-8 font-jp text-xs tracking-[0.3em] text-mist-700">
+          しばらくお待ちください
+        </p>
       </div>
     </main>
   );

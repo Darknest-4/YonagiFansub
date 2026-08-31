@@ -299,10 +299,12 @@ export default async function ProjectPage({ params }: { params: Params }) {
 
               <div className="mt-2 space-y-0.5">
                 {project.titleNative && (
-                  <p className="font-jp text-base text-mist-400">{project.titleNative}</p>
+                  <p lang="ja" className="font-jp text-base text-mist-400">
+                    {project.titleNative}
+                  </p>
                 )}
                 {project.titleRomaji && project.titleRomaji !== project.title && (
-                  <p className="text-sm text-mist-500">{project.titleRomaji}</p>
+                  <p lang="ja-Latn" className="text-sm text-mist-500">{project.titleRomaji}</p>
                 )}
               </div>
 
