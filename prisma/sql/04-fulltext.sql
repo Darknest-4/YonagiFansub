@@ -33,8 +33,29 @@
 -- suffix, and it does not matter: the same stemmer runs over the query, so both
 -- sides clip identically and the match still lands. Consistency is what a search
 -- index needs, not linguistic correctness.
+--
+-- ## Every function reference below is schema-qualified, and that is load-bearing
+--
+-- Postgres evaluates an index expression during operations that do NOT run with
+-- the caller's `search_path`: building the index, and every autovacuum/autoanalyze
+-- pass over the table afterwards. Those run with a restricted path, so an
+-- unqualified call to a function in `public` fails to resolve:
+--
+--   ERROR: function immutable_unaccent(text) does not exist
+--   CONTEXT: SQL function "project_search_vector" during inlining
+--            automatic analyze of table "…public.projects"
+--
+-- The first form of that error stops a deploy, which is the merciful one. The
+-- second is silent: statistics stop being collected on the busiest tables in the
+-- catalogue, plans slowly go wrong, and nothing in the application ever says so.
+-- Both were happening before the `public.` prefixes below were added.
+--
+-- Table names stay unqualified because a `CREATE INDEX` statement's own names are
+-- resolved with the session's `search_path`; only the *expression* is re-evaluated
+-- later under the restricted one. If this schema is ever deployed somewhere other
+-- than `public`, these prefixes are what has to change.
 
-CREATE OR REPLACE FUNCTION immutable_unaccent(text)
+CREATE OR REPLACE FUNCTION public.immutable_unaccent(text)
   RETURNS text
   LANGUAGE sql
   IMMUTABLE
@@ -59,7 +80,7 @@ AS $$ SELECT public.unaccent('public.unaccent'::regdictionary, $1) $$;
 --   C  attributes worth finding by (studio, source)
 --   D  long prose, where a hit is weak evidence
 
-CREATE OR REPLACE FUNCTION project_search_vector(
+CREATE OR REPLACE FUNCTION public.project_search_vector(
   title text,
   romaji text,
   english text,
@@ -73,15 +94,15 @@ CREATE OR REPLACE FUNCTION project_search_vector(
   PARALLEL SAFE
 AS $$
   SELECT
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(title, ''))), 'A') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(title, ''))), 'A') ||
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(
       concat_ws(' ', romaji, english, native, array_to_string(coalesce(synonyms, '{}'), ' '))
     )), 'B') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(concat_ws(' ', studio))), 'C') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(synopsis, ''))), 'D')
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(concat_ws(' ', studio))), 'C') ||
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(synopsis, ''))), 'D')
 $$;
 
-CREATE OR REPLACE FUNCTION episode_search_vector(
+CREATE OR REPLACE FUNCTION public.episode_search_vector(
   title text,
   native text,
   synopsis text
@@ -91,12 +112,12 @@ CREATE OR REPLACE FUNCTION episode_search_vector(
   PARALLEL SAFE
 AS $$
   SELECT
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(title, ''))), 'A') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(native, ''))), 'B') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(synopsis, ''))), 'D')
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(title, ''))), 'A') ||
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(native, ''))), 'B') ||
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(synopsis, ''))), 'D')
 $$;
 
-CREATE OR REPLACE FUNCTION news_search_vector(
+CREATE OR REPLACE FUNCTION public.news_search_vector(
   title text,
   excerpt text,
   content text
@@ -106,9 +127,9 @@ CREATE OR REPLACE FUNCTION news_search_vector(
   PARALLEL SAFE
 AS $$
   SELECT
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(title, ''))), 'A') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(excerpt, ''))), 'B') ||
-    setweight(to_tsvector('hungarian', immutable_unaccent(coalesce(content, ''))), 'D')
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(title, ''))), 'A') ||
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(excerpt, ''))), 'B') ||
+    setweight(to_tsvector('hungarian', public.immutable_unaccent(coalesce(content, ''))), 'D')
 $$;
 
 -- ## Indexes
@@ -120,11 +141,11 @@ $$;
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS projects_fts_idx
   ON projects USING gin (
-    project_search_vector(title, "titleRomaji", "titleEnglish", "titleNative", synonyms, studio, synopsis)
+    public.project_search_vector(title, "titleRomaji", "titleEnglish", "titleNative", synonyms, studio, synopsis)
   );
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS episodes_fts_idx
-  ON episodes USING gin (episode_search_vector(title, "titleNative", synopsis));
+  ON episodes USING gin (public.episode_search_vector(title, "titleNative", synopsis));
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS news_posts_fts_idx
-  ON news_posts USING gin (news_search_vector(title, excerpt, content));
+  ON news_posts USING gin (public.news_search_vector(title, excerpt, content));

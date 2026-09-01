@@ -20,7 +20,10 @@ import { logger } from '@/lib/logger';
  * results it always got, and finds that out once rather than on every query.
  *
  * The index expressions live in that same SQL file, in functions this module
- * calls by name so the two cannot drift.
+ * calls by name so the two cannot drift. Every call is schema-qualified for the
+ * same reason the SQL file qualifies them: these functions are resolved in
+ * contexts that do not carry a `search_path`, and an unqualified name there is a
+ * deploy failure at best and silently broken autovacuum at worst.
  */
 
 export interface FtsHit {
@@ -81,9 +84,9 @@ async function probe(): Promise<boolean> {
     // returns null for anything with an argument list, which would report a
     // fully installed database as missing.
     const rows = await db.$queryRaw<Array<{ ok: boolean }>>`
-      SELECT to_regprocedure('project_search_vector(text,text,text,text,text[],text,text)') IS NOT NULL
-         AND to_regprocedure('episode_search_vector(text,text,text)') IS NOT NULL
-         AND to_regprocedure('news_search_vector(text,text,text)') IS NOT NULL AS ok
+      SELECT to_regprocedure('public.project_search_vector(text,text,text,text,text[],text,text)') IS NOT NULL
+         AND to_regprocedure('public.episode_search_vector(text,text,text)') IS NOT NULL
+         AND to_regprocedure('public.news_search_vector(text,text,text)') IS NOT NULL AS ok
     `;
 
     const ok = rows[0]?.ok === true;
@@ -135,15 +138,15 @@ export async function fullTextSearch(
       ? db.$queryRaw<FtsHit[]>`
           SELECT p.id,
                  ts_rank_cd(
-                   project_search_vector(p.title, p."titleRomaji", p."titleEnglish",
-                                         p."titleNative", p.synonyms, p.studio, p.synopsis),
+                   public.project_search_vector(p.title, p."titleRomaji", p."titleEnglish",
+                                                p."titleNative", p.synonyms, p.studio, p.synopsis),
                    ${q}
                  ) AS rank
           FROM projects p
           WHERE p."deletedAt" IS NULL
             AND p."publishStatus" = 'PUBLISHED'
-            AND project_search_vector(p.title, p."titleRomaji", p."titleEnglish",
-                                      p."titleNative", p.synonyms, p.studio, p.synopsis) @@ ${q}
+            AND public.project_search_vector(p.title, p."titleRomaji", p."titleEnglish",
+                                             p."titleNative", p.synonyms, p.studio, p.synopsis) @@ ${q}
           ORDER BY rank DESC
           LIMIT ${take}
         `
@@ -152,13 +155,13 @@ export async function fullTextSearch(
     wants('episode')
       ? db.$queryRaw<FtsHit[]>`
           SELECT e.id,
-                 ts_rank_cd(episode_search_vector(e.title, e."titleNative", e.synopsis), ${q}) AS rank
+                 ts_rank_cd(public.episode_search_vector(e.title, e."titleNative", e.synopsis), ${q}) AS rank
           FROM episodes e
           JOIN projects p ON p.id = e."projectId"
           WHERE e."deletedAt" IS NULL
             AND p."deletedAt" IS NULL
             AND p."publishStatus" = 'PUBLISHED'
-            AND episode_search_vector(e.title, e."titleNative", e.synopsis) @@ ${q}
+            AND public.episode_search_vector(e.title, e."titleNative", e.synopsis) @@ ${q}
           ORDER BY rank DESC
           LIMIT ${take}
         `
@@ -167,12 +170,12 @@ export async function fullTextSearch(
     wants('news')
       ? db.$queryRaw<FtsHit[]>`
           SELECT n.id,
-                 ts_rank_cd(news_search_vector(n.title, n.excerpt, n.content), ${q}) AS rank
+                 ts_rank_cd(public.news_search_vector(n.title, n.excerpt, n.content), ${q}) AS rank
           FROM news_posts n
           WHERE n."deletedAt" IS NULL
             AND n.status = 'PUBLISHED'
             AND n."publishedAt" <= now()
-            AND news_search_vector(n.title, n.excerpt, n.content) @@ ${q}
+            AND public.news_search_vector(n.title, n.excerpt, n.content) @@ ${q}
           ORDER BY rank DESC
           LIMIT ${take}
         `
