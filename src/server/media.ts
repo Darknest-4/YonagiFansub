@@ -204,3 +204,111 @@ export async function mediaUsage(): Promise<{ count: number; totalBytes: string 
 }
 
 export const DEFAULT_MEDIA_PER_PAGE = DEFAULT_PER_PAGE;
+
+// ── Hivatkozás-ellenőrzés ────────────────────────────────────────────────────
+
+export interface MediaReference {
+  /** What kind of thing points at the file, for the icon and the wording. */
+  kind: 'project' | 'episode' | 'news' | 'team' | 'user';
+  label: string;
+  /** Where to go and look, when there is a page for it. */
+  href: string | null;
+  /** Which field, so "cover" and "banner" on one project read as two uses. */
+  field: string;
+}
+
+/**
+ * Everything that points at a stored file.
+ *
+ * The delete dialog used to warn in prose — "if a project or news post still
+ * references it, a broken image is left behind" — while the database knew the
+ * answer the whole time. This asks it.
+ *
+ * ## Matched on the key, not the URL
+ *
+ * References store the absolute URL that `publicUrl()` produced at the time.
+ * `MEDIA_PUBLIC_BASE_URL` changes when a site moves host or switches from the
+ * local driver to S3, and an exact URL match would then quietly report "used by
+ * nothing" for every file uploaded before the move — the one answer that leads
+ * somebody to delete an image that is still on a page. The key survives that,
+ * so the match is a suffix.
+ */
+export async function findMediaReferences(key: string): Promise<MediaReference[]> {
+  const like = { contains: key };
+
+  const [projects, episodes, news, team, users] = await Promise.all([
+    db.project.findMany({
+      where: { deletedAt: null, OR: [{ coverImageUrl: like }, { bannerImageUrl: like }] },
+      select: { slug: true, title: true, coverImageUrl: true, bannerImageUrl: true },
+    }),
+    db.episode.findMany({
+      where: { deletedAt: null, thumbnailUrl: like },
+      select: { number: true, project: { select: { slug: true, title: true } } },
+    }),
+    db.newsPost.findMany({
+      where: { deletedAt: null, coverImageUrl: like },
+      select: { slug: true, title: true },
+    }),
+    db.teamMember.findMany({
+      where: { deletedAt: null, avatarUrl: like },
+      select: { slug: true, name: true },
+    }),
+    // Avatars people chose for themselves. No link: an administrator should not
+    // be nudged towards editing somebody's profile picture from a file screen.
+    db.user.findMany({
+      where: { deletedAt: null, OR: [{ avatarUrl: like }, { bannerUrl: like }] },
+      select: { username: true, displayName: true },
+    }),
+  ]);
+
+  const references: MediaReference[] = [];
+
+  for (const project of projects) {
+    const href = `/projektek/${project.slug}`;
+    if (project.coverImageUrl?.includes(key)) {
+      references.push({ kind: 'project', label: project.title, href, field: 'borítókép' });
+    }
+    if (project.bannerImageUrl?.includes(key)) {
+      references.push({ kind: 'project', label: project.title, href, field: 'fejléckép' });
+    }
+  }
+
+  for (const episode of episodes) {
+    const number = Number(episode.number);
+    references.push({
+      kind: 'episode',
+      label: `${episode.project.title} – ${number}. rész`,
+      href: `/projektek/${episode.project.slug}/${number}`,
+      field: 'előnézeti kép',
+    });
+  }
+
+  for (const post of news) {
+    references.push({
+      kind: 'news',
+      label: post.title,
+      href: `/hirek/${post.slug}`,
+      field: 'borítókép',
+    });
+  }
+
+  for (const member of team) {
+    references.push({
+      kind: 'team',
+      label: member.name,
+      href: `/csapat/${member.slug}`,
+      field: 'profilkép',
+    });
+  }
+
+  for (const user of users) {
+    references.push({
+      kind: 'user',
+      label: user.displayName,
+      href: null,
+      field: 'felhasználói kép',
+    });
+  }
+
+  return references;
+}

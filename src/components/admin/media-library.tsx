@@ -33,6 +33,21 @@ export const MEDIA_FOLDER_LABELS: Record<string, string> = {
   team: 'Csapat',
 };
 
+export interface MediaReferenceView {
+  kind: 'project' | 'episode' | 'news' | 'team' | 'user';
+  label: string;
+  href: string | null;
+  field: string;
+}
+
+const REFERENCE_LABELS: Record<MediaReferenceView['kind'], string> = {
+  project: 'Projekt',
+  episode: 'Epizód',
+  news: 'Hír',
+  team: 'Csapattag',
+  user: 'Felhasználó',
+};
+
 interface ListResponse {
   items: MediaAssetView[];
   meta: { page: number; perPage: number; total: number; totalPages: number };
@@ -72,6 +87,9 @@ export function MediaLibrary({
   const [dragging, setDragging] = useState(false);
   const [deleting, setDeleting] = useState<MediaAssetView | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [references, setReferences] = useState<
+    MediaReferenceView[] | 'loading' | 'error' | null
+  >(null);
   const [activeFolder, setActiveFolder] = useState(folder ?? '');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -144,6 +162,38 @@ export function MediaLibrary({
       if (inputRef.current) inputRef.current.value = '';
     }
   };
+
+  /**
+   * Loads what points at the file when the dialog opens.
+   *
+   * Five queries, so it waits until somebody is actually about to delete
+   * something rather than running for every tile in the grid.
+   */
+  useEffect(() => {
+    if (!deleting) {
+      setReferences(null);
+      return;
+    }
+
+    let cancelled = false;
+    setReferences('loading');
+
+    void apiFetch<{ references: MediaReferenceView[] }>(
+      `/api/v1/admin/media/${deleting.id}/usage`,
+    )
+      .then((result) => {
+        if (!cancelled) setReferences(result.references);
+      })
+      .catch(() => {
+        // A failed check must not block the delete — it just stops being able
+        // to warn, and the dialog says so instead of pretending nothing uses it.
+        if (!cancelled) setReferences('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deleting]);
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -309,23 +359,90 @@ export function MediaLibrary({
         dismissible={false}
         size="sm"
         title="Médiafájl törlése"
-        description="A fájl véglegesen törlődik a tárolóból. Ha egy projekt vagy hír még hivatkozik rá, ott törött kép marad."
+        description="A fájl véglegesen törlődik a tárolóból."
         footer={
           <>
             <Button variant="ghost" onClick={() => setDeleting(null)}>
               Mégse
             </Button>
-            <Button variant="danger" onClick={() => void confirmDelete()}>
+            <Button
+              variant="danger"
+              onClick={() => void confirmDelete()}
+              // Waiting is deliberate: the whole point is not to delete before
+              // knowing the answer.
+              disabled={references === 'loading'}
+            >
               Végleges törlés
             </Button>
           </>
         }
       >
-        {deleting && (
-          <p className="text-sm break-all text-mist-300">
-            <code className="text-xs">{deleting.key}</code>
-          </p>
-        )}
+        <div className="space-y-3">
+          {deleting && (
+            <p className="text-sm break-all text-mist-300">
+              <code className="text-xs">{deleting.key}</code>
+            </p>
+          )}
+
+          {references === 'loading' && (
+            <p className="text-2xs text-mist-500">Megnézem, mi hivatkozik rá…</p>
+          )}
+
+          {references === 'error' && (
+            <p className="rounded-lg border border-warning-500/30 bg-warning-500/8 px-3 py-2 text-2xs text-warning-400">
+              Nem sikerült ellenőrizni, mi használja ezt a fájlt. A törlés így is
+              elvégezhető, de nem tudom megmondani, hol marad utána törött kép.
+            </p>
+          )}
+
+          {Array.isArray(references) &&
+            (references.length === 0 ? (
+              <p className="rounded-lg border border-success-500/25 bg-success-500/8 px-3 py-2 text-2xs text-success-400">
+                Semmi nem hivatkozik rá — nyugodtan törölhető.
+              </p>
+            ) : (
+              <div className="rounded-lg border border-danger-500/30 bg-danger-500/8 px-3 py-2.5">
+                <p className="text-2xs font-medium text-danger-400">
+                  {references.length === 1
+                    ? 'Egy helyen még használatban van:'
+                    : `${references.length} helyen még használatban van:`}
+                </p>
+
+                {/* Capped, because "used in 300 places" is the finding, and the
+                    list past the first few adds nothing to the decision. */}
+                <ul className="mt-1.5 space-y-1">
+                  {references.slice(0, 8).map((reference, index) => (
+                    <li key={`${reference.kind}-${reference.label}-${index}`} className="text-2xs">
+                      <span className="text-mist-500">{REFERENCE_LABELS[reference.kind]}:</span>{' '}
+                      {reference.href ? (
+                        <a
+                          href={reference.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-mist-200 underline-offset-4 hover:underline"
+                        >
+                          {reference.label}
+                        </a>
+                      ) : (
+                        <span className="text-mist-200">{reference.label}</span>
+                      )}{' '}
+                      <span className="text-mist-600">({reference.field})</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {references.length > 8 && (
+                  <p className="mt-1.5 text-2xs text-mist-600">
+                    …és még {references.length - 8}.
+                  </p>
+                )}
+
+                <p className="mt-2 text-2xs text-mist-400">
+                  Ha törlöd, ezeken a helyeken törött kép marad.
+                </p>
+              </div>
+            ))}
+        </div>
       </Modal>
     </div>
   );
