@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { MessageSquare, Reply } from 'lucide-react';
+import { MessageSquare, Pencil, Reply, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/field';
@@ -45,7 +45,11 @@ export interface CommentView {
   id: string;
   body: string;
   createdAt: string | Date;
+  /** Kitöltve, ha a szerző utólag módosította a szöveget. */
+  editedAt: string | Date | null;
   parentId: string | null;
+  /** A szerző törölte, de válaszok lógnak alatta — a helye megmarad. */
+  deleted: boolean;
   /** Null a törölt fiókok hozzászólásainál. */
   user: CommentAuthorView | null;
 }
@@ -60,6 +64,7 @@ export type CommentTargetView =
   | { newsPostId: string };
 
 interface Viewer {
+  username: string;
   displayName: string;
   avatarUrl: string | null;
   isVerified: boolean;
@@ -138,6 +143,44 @@ export function CommentBoard({
     setThreads((current) => [{ ...comment, replies: [] }, ...current]);
   };
 
+  /** Applies an edit in place, at whichever level the comment lives. */
+  const patch = (id: string, changes: Partial<CommentView>) => {
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === id
+          ? { ...thread, ...changes }
+          : {
+              ...thread,
+              replies: thread.replies.map((reply) =>
+                reply.id === id ? { ...reply, ...changes } : reply,
+              ),
+            },
+      ),
+    );
+  };
+
+  /**
+   * Removes a comment the author just deleted.
+   *
+   * A top-level comment with replies becomes a tombstone rather than
+   * disappearing — the server decides which, and this mirrors that rule so the
+   * page does not have to be reloaded to find out.
+   */
+  const drop = (id: string) => {
+    setCount((value) => Math.max(0, value - 1));
+
+    setThreads((current) =>
+      current.flatMap((thread) => {
+        if (thread.id === id) {
+          if (thread.replies.length === 0) return [];
+          return [{ ...thread, deleted: true, body: '', user: null }];
+        }
+
+        return [{ ...thread, replies: thread.replies.filter((reply) => reply.id !== id) }];
+      }),
+    );
+  };
+
   return (
     <section aria-labelledby="comments" className="mt-16 border-t border-ink-800 pt-10">
       <h2 id="comments" className="mb-6 flex items-center gap-2.5 text-xl">
@@ -166,13 +209,24 @@ export function CommentBoard({
         <ul className="mt-8 space-y-6">
           {threads.map((thread) => (
             <li key={thread.id}>
-              <CommentRow comment={thread} />
+              <CommentRow
+                comment={thread}
+                viewer={viewer}
+                onEdited={(body, editedAt) => patch(thread.id, { body, editedAt })}
+                onDeleted={() => drop(thread.id)}
+              />
 
               {thread.replies.length > 0 && (
                 <ul className="mt-4 space-y-4 border-l border-ink-800 pl-4 sm:ml-5 sm:pl-5">
                   {thread.replies.map((reply) => (
                     <li key={reply.id}>
-                      <CommentRow comment={reply} compact />
+                      <CommentRow
+                        comment={reply}
+                        compact
+                        viewer={viewer}
+                        onEdited={(body, editedAt) => patch(reply.id, { body, editedAt })}
+                        onDeleted={() => drop(reply.id)}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -249,7 +303,93 @@ function Gate({ viewer, returnTo }: { viewer: Viewer | null; returnTo: string })
   );
 }
 
-function CommentRow({ comment, compact = false }: { comment: CommentView; compact?: boolean }) {
+/**
+ * How long the edit button stays offered.
+ *
+ * Mirrors `EDIT_WINDOW_MS` on the server, which is the authority — this only
+ * decides whether to draw a button. A clock skewed the wrong way shows a button
+ * that answers with the server's own explanation, which is a better failure
+ * than hiding a control that would have worked.
+ */
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+function CommentRow({
+  comment,
+  compact = false,
+  viewer,
+  onEdited,
+  onDeleted,
+}: {
+  comment: CommentView;
+  compact?: boolean;
+  viewer: Viewer | null;
+  onEdited: (body: string, editedAt: string) => void;
+  onDeleted: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.body);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const toast = useToast();
+
+  const mine = Boolean(viewer && comment.user && viewer.username === comment.user.username);
+  const editable =
+    mine && !comment.deleted && Date.now() - new Date(comment.createdAt).getTime() < EDIT_WINDOW_MS;
+
+  const save = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+
+    try {
+      const result = await apiFetch<{ comment: { body: string; editedAt: string } }>(
+        `/api/v1/comments/${comment.id}`,
+        { method: 'PATCH', body: { body: draft } },
+      );
+      onEdited(result.comment.body, result.comment.editedAt);
+      setEditing(false);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'A mentés nem sikerült.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (busy) return;
+    setBusy(true);
+
+    try {
+      await apiFetch(`/api/v1/comments/${comment.id}`, { method: 'DELETE' });
+      onDeleted();
+    } catch (caught) {
+      toast.error(
+        'A törlés nem sikerült',
+        caught instanceof ApiError ? caught.message : undefined,
+      );
+      setBusy(false);
+    }
+  };
+
+  // A tombstone holds a thread open; it has no author, no body and no controls.
+  if (comment.deleted) {
+    return (
+      <article className="flex gap-3">
+        <div
+          aria-hidden
+          className={cn(
+            'shrink-0 rounded-full border border-dashed border-ink-700',
+            compact ? 'size-8' : 'size-10',
+          )}
+        />
+        <p className="flex-1 self-center text-sm text-mist-600 italic">
+          A szerző törölte ezt a hozzászólást.
+        </p>
+      </article>
+    );
+  }
+
   return (
     <article className="flex gap-3">
       <Avatar
@@ -282,16 +422,100 @@ function CommentRow({ comment, compact = false }: { comment: CommentView; compac
           >
             {formatRelative(comment.createdAt)}
           </time>
+          {comment.editedAt && (
+            /* Marked, not hidden: somebody may have replied to the old text. */
+            <span className="text-2xs text-mist-600" title="A szerző módosította">
+              · szerkesztve
+            </span>
+          )}
         </div>
-        {/*
-          `whitespace-pre-wrap` and nothing else: the body is plain text, stored
-          as the author typed it and rendered as text. No markdown, no HTML —
-          the one field on this site that any registered account can write into
-          is not the place to start interpreting markup.
-        */}
-        <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap text-mist-300">
-          {comment.body}
-        </p>
+
+        {editing ? (
+          <div className="mt-2 space-y-2">
+            <Textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              rows={3}
+              aria-label="Hozzászólás szerkesztése"
+            />
+            {error && <p className="text-2xs text-danger-400">{error}</p>}
+            <div className="flex gap-2">
+              <Button size="xs" variant="primary" onClick={() => void save()} loading={busy}>
+                Mentés
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={() => {
+                  setDraft(comment.body);
+                  setError(null);
+                  setEditing(false);
+                }}
+                disabled={busy}
+              >
+                Mégsem
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/*
+              `whitespace-pre-wrap` and nothing else: the body is plain text, stored
+              as the author typed it and rendered as text. No markdown, no HTML —
+              the one field on this site that any registered account can write into
+              is not the place to start interpreting markup.
+            */}
+            <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap text-mist-300">
+              {comment.body}
+            </p>
+
+            {mine && (
+              <div className="mt-1.5 flex items-center gap-3">
+                {editable && (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="inline-flex items-center gap-1 text-2xs text-mist-600 transition-colors hover:text-bloom-300"
+                  >
+                    <Pencil className="size-3" aria-hidden />
+                    Szerkesztés
+                  </button>
+                )}
+
+                {confirming ? (
+                  <span className="inline-flex items-center gap-2 text-2xs text-mist-500">
+                    Biztosan törlöd?
+                    <button
+                      type="button"
+                      onClick={() => void remove()}
+                      disabled={busy}
+                      className="font-medium text-danger-400 transition-colors hover:text-danger-300 disabled:opacity-60"
+                    >
+                      Igen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(false)}
+                      disabled={busy}
+                      className="transition-colors hover:text-mist-300"
+                    >
+                      Mégsem
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(true)}
+                    className="inline-flex items-center gap-1 text-2xs text-mist-600 transition-colors hover:text-danger-400"
+                  >
+                    <Trash2 className="size-3" aria-hidden />
+                    Törlés
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </article>
   );

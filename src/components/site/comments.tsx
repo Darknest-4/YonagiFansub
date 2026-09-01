@@ -52,6 +52,7 @@ export async function Comments({
       viewer={
         user
           ? {
+              username: user.username,
               displayName: user.displayName,
               avatarUrl: user.avatarUrl,
               isVerified: Boolean(user.emailVerifiedAt),

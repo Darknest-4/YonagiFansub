@@ -466,6 +466,9 @@ export const contactQuerySchema = paginationSchema.extend({
 
 // ── Comments ─────────────────────────────────────────────────────────────────
 
+/** Az író saját szerkesztése — ugyanaz a hossz-szabály, mint az új hozzászólásnál. */
+export const commentEditSchema = z.object({ body: text(2, 2000, 'A hozzászólás') });
+
 export const commentCreateSchema = z
   .object({
     body: text(2, 2000, 'A hozzászólás'),

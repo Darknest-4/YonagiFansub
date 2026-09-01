@@ -904,6 +904,11 @@ model Comment {
 
   status CommentStatus @default(PUBLISHED)
 
+  /// Set when the author edits their own text. Rendered as an "edited" marker:
+  /// a comment somebody replied to should not be able to change out from under
+  /// the reply without the reader being able to tell.
+  editedAt DateTime?
+
   moderatedById  String?
   moderatedBy    User?     @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
   moderatedAt    DateTime?
