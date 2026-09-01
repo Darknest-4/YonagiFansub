@@ -359,13 +359,26 @@ function MediaTile({
         />
 
         {/*
-          The action layer is always in the DOM and always focusable — revealing
-          controls on hover alone would hide them from keyboard and touch users.
+          The action layer is always in the DOM and always focusable. It is also
+          always *visible* unless the device has a real hover, which is the part
+          that was missing: `group-hover` never fires on a touchscreen, so the
+          delete and copy buttons were invisible on every phone and tablet. They
+          were still tappable — an `opacity-0` element takes clicks — which is
+          the worst version of the bug, because nothing looked broken.
+
+          So the default is shown, and hiding is what gets conditioned on hover
+          existing. The scrim is a top-and-bottom gradient rather than a flat
+          wash: on a phone it sits there permanently, and a 70% cover over every
+          thumbnail would turn the library into a grid of dark squares.
         */}
         <div
           className={cn(
-            'absolute inset-0 flex flex-col justify-between bg-ink-950/70 p-2 opacity-0',
-            'transition-opacity duration-fast group-hover:opacity-100 focus-within:opacity-100',
+            'absolute inset-0 flex flex-col justify-between p-2 transition-opacity duration-fast',
+            'bg-linear-to-b from-ink-950/85 via-transparent to-ink-950/70',
+            '[@media(hover:hover)]:bg-ink-950/70 [@media(hover:hover)]:bg-none',
+            '[@media(hover:hover)]:opacity-0',
+            '[@media(hover:hover)]:group-hover:opacity-100',
+            '[@media(hover:hover)]:focus-within:opacity-100',
           )}
         >
           <div className="flex justify-end gap-1">
