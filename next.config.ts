@@ -59,6 +59,20 @@ const nextConfig: NextConfig = {
 
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns', 'framer-motion'],
+
+    /*
+      Cross-fades between routes instead of a hard swap.
+
+      Every page here is `force-dynamic`, so a navigation always waits on the
+      server — tens of milliseconds locally, more over mobile data. The
+      `loading.tsx` files fill that gap with a skeleton; this makes the two
+      swaps either side of it fade rather than snap, which is the difference
+      between "loading" and "flickering".
+
+      Browsers without the View Transitions API ignore it and get the old
+      behaviour, so there is nothing to feature-detect.
+    */
+    viewTransition: true,
   },
 
   images: {

@@ -769,3 +769,52 @@
     padding-bottom: calc(1rem + 3.5rem + env(safe-area-inset-bottom));
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Oldalváltás
+   ═══════════════════════════════════════════════════════════════════════════
+
+   A View Transitions API-t a `next.config.ts` kapcsolja be. Alapból a böngésző
+   egy teljes képernyős kereszttűnést csinál, ami két gond miatt nem jó itt:
+
+   1. A fejléc és az alsó sáv is beleúszik, pedig azok nem változnak. Egy állandó
+      elem, ami minden lapváltáskor felvillan, pont az ellenkezőjét éri el annak,
+      amiért az animáció van.
+   2. Az alapértelmezett 250 ms hosszabb, mint amennyi idő alatt a szerver
+      válaszol (30–60 ms) — az animáció maga lassítaná az oldalt.
+
+   Ezért: a héj kimarad a névvel ellátott átmenetekből, a tartalom pedig rövid,
+   apró elmozdulással úszik be. `::view-transition-old` nélkül nincs áttűnés,
+   csak egy csere — ez szándékos: a régi tartalom kifelé úsztatása azt a hatást
+   kelti, mintha a régi oldal még ott lenne, miközben már a csontváz látszik.
+*/
+
+::view-transition-old(root) {
+  animation: none;
+}
+
+::view-transition-new(root) {
+  animation: page-enter 180ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  A csontváz „lélegzése" és a beúszás együtt villogásnak látszana, ezért a
+  betöltő állapot csak halványan jelenik meg, elmozdulás nélkül.
+*/
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root),
+  ::view-transition-old(root) {
+    animation: none !important;
+  }
+}

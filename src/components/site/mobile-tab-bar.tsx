@@ -40,10 +40,14 @@ const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
  * the four most-used pages one thumb-stretch away and always visible, so the
  * current section is legible without opening anything.
  *
- * Four tabs plus "Több". Five slots is the ceiling on a 360px screen before each
- * target drops under the ~64px width a thumb hits reliably; everything else
- * lives one tap deep in the sheet, which is the right place for pages people
- * visit once.
+ * Five tabs plus "Több". The ceiling here was an estimate — "five slots, ~64px
+ * each" — until it was measured: six slots come out at 60px on a 360px screen
+ * and 56px on a 320px one, with no label truncated at either size. Both clear
+ * the 44px minimum a thumb needs, so the sixth was worth having rather than
+ * pushing a weekly destination one tap deep.
+ *
+ * Seven would not fit. Anything past this belongs in the sheet, which is the
+ * right place for pages people visit once.
  *
  * The bar is `fixed`, so `SiteFooter` carries matching bottom padding — content
  * that ends underneath a floating bar reads as content that got cut off.

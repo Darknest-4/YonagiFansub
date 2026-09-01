@@ -20,9 +20,10 @@ export interface NavItem {
    */
   icon?: 'Home' | 'Clapperboard' | 'Package' | 'Newspaper' | 'Users' | 'HelpCircle' | 'Mail' | 'Sparkles' | 'CalendarDays';
   /**
-   * Whether this item earns a slot in the mobile tab bar. Five is the ceiling:
-   * a sixth tab on a 360px screen drops each target under the width a thumb can
-   * reliably hit, and the rest are one tap away behind "Több".
+   * Whether this item earns a slot in the mobile tab bar. Six is the measured
+   * ceiling: at 360px that is 60px per target, at 320px 56px, with no label
+   * truncated — a seventh would drop under what a thumb reliably hits. The rest
+   * are one tap away behind "Több".
    */
   tab?: boolean;
 }
@@ -61,6 +62,7 @@ export const PRIMARY_NAV: NavItem[] = [
     href: '/naptar',
     label: 'Naptár',
     icon: 'CalendarDays',
+    tab: true,
     description: 'Mikor jön a következő rész',
   },
   {
