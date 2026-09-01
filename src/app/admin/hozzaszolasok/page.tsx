@@ -72,9 +72,11 @@ export default async function AdminCommentsPage({ searchParams }: { searchParams
             body: comment.body,
             status: comment.status,
             createdAt: comment.createdAt.toISOString(),
-            authorName: comment.user.displayName,
-            authorUsername: comment.user.username,
-            authorAvatar: comment.user.avatarUrl,
+            // A szerző nélküli hozzászólás törölt fiókhoz tartozik: a szöveg
+            // megmarad, hogy a rá adott válaszok értelmezhetők maradjanak.
+            authorName: comment.user?.displayName ?? 'Törölt felhasználó',
+            authorUsername: comment.user?.username ?? null,
+            authorAvatar: comment.user?.avatarUrl ?? null,
             target: comment.newsPost
               ? { label: comment.newsPost.title, href: `/hirek/${comment.newsPost.slug}` }
               : comment.episode

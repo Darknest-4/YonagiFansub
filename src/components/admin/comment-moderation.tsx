@@ -22,7 +22,8 @@ export interface CommentView {
   status: CommentStatus;
   createdAt: string;
   authorName: string;
-  authorUsername: string;
+  /** Null a törölt fiókok hozzászólásainál. */
+  authorUsername: string | null;
   authorAvatar: string | null;
   target: { label: string; href: string } | null;
 }
@@ -132,9 +133,13 @@ export function CommentModeration({
                   <span className="text-sm font-medium text-mist-100">
                     {comment.authorName}
                   </span>
-                  <span className="font-mono text-2xs text-mist-600">
-                    @{comment.authorUsername}
-                  </span>
+                  {comment.authorUsername ? (
+                    <span className="font-mono text-2xs text-mist-600">
+                      @{comment.authorUsername}
+                    </span>
+                  ) : (
+                    <span className="text-2xs text-mist-600">törölt fiók</span>
+                  )}
                   <Badge tone={STATUS_CONFIG[comment.status].tone} size="sm">
                     {STATUS_CONFIG[comment.status].label}
                   </Badge>

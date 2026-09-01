@@ -335,7 +335,7 @@ model Project {
   releases  Release[]
   staff     ProjectStaff[]
   favorites Favorite[]
-  ratings    Rating[]
+  ratings   Rating[]
   comments  Comment[]
 
   @@index([publishStatus, deletedAt, publishedAt])
@@ -877,9 +877,17 @@ enum CommentStatus {
 /// constraint (see prisma/sql/constraints.sql) keep that invariant honest while
 /// preserving real foreign keys and cascade behaviour.
 model Comment {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid())
+
+  /// Nullable so that erasing an account does not erase the conversation.
+  ///
+  /// A cascade here would delete the account's comments, and each of those
+  /// would cascade into its replies — *other people's* replies. One person
+  /// exercising their right to erasure would silently delete a stranger's
+  /// posts. `SetNull` detaches the author instead: the identity goes, the
+  /// thread survives, and the comment renders as "Törölt felhasználó".
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   body String @db.Text
 

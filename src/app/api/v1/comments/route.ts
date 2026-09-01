@@ -83,7 +83,7 @@ export const POST = defineRoute({
 
       if (!sameTarget) throw new ForbiddenError('A válasz nem tartozhat másik oldalhoz.');
 
-      if (parent.userId !== user!.id) {
+      if (parent.userId && parent.userId !== user!.id) {
         void notify({
           userId: parent.userId,
           type: 'COMMENT_REPLY',

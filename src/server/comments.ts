@@ -71,7 +71,13 @@ export interface CommentNode {
   body: string;
   createdAt: Date | string;
   parentId: string | null;
-  user: CommentAuthor;
+  /**
+   * `null`, ha a szerző fiókja törölve lett.
+   *
+   * A hozzászólás ilyenkor is megmarad: törölni magával vinné a rá adott
+   * válaszokat, amiket más írt. A megjelenítés „Törölt felhasználó”.
+   */
+  user: CommentAuthor | null;
 }
 
 export interface CommentThread extends CommentNode {
@@ -109,7 +115,7 @@ export async function listCommentThreads(target: CommentTarget, pagination: Pagi
     db.comment.count({ where }),
   ]);
 
-  return { items: threads as CommentThread[], meta: paginationMeta(total, pagination) };
+  return { items: threads satisfies CommentThread[], meta: paginationMeta(total, pagination) };
 }
 
 /** Total published comments on a target, replies included — the heading's number. */

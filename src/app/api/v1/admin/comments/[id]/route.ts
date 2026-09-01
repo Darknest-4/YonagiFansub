@@ -41,10 +41,11 @@ export const PATCH = defineRoute({
         moderatedAt: new Date(),
         deletedAt: body.status === 'DELETED' ? new Date() : null,
       },
-      select: { id: true, status: true },
+      select: { id: true, status: true, userId: true },
     });
 
-    if (body.notifyAuthor && body.status !== 'PUBLISHED') {
+    // A szerző hiánya törölt fiókot jelent — nincs kit értesíteni.
+    if (body.notifyAuthor && body.status !== 'PUBLISHED' && comment.userId) {
       void notify({
         userId: comment.userId,
         type: 'MODERATION',

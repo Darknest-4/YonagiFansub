@@ -66,8 +66,18 @@ velük adatfeldolgozói szerződésünk van.
 ## Milyen jogaid vannak?
 
 Kérheted az adataidhoz való hozzáférést, azok helyesbítését, törlését, a kezelés
-korlátozását, illetve az adathordozhatóságot. A hozzájáruláson alapuló kezelést
-(pl. értesítő e-mailek) bármikor visszavonhatod a fiókbeállításokban.
+korlátozását, illetve az adathordozhatóságot. Ehhez nem kell megkeresned minket:
+a **fiókbeállításokban** egy kattintással letöltheted az összes rólad tárolt
+adatot JSON formátumban, és ugyanott véglegesen törölheted a fiókodat. A
+hozzájáruláson alapuló kezelést (pl. értesítő e-mailek) szintén ott vonhatod
+vissza bármikor.
+
+A fiók törlésekor a profilod, az értékeléseid, a kedvenceid, a nézési
+előrehaladásod, az értesítéseid és a bejelentkezéseid törlődnek. A
+hozzászólásaid szövege megmarad, de elválik a személyedtől — „Törölt
+felhasználó” lesz a szerzőjük –, mert a törlésük magával vinné a rájuk adott
+válaszokat is, amiket mások írtak. Ha egy konkrét hozzászólásod törlését is
+kéred, azt a törlés előtt magad is megteheted, vagy jelezd nekünk.
 
 Panasszal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz fordulhatsz
 (naih.hu).

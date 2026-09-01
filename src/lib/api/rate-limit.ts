@@ -44,6 +44,10 @@ export const RATE_LIMITS = {
   // Tighter than the reset: this one sends mail to an address the caller typed,
   // so an unlimited version is a way to have somebody's inbox filled for them.
   'auth:verify-resend': { limit: 3, windowSec: 3600 },
+  // Az export az egész fiókot összeolvassa; a törlés visszafordíthatatlan.
+  // Egyik sem olyan művelet, amit percenként többször kellene tudni kiadni.
+  'account:export': { limit: 4, windowSec: 3600 },
+  'account:delete': { limit: 3, windowSec: 3600 },
   'contact:submit': { limit: 3, windowSec: 3600 },
   'comment:create': { limit: 12, windowSec: 600 },
   // A lejátszó ritkítva jelent, de egy hosszú film alatt így is sokszor. Bőven

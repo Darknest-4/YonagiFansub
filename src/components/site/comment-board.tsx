@@ -46,7 +46,8 @@ export interface CommentView {
   body: string;
   createdAt: string | Date;
   parentId: string | null;
-  user: CommentAuthorView;
+  /** Null a törölt fiókok hozzászólásainál. */
+  user: CommentAuthorView | null;
 }
 
 export interface CommentThreadView extends CommentView {
@@ -252,8 +253,8 @@ function CommentRow({ comment, compact = false }: { comment: CommentView; compac
   return (
     <article className="flex gap-3">
       <Avatar
-        name={comment.user.displayName}
-        src={comment.user.avatarUrl}
+        name={comment.user?.displayName ?? 'Törölt felhasználó'}
+        src={comment.user?.avatarUrl ?? null}
         size={compact ? 'sm' : 'md'}
       />
       <div className="min-w-0 flex-1">
@@ -263,12 +264,18 @@ function CommentRow({ comment, compact = false }: { comment: CommentView; compac
             csak nem volt hova mutatnia — egy közösségi funkciónál pedig az a
             minimum, hogy meg lehessen nézni, ki írta.
           */}
-          <Link
-            href={`/felhasznalo/${comment.user.username}`}
-            className="text-sm font-medium text-mist-100 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
-          >
-            {comment.user.displayName}
-          </Link>
+          {comment.user ? (
+            <Link
+              href={`/felhasznalo/${comment.user.username}`}
+              className="text-sm font-medium text-mist-100 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
+            >
+              {comment.user.displayName}
+            </Link>
+          ) : (
+            /* Törölt fiók: nincs profil, amire mutasson. A szöveg marad, hogy a
+               rá adott válaszok ne váljanak értelmezhetetlenné. */
+            <span className="text-sm font-medium text-mist-500 italic">Törölt felhasználó</span>
+          )}
           <time
             dateTime={new Date(comment.createdAt).toISOString()}
             className="text-2xs text-mist-600"

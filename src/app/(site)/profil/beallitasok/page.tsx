@@ -9,6 +9,7 @@ import {
 } from '@/components/account/settings-forms';
 import { SessionList } from '@/components/account/session-list';
 import { VerifyEmailCard } from '@/components/account/verify-email-card';
+import { DataRightsCard } from '@/components/account/data-rights-card';
 
 export const metadata: Metadata = {
   title: 'Beállítások',
@@ -31,7 +32,7 @@ export default async function SettingsPage() {
   const [profile, sessions] = await Promise.all([
     db.user.findUniqueOrThrow({
       where: { id: user.id },
-      select: { displayName: true, bio: true, avatarUrl: true },
+      select: { username: true, displayName: true, bio: true, avatarUrl: true },
     }),
     db.session.findMany({
       where: { userId: user.id, revokedAt: null, expiresAt: { gt: new Date() } },
@@ -70,6 +71,9 @@ export default async function SettingsPage() {
           createdAt: session.createdAt.toISOString(),
         }))}
       />
+
+      {/* Last, and deliberately so: everything above is a change you can undo. */}
+      <DataRightsCard username={profile.username} />
     </div>
   );
 }
