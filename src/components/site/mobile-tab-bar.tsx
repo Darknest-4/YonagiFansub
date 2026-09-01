@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  CalendarDays,
   Clapperboard,
   HelpCircle,
   Home,
@@ -19,6 +20,7 @@ import { TAB_NAV, isActive, type NavItem } from '@/components/site/nav-config';
 
 const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
   Home,
+  CalendarDays,
   Clapperboard,
   Package,
   Newspaper,

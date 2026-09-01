@@ -18,7 +18,7 @@ export interface NavItem {
    * stays free of React imports and can be used by the sitemap and the footer,
    * neither of which renders an icon.
    */
-  icon?: 'Home' | 'Clapperboard' | 'Package' | 'Newspaper' | 'Users' | 'HelpCircle' | 'Mail' | 'Sparkles';
+  icon?: 'Home' | 'Clapperboard' | 'Package' | 'Newspaper' | 'Users' | 'HelpCircle' | 'Mail' | 'Sparkles' | 'CalendarDays';
   /**
    * Whether this item earns a slot in the mobile tab bar. Five is the ceiling:
    * a sixth tab on a 360px screen drops each target under the width a thumb can
@@ -58,6 +58,12 @@ export const PRIMARY_NAV: NavItem[] = [
     matchPrefix: true,
   },
   {
+    href: '/naptar',
+    label: 'Naptár',
+    icon: 'CalendarDays',
+    description: 'Mikor jön a következő rész',
+  },
+  {
     href: '/hirek',
     label: 'Hírek',
     icon: 'Newspaper',
@@ -95,6 +101,7 @@ export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/projektek', label: 'Projektek' },
       { href: '/kiadasok', label: 'Legújabb kiadások' },
+      { href: '/naptar', label: 'Adásnaptár' },
       { href: '/hirek', label: 'Hírek' },
       { href: '/kereses', label: 'Keresés' },
     ],

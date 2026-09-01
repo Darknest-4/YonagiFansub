@@ -60,6 +60,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: base, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${base}/projektek`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/kiadasok`, changeFrequency: 'hourly', priority: 0.9 },
+    // Daily, because that is how often a broadcast row moves from "várható" to
+    // "készül" — the page changes on its own without anybody editing anything.
+    { url: `${base}/naptar`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/hirek`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/csapat`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${base}/gyik`, changeFrequency: 'monthly', priority: 0.5 },
