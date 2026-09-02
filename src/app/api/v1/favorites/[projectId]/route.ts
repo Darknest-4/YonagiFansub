@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
-import { db } from '@/infrastructure/db';
-import { NotFoundError } from '@/shared/lib/errors';
-import { invalidate, CACHE_TAGS } from '@/infrastructure/cache';
+import { followProject, unfollowProject } from '@/features/watch/favorites-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,37 +12,20 @@ const params = z.object({ projectId: z.string().cuid() });
  *
  * `PUT` is idempotent by design: tapping "follow" twice, or replaying the
  * request after a flaky connection, must not create a second row or toggle the
- * state back off.
+ * state back off. The rule itself lives in the service.
  */
 export const PUT = defineRoute({
   auth: 'user',
   rateLimit: 'api:write',
   params,
   body: z.object({ notify: z.boolean().default(true) }),
-  async handler({ user, params: { projectId }, body }) {
-    const project = await db.project.findFirst({
-      where: { id: projectId, deletedAt: null, publishStatus: 'PUBLISHED' },
-      select: { id: true },
-    });
-    if (!project) throw new NotFoundError('A projekt');
-
-    await db.favorite.upsert({
-      where: { userId_projectId: { userId: user!.id, projectId } },
-      create: { userId: user!.id, projectId, notify: body.notify },
-      update: { notify: body.notify },
-    });
-
-    invalidate(CACHE_TAGS.project(projectId));
-    return { following: true, notify: body.notify };
-  },
+  handler: ({ user, params: { projectId }, body }) =>
+    followProject(user!.id, projectId, body.notify),
 });
 
 export const DELETE = defineRoute({
   auth: 'user',
   rateLimit: 'api:write',
   params,
-  async handler({ user, params: { projectId } }) {
-    await db.favorite.deleteMany({ where: { userId: user!.id, projectId } });
-    return { following: false };
-  },
+  handler: ({ user, params: { projectId } }) => unfollowProject(user!.id, projectId),
 });

@@ -143,3 +143,18 @@ export async function getEpisodeNeighbours(projectId: string, number: number) {
   ]);
   return { previous, next };
 }
+
+/**
+ * Egy projekt epizódjai, névválasztóhoz.
+ *
+ * Saját lekérdezés, mert a szerkesztő igény szerint tölti be őket — egy űrlap,
+ * ami minden projekt minden epizódját előre magával hozná, a katalógussal
+ * együtt nő korlát nélkül.
+ */
+export async function listEpisodesForPicker(projectId: string) {
+  return db.episode.findMany({
+    where: { projectId, deletedAt: null },
+    orderBy: { number: 'asc' },
+    select: { id: true, number: true, title: true },
+  });
+}

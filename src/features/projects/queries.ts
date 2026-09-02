@@ -1,5 +1,6 @@
 import 'server-only';
 import { Prisma } from '@prisma/client';
+import { NotFoundError } from '@/shared/lib/errors';
 import { db } from '@/infrastructure/db';
 import { CACHE_TAGS, CACHE_TTL, cached } from '@/infrastructure/cache';
 import {
@@ -208,6 +209,27 @@ export async function getProjectBySlug(slug: string, includeUnpublished = false)
     where: { slug, ...visibilityFilter(includeUnpublished) },
     ...projectDetailArgs,
   });
+}
+
+/**
+ * „Létezik ez a projekt, és nyilvános?" — a válasza a slug, vagy egy 404.
+ *
+ * Ez a kérdés minden olyan végponton felmerül, ami egy projekthez köt valamit:
+ * értékelés, követés, nézési lista. Mindegyik ugyanazt a lekérdezést írta le a
+ * maga route-fájljában, és a három példány már el is kezdett szétcsúszni —
+ * ezért van itt, egy helyen, a projekt-domainben.
+ *
+ * A slugot adja vissza, nem csak egy logikai értéket: a hívók ezt használják a
+ * cache-címkéhez, és enélkül egy második lekérdezést kellene indítaniuk
+ * ugyanarra a sorra.
+ */
+export async function requirePublishedProject(projectId: string): Promise<{ slug: string }> {
+  const project = await db.project.findFirst({
+    where: { id: projectId, ...publicProjectFilter },
+    select: { slug: true },
+  });
+  if (!project) throw new NotFoundError('A projekt');
+  return project;
 }
 
 export const getPublicProjectBySlug = cached(

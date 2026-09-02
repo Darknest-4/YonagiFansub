@@ -1,30 +1,20 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
 import { commentCreateSchema } from '@/features/comments/schemas';
-import { db } from '@/infrastructure/db';
-import { ForbiddenError, NotFoundError } from '@/shared/lib/errors';
-import { getSettings } from '@/features/settings/service';
-import { notify } from '@/features/notifications/service';
+import { NotFoundError } from '@/shared/lib/errors';
 import { listCommentThreads } from '@/features/comments/queries';
+import { createComment } from '@/features/comments/service';
 import { paginationSchema } from '@/shared/api/pagination';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const commentSelect = {
-  id: true,
-  body: true,
-  createdAt: true,
-  parentId: true,
-  user: { select: { username: true, displayName: true, avatarUrl: true } },
-} as const;
 
 /**
  * Published comment threads for one target.
  *
  * Each item is a top-level comment carrying its replies; pagination walks
  * threads rather than individual comments, so a page never contains a reply
- * whose parent is missing. See `server/comments.ts` for why.
+ * whose parent is missing. See `features/comments/queries.ts` for why.
  */
 export const GET = defineRoute({
   auth: 'public',
@@ -54,58 +44,6 @@ export const POST = defineRoute({
   auth: 'verified',
   rateLimit: 'comment:create',
   body: commentCreateSchema,
-  async handler({ body, user }) {
-    const settings = await getSettings();
-    if (!settings.commentsEnabled) {
-      throw new ForbiddenError('A hozzászólások jelenleg ki vannak kapcsolva.');
-    }
-
-    // A reply must belong to the same target as its parent, or a thread could be
-    // hijacked into an unrelated page.
-    if (body.parentId) {
-      const parent = await db.comment.findFirst({
-        where: { id: body.parentId, deletedAt: null, status: 'PUBLISHED' },
-        select: {
-          id: true,
-          userId: true,
-          projectId: true,
-          episodeId: true,
-          newsPostId: true,
-        },
-      });
-
-      if (!parent) throw new NotFoundError('A hozzászólás, amire válaszolni próbálsz');
-
-      const sameTarget =
-        parent.projectId === (body.projectId ?? null) &&
-        parent.episodeId === (body.episodeId ?? null) &&
-        parent.newsPostId === (body.newsPostId ?? null);
-
-      if (!sameTarget) throw new ForbiddenError('A válasz nem tartozhat másik oldalhoz.');
-
-      if (parent.userId && parent.userId !== user!.id) {
-        void notify({
-          userId: parent.userId,
-          type: 'COMMENT_REPLY',
-          title: `${user!.displayName} válaszolt a hozzászólásodra`,
-          body: body.body.slice(0, 140),
-        });
-      }
-    }
-
-    const comment = await db.comment.create({
-      data: {
-        userId: user!.id,
-        body: body.body,
-        parentId: body.parentId ?? null,
-        projectId: body.projectId ?? null,
-        episodeId: body.episodeId ?? null,
-        newsPostId: body.newsPostId ?? null,
-        status: settings.commentsRequireApproval ? 'PENDING' : 'PUBLISHED',
-      },
-      select: commentSelect,
-    });
-
-    return { comment, pendingApproval: settings.commentsRequireApproval };
-  },
+  handler: ({ body, user }) =>
+    createComment({ id: user!.id, displayName: user!.displayName }, body),
 });

@@ -1,27 +1,12 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
 import { ratingSchema } from '@/features/watch/schemas';
-import { clearRating, getRatingSummary, setRating } from '@/features/watch/service';
-import { db } from '@/infrastructure/db';
-import { NotFoundError } from '@/shared/lib/errors';
-import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
-import { assertFeatureEnabled } from '@/features/settings/service';
+import { rateProject, readProjectRating, unrateProject } from '@/features/watch/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const params = z.object({ projectId: z.string().cuid() });
-
-const RATINGS_OFF = 'Az értékelés jelenleg ki van kapcsolva ezen az oldalon.';
-
-async function requirePublishedProject(projectId: string): Promise<string> {
-  const project = await db.project.findFirst({
-    where: { id: projectId, deletedAt: null, publishStatus: 'PUBLISHED' },
-    select: { slug: true },
-  });
-  if (!project) throw new NotFoundError('A projekt');
-  return project.slug;
-}
 
 /**
  * Casting or changing a vote.
@@ -39,31 +24,14 @@ export const PUT = defineRoute({
   rateLimit: 'rating:write',
   params,
   body: ratingSchema,
-  async handler({ params: { projectId }, body, user }) {
-    await assertFeatureEnabled('ratingsEnabled', RATINGS_OFF);
-    const slug = await requirePublishedProject(projectId);
-    const summary = await setRating(user!.id, projectId, body.score);
-
-    // The project page renders the average, and it is cached.
-    invalidate(CACHE_TAGS.project(slug), CACHE_TAGS.projects);
-
-    return summary;
-  },
+  handler: ({ params: { projectId }, body, user }) => rateProject(user!.id, projectId, body.score),
 });
 
 export const DELETE = defineRoute({
   auth: 'verified',
   rateLimit: 'rating:write',
   params,
-  async handler({ params: { projectId }, user }) {
-    await assertFeatureEnabled('ratingsEnabled', RATINGS_OFF);
-    const slug = await requirePublishedProject(projectId);
-    const summary = await clearRating(user!.id, projectId);
-
-    invalidate(CACHE_TAGS.project(slug), CACHE_TAGS.projects);
-
-    return summary;
-  },
+  handler: ({ params: { projectId }, user }) => unrateProject(user!.id, projectId),
 });
 
 /** The current standing, for a client that wants it without a page reload. */
@@ -71,8 +39,5 @@ export const GET = defineRoute({
   auth: 'public',
   rateLimit: 'api:read',
   params,
-  async handler({ params: { projectId }, user }) {
-    await requirePublishedProject(projectId);
-    return getRatingSummary(projectId, user?.id ?? null);
-  },
+  handler: ({ params: { projectId }, user }) => readProjectRating(projectId, user?.id ?? null),
 });

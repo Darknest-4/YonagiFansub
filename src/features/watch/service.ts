@@ -1,5 +1,11 @@
 import 'server-only';
 import { db } from '@/infrastructure/db';
+import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
+import { NotFoundError } from '@/shared/lib/errors';
+import { assertFeatureEnabled } from '@/features/settings/service';
+import { requirePublishedProject } from '@/features/projects/queries';
+
+const RATINGS_DISABLED = 'Az értékelés jelenleg ki van kapcsolva ezen az oldalon.';
 
 /**
  * Watch progress and ratings — the two things a viewer contributes back.
@@ -199,5 +205,82 @@ export async function clearRating(userId: string, projectId: string): Promise<Ra
     // that is: no vote. Not an error worth surfacing.
     .catch(() => undefined);
 
+  return getRatingSummary(projectId, userId);
+}
+
+// ── A végpontok belépési pontjai ─────────────────────────────────────────────
+
+/**
+ * A lejátszó jelentésének teljes útja: kapcsoló, létezés, mentés.
+ *
+ * A három lépés együtt tartozik, és eddig a route-fájlban állt egymás alatt.
+ * Így viszont a szabály — hogy kikapcsolt funkciónál nem mentünk, és hogy nem
+ * létező epizódra nem írunk — a domainben van, nem a HTTP-rétegben.
+ *
+ * Az epizódot azért ellenőrizzük, és nem bízzuk az útvonalra: idegen kulcs
+ * mindkét esetben, de egy hiányzó sor 404 legyen, ne egy 500-nak öltözött
+ * megszorítás-hiba.
+ */
+export async function saveWatchProgress(input: ProgressInput): Promise<{ saved: true }> {
+  await assertFeatureEnabled(
+    'watchProgressEnabled',
+    'A nézési előrehaladás mentése jelenleg ki van kapcsolva.',
+  );
+
+  const episode = await db.episode.findFirst({
+    where: { id: input.episodeId, deletedAt: null },
+    select: { id: true },
+  });
+  if (!episode) throw new NotFoundError('Az epizód');
+
+  await recordProgress(input);
+  return { saved: true };
+}
+
+/** A néző saját „mégsem néztem" kapcsolója. */
+export async function forgetWatchProgress(
+  userId: string,
+  episodeId: string,
+): Promise<{ saved: true }> {
+  // `deleteMany`: a nem létező sor törlése a kért végállapot, nem hiba.
+  await db.watchProgress.deleteMany({ where: { userId, episodeId } });
+  return { saved: true };
+}
+
+/**
+ * Értékelés leadása vagy módosítása, a projekt ellenőrzésével együtt.
+ *
+ * Az ürítés is itt van: a projektoldal az átlagot jeleníti meg, és az
+ * gyorsítótárazott. Ha ez a route-ban maradna, egy második hívó könnyen
+ * kihagyná — és az átlag napokig állna egy rossz értéken.
+ */
+export async function rateProject(
+  userId: string,
+  projectId: string,
+  score: number,
+): Promise<RatingSummary> {
+  await assertFeatureEnabled('ratingsEnabled', RATINGS_DISABLED);
+  const { slug } = await requirePublishedProject(projectId);
+
+  const summary = await setRating(userId, projectId, score);
+  invalidate(CACHE_TAGS.project(slug), CACHE_TAGS.projects);
+  return summary;
+}
+
+export async function unrateProject(userId: string, projectId: string): Promise<RatingSummary> {
+  await assertFeatureEnabled('ratingsEnabled', RATINGS_DISABLED);
+  const { slug } = await requirePublishedProject(projectId);
+
+  const summary = await clearRating(userId, projectId);
+  invalidate(CACHE_TAGS.project(slug), CACHE_TAGS.projects);
+  return summary;
+}
+
+/** A publikus állás — annak, aki oldalfrissítés nélkül kérdezi. */
+export async function readProjectRating(
+  projectId: string,
+  userId: string | null,
+): Promise<RatingSummary> {
+  await requirePublishedProject(projectId);
   return getRatingSummary(projectId, userId);
 }

@@ -578,3 +578,18 @@ export async function changePassword(
     requestId: context.requestId,
   });
 }
+
+/**
+ * A lejárt egyszer használatos tokenek takarítása.
+ *
+ * Lejárat után érvénytelenek, tehát a sor már nem véd semmit — viszont
+ * továbbra is egy fiókhoz köthető nyom. A napi karbantartás hívja.
+ */
+export async function pruneExpiredAuthTokens(): Promise<number> {
+  const now = new Date();
+  const [reset, verify] = await Promise.all([
+    db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } }),
+    db.emailVerificationToken.deleteMany({ where: { expiresAt: { lt: now } } }),
+  ]);
+  return reset.count + verify.count;
+}

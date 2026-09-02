@@ -1,11 +1,6 @@
 import { defineRoute } from '@/shared/api/handler';
 import { contactSchema } from '@/features/contact/schemas';
-import { db } from '@/infrastructure/db';
-import { logger } from '@/infrastructure/logger';
-import { ForbiddenError } from '@/shared/lib/errors';
-import { sendMail } from '@/infrastructure/mail/transport';
-import { contactMail } from '@/features/contact/mail';
-import { getSettings } from '@/features/settings/service';
+import { submitContactMessage } from '@/features/contact/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,35 +17,6 @@ export const POST = defineRoute({
   auth: 'public',
   rateLimit: 'contact:submit',
   body: contactSchema,
-  async handler({ body, ipHash, userAgent, requestId }) {
-    const settings = await getSettings();
-    if (!settings.contactFormEnabled) {
-      throw new ForbiddenError('A kapcsolati űrlap jelenleg nem elérhető.');
-    }
-
-    if (body.website) {
-      logger.warn('Honeypot triggered on contact form', { requestId });
-      return { sent: true };
-    }
-
-    const message = await db.contactMessage.create({
-      data: {
-        name: body.name,
-        email: body.email,
-        subject: body.subject,
-        body: body.body,
-        category: body.category,
-        ipHash,
-        userAgent: userAgent?.slice(0, 400) ?? null,
-      },
-      select: { id: true },
-    });
-
-    // Receipt only – the message itself stays in the admin queue.
-    void sendMail({ to: body.email, ...contactMail.contactReceipt(body.name) });
-
-    logger.info('Contact message received', { messageId: message.id, category: body.category });
-
-    return { sent: true };
-  },
+  handler: ({ body, ipHash, userAgent, requestId }) =>
+    submitContactMessage(body, { ipHash, userAgent, requestId }),
 });

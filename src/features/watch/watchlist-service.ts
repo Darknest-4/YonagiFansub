@@ -1,6 +1,6 @@
 import 'server-only';
 import { db } from '@/infrastructure/db';
-import { NotFoundError } from '@/shared/lib/errors';
+import { requirePublishedProject } from '@/features/projects/queries';
 import {
   resolveWatchlistStatus,
   type WatchlistSignals,
@@ -191,11 +191,7 @@ export async function setWatchlistMark(
   projectId: string,
   kind: 'PLANNED' | 'DROPPED' | null,
 ): Promise<{ status: WatchlistStatus | null; mark: 'PLANNED' | 'DROPPED' | null }> {
-  const project = await db.project.findFirst({
-    where: { id: projectId, deletedAt: null, publishStatus: 'PUBLISHED' },
-    select: { id: true },
-  });
-  if (!project) throw new NotFoundError('A projekt');
+  await requirePublishedProject(projectId);
 
   if (kind === null) {
     // `deleteMany`, nem `delete`: a nem létező sor törlése nem hiba, hanem a

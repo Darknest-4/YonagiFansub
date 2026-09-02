@@ -1,35 +1,24 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { logger } from '@/infrastructure/logger';
-import { pruneAuditLogs } from '@/shared/api/audit';
-import { pruneExpiredSessions } from '@/shared/auth/session';
-import { pruneNotifications } from '@/features/notifications/service';
-import { publishDueNews } from '@/features/news/queries';
-import { sendDigests } from '@/features/notifications/digest';
-import { resendMissedVerifications } from '@/features/auth/service';
-import { runScheduledSync } from '@/features/metadata/sync-service';
-import { env } from '@/infrastructure/env';
-import { db } from '@/infrastructure/db';
-import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
+import { runDailyMaintenance } from '@/features/maintenance/daily-job';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * Nightly maintenance.
+ * Nightly maintenance trigger.
  *
- * Every task here is idempotent and independently recoverable: a missed run
- * costs a day of latency, never correctness. That is why they are a swept batch
- * rather than per-row timers — timers do not survive a restart, and a fansub
- * server restarts.
+ * The route does two things and no more: it proves the caller is the cron
+ * daemon, and it starts the job. What the job actually does — and in which
+ * order, and why — lives in `features/maintenance/daily-job.ts`.
  *
  * Authentication is a shared secret in a header rather than a session, because
  * the caller is a cron daemon, not a person. Without `CRON_SECRET` configured
  * the endpoint refuses to run at all — an unauthenticated maintenance endpoint
  * is a denial-of-service primitive.
  */
-
 function authorised(request: NextRequest): boolean {
   const expected = process.env.CRON_SECRET;
   if (!expected || expected.length < 16) return false;
@@ -51,87 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: { code: 'FORBIDDEN' } }, { status: 403 });
   }
 
-  const startedAt = performance.now();
-  const results: Record<string, number | string> = {};
+  const report = await runDailyMaintenance();
 
-  /** One failing task must not abort the rest of the run. */
-  async function step(name: string, task: () => Promise<number>) {
-    try {
-      results[name] = await task();
-    } catch (error) {
-      logger.error(`Cron step failed: ${name}`, error);
-      results[name] = 'failed';
-    }
-  }
-
-  await step('publishedNews', publishDueNews);
-  await step('prunedSessions', pruneExpiredSessions);
-  await step('prunedNotifications', () => pruneNotifications(90));
-  await step('prunedAuditLogs', () => pruneAuditLogs(365));
-
-  await step('prunedContactMessages', async () => {
-    const cutoff = new Date(Date.now() - 730 * 86_400_000);
-    const { count } = await db.contactMessage.deleteMany({
-      where: { createdAt: { lt: cutoff }, status: { in: ['ARCHIVED', 'SPAM'] } },
-    });
-    return count;
-  });
-
-  await step('prunedExpiredTokens', async () => {
-    const now = new Date();
-    const [reset, verify] = await Promise.all([
-      db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } }),
-      db.emailVerificationToken.deleteMany({ where: { expiresAt: { lt: now } } }),
-    ]);
-    return reset.count + verify.count;
-  });
-
-  /*
-    Confirmation links that never arrived.
-
-    Deliberately before the digests, because it is the more urgent of the two:
-    an account waiting on a confirmation cannot fully use the site, while a
-    missed digest is a day of latency on things the person can already see.
-  */
-  await step('resentVerifications', resendMissedVerifications);
-
-  /*
-    Digests.
-
-    After the publishing steps above, so a release that goes live tonight is in
-    tonight's digest rather than tomorrow's. `sendDigests` decides for itself who
-    is due — a missed run delays a summary, it does not skip one.
-  */
-  await step('sentDigests', async () => (await sendDigests()).sent);
-
-  /*
-    Metadata resync, last in the run and batched.
-
-    Last because it is the only step that depends on third-party APIs: if
-    AniList is down, the pruning above has already happened. Batched because a
-    nightly job must spend a predictable slice of the upstream rate limit —
-    `runScheduledSync` takes the stalest projects, so the whole catalogue is
-    still covered over a few nights without ever hammering anyone.
-  */
-  await step('syncedMetadata', async () => {
-    const outcome = await runScheduledSync(env.METADATA_SYNC_BATCH);
-    if (outcome.failed.length > 0) {
-      logger.warn('Metadata sync had failures', { failed: outcome.failed });
-    }
-    if (outcome.succeeded > 0) invalidate(CACHE_TAGS.projects);
-    return outcome.succeeded;
-  });
-
-  // Anything published above is now visible; drop the cached feeds.
-  if (results.publishedNews) {
-    invalidate(CACHE_TAGS.news, CACHE_TAGS.projects, CACHE_TAGS.stats);
-  }
-
-  const durationMs = Math.round(performance.now() - startedAt);
-  logger.info('Daily maintenance completed', { durationMs, ...results });
-
-  return NextResponse.json(
-    { data: { ...results, durationMs } },
-    { headers: { 'Cache-Control': 'no-store' } },
-  );
+  return NextResponse.json({ data: report }, { headers: { 'Cache-Control': 'no-store' } });
 }

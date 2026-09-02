@@ -1,6 +1,7 @@
 import 'server-only';
 import type { AuditAction, Prisma } from '@prisma/client';
 import { db } from '@/infrastructure/db';
+import { paginationMeta, toSkipTake, type PaginationInput } from '@/shared/api/pagination';
 import { logger, redact } from '@/infrastructure/logger';
 
 /**
@@ -119,4 +120,49 @@ export async function pruneAuditLogs(retentionDays = 365): Promise<number> {
     },
   });
   return result.count;
+}
+
+export interface AuditFilters {
+  action?: AuditAction;
+  entityType?: string;
+  entityId?: string;
+  actorId?: string;
+}
+
+/**
+ * A napló olvasása.
+ *
+ * Az írás mellett van, mert a kettő egy dolog két fele: ami ide kerül, azt itt
+ * is kell tudni előkeresni, és ha az egyik oldal mezőt vált, a másik nem
+ * maradhat le. Írási végpont ehhez a táblához az egész alkalmazásban nincs a
+ * `recordAudit`-on kívül.
+ */
+export async function listAuditEntries(filters: AuditFilters, pagination: PaginationInput) {
+  const where: Prisma.AuditLogWhereInput = {};
+  if (filters.action) where.action = filters.action;
+  if (filters.entityType) where.entityType = filters.entityType;
+  if (filters.entityId) where.entityId = filters.entityId;
+  if (filters.actorId) where.actorId = filters.actorId;
+
+  const [items, total] = await Promise.all([
+    db.auditLog.findMany({
+      where,
+      select: {
+        id: true,
+        action: true,
+        entityType: true,
+        entityId: true,
+        summary: true,
+        diff: true,
+        actorLabel: true,
+        createdAt: true,
+        actor: { select: { username: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      ...toSkipTake(pagination),
+    }),
+    db.auditLog.count({ where }),
+  ]);
+
+  return { items, meta: paginationMeta(total, pagination) };
 }

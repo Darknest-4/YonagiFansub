@@ -1,10 +1,8 @@
 import { z } from 'zod';
 import { CommentStatus } from '@prisma/client';
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { db } from '@/infrastructure/db';
-import { NotFoundError } from '@/shared/lib/errors';
-import { recordAudit } from '@/shared/api/audit';
-import { notify } from '@/features/notifications/service';
+import { moderateComment } from '@/features/comments/moderation-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,47 +23,6 @@ export const PATCH = defineRoute({
     moderationNote: z.string().trim().max(500).optional(),
     notifyAuthor: z.boolean().default(false),
   }),
-  async handler({ params, body, user, ipHash, userAgent, requestId }) {
-    const comment = await db.comment.findFirst({
-      where: { id: params.id },
-      select: { id: true, status: true, userId: true, body: true },
-    });
-    if (!comment) throw new NotFoundError('A hozzászólás');
-
-    const updated = await db.comment.update({
-      where: { id: params.id },
-      data: {
-        status: body.status,
-        moderationNote: body.moderationNote ?? null,
-        moderatedById: user!.id,
-        moderatedAt: new Date(),
-        deletedAt: body.status === 'DELETED' ? new Date() : null,
-      },
-      select: { id: true, status: true, userId: true },
-    });
-
-    // A szerző hiánya törölt fiókot jelent — nincs kit értesíteni.
-    if (body.notifyAuthor && body.status !== 'PUBLISHED' && comment.userId) {
-      void notify({
-        userId: comment.userId,
-        type: 'MODERATION',
-        title: 'A hozzászólásod moderálva lett',
-        body: body.moderationNote ?? 'A hozzászólásod nem felel meg a közösségi irányelveinknek.',
-      });
-    }
-
-    await recordAudit({
-      actorId: user!.id,
-      actorLabel: `${user!.displayName} (@${user!.username})`,
-      action: 'UPDATE',
-      entityType: 'Comment',
-      entityId: params.id,
-      summary: `Hozzászólás moderálva: ${comment.status} → ${body.status}`,
-      ipHash,
-      userAgent,
-      requestId,
-    });
-
-    return updated;
-  },
+  handler: ({ params, body, user, ipHash, userAgent, requestId }) =>
+    moderateComment(params.id, body, mutationContext(user!, { ipHash, userAgent, requestId })),
 });
