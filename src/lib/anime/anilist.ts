@@ -178,15 +178,25 @@ export async function fetchAniListMedia(params: {
   const { anilistId, malId } = params;
   if (!anilistId && !malId) return null;
 
-  const body = JSON.stringify({
-    query: MEDIA_QUERY,
-    variables: {
-      id: anilistId ?? null,
-      // AniList resolves `id` first; sending both would let a mismatched pair
-      // silently return the AniList one. Only send `malId` when it is the key.
-      malId: anilistId ? null : (malId ?? null),
-    },
-  });
+  /*
+    Only the key actually being used is sent, and the other is *omitted* rather
+    than set to null.
+
+    In GraphQL an explicitly-null argument is not the same thing as an absent
+    one, and whether a server reads `idMal: null` as "no filter" or as "idMal
+    must be null" is an implementation detail of that server. Depending on it
+    means a lookup that works today can start returning nothing after an
+    upstream refactor, with no error to point at. Omitting the key removes the
+    question.
+
+    Sending both would be wrong for a second reason: AniList resolves `id`
+    first, so a mismatched pair would silently return the AniList one.
+  */
+  const variables: { id?: number; malId?: number } = anilistId
+    ? { id: anilistId }
+    : { malId: malId as number };
+
+  const body = JSON.stringify({ query: MEDIA_QUERY, variables });
 
   try {
     const response = await upstreamFetch<GraphQLResponse<{ Media: AniListMedia | null }>>({
@@ -230,4 +240,67 @@ export function aniListTrailerUrl(
   if (trailer.site === 'youtube') return `https://www.youtube.com/watch?v=${trailer.id}`;
   if (trailer.site === 'dailymotion') return `https://www.dailymotion.com/video/${trailer.id}`;
   return null;
+}
+
+/**
+ * Why an id came back empty.
+ *
+ * The main query filters on `type: ANIME`, so a perfectly real id belonging to
+ * a manga, novel or one-shot answers exactly like an id that does not exist —
+ * and "nem található" then sends somebody off to re-check a number that was
+ * right all along. This asks the same id again without the type filter, purely
+ * so the failure can say which of the two it was.
+ *
+ * Only ever called on the failure path, so it costs a request when something is
+ * already wrong and nothing at all the rest of the time.
+ */
+export async function probeAniListId(id: number): Promise<
+  { exists: false } | { exists: true; type: string | null; title: string | null }
+> {
+  const query = /* GraphQL */ `
+    query ($id: Int) {
+      Media(id: $id) {
+        id
+        type
+        title {
+          romaji
+          english
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await upstreamFetch<
+      GraphQLResponse<{
+        Media: { id: number; type: string | null; title: { romaji: string | null; english: string | null } } | null;
+      }>
+    >({
+      host: HOST,
+      url: ENDPOINT,
+      gapMs: GAP_MS,
+      init: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables: { id } }),
+      },
+      // One attempt: this is already the explanation for a failure, and making
+      // somebody wait through a retry cycle for a diagnostic is worse than not
+      // having one.
+      attempts: 1,
+    });
+
+    const media = response.data?.Media;
+    if (!media) return { exists: false };
+
+    return {
+      exists: true,
+      type: media.type,
+      title: media.title.romaji ?? media.title.english,
+    };
+  } catch {
+    // A probe that cannot run tells us nothing, which is the same as not having
+    // asked. The caller falls back to the plain message.
+    return { exists: false };
+  }
 }

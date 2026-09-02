@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 import { UpstreamError } from '@/lib/anime/http';
 import { invalidateProject } from '@/lib/cache';
 import { slugify } from '@/lib/utils';
-import { fetchAniListMedia } from '@/lib/anime/anilist';
+import { fetchAniListMedia, probeAniListId } from '@/lib/anime/anilist';
 import { fetchJikanAnime, fetchJikanEpisodes } from '@/lib/anime/jikan';
 import { normalizeAnime, type NormalizedAnime } from '@/lib/anime/normalize';
 import type { MutationContext } from '@/server/admin/context';
@@ -157,7 +157,8 @@ export async function lookupAnime(params: {
         `A metaadat-források nem elérhetők: ${failures.join(' · ')}`,
       );
     }
-    throw new NotFoundError('Az anime a megadott azonosítóval');
+
+    throw new BadRequestError(await explainMissing(anilistId, malId));
   }
 
   // Episode titles are a bonus, not a precondition: a project with metadata and
@@ -193,6 +194,52 @@ export async function lookupAnime(params: {
       jikanError ? `MyAnimeList: ${jikanError}` : null,
     ].filter((entry): entry is string => entry !== null),
   };
+}
+
+/**
+ * Turns "not found" into something somebody can act on.
+ *
+ * The plain message sends people off to re-check a number that is often
+ * correct. Three different situations produce it, and only one of them means
+ * the id is wrong:
+ *
+ *   • The id belongs to a manga or novel. AniList numbers every kind of media
+ *     in one sequence and the importer filters on `type: ANIME`, so a real id
+ *     for the wrong kind of thing answers exactly like a fake one.
+ *   • The id was typed into the other field — a MyAnimeList id in the AniList
+ *     box, or the reverse. Both are plain integers, and MAL's run low enough
+ *     that they are frequently valid AniList ids for something unrelated.
+ *   • The id genuinely does not exist.
+ *
+ * The probe costs one extra request on a path that has already failed.
+ */
+async function explainMissing(
+  anilistId: number | null | undefined,
+  malId: number | null | undefined,
+): Promise<string> {
+  if (anilistId) {
+    const probe = await probeAniListId(anilistId);
+
+    if (probe.exists && probe.type && probe.type !== 'ANIME') {
+      const name = probe.title ? ` („${probe.title}”)` : '';
+      return (
+        `A(z) ${anilistId} AniList-azonosító létezik, de ${probe.type} típusú bejegyzéshez ` +
+        `tartozik${name}, nem animéhez. Az AniList egy számsorozatban tartja az animét és a ` +
+        'mangát — nézd meg, hogy az anime oldaláról másoltad-e az azonosítót.'
+      );
+    }
+
+    return (
+      `A(z) ${anilistId} AniList-azonosítón nincs anime. Ellenőrizd az anime AniList-oldalának ` +
+      'címét (anilist.co/anime/AZONOSÍTÓ/…), vagy keress rá a címre fent — ' +
+      'lehet, hogy MyAnimeList-azonosítót írtál az AniList mezőbe.'
+    );
+  }
+
+  return (
+    `A(z) ${malId} MyAnimeList-azonosítón nincs anime. Ellenőrizd az anime MyAnimeList-oldalának ` +
+    'címét (myanimelist.net/anime/AZONOSÍTÓ/…), vagy keress rá a címre fent.'
+  );
 }
 
 /** Upstream facts. Always refreshed — see the note at the top of this file. */
