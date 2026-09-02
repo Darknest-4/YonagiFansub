@@ -147,21 +147,6 @@ export const AGE_RATING_LABEL: Record<string, string> = {
   R18: '18+',
 };
 
-export const RELEASE_KIND_LABEL: Record<string, string> = {
-  EPISODE: 'Epizód',
-  BATCH: 'Batch',
-  MOVIE: 'Film',
-  SPECIAL: 'Special',
-  PATCH: 'Patch',
-};
-
-export const LINK_KIND_LABEL: Record<string, string> = {
-  DIRECT: 'Közvetlen',
-  TORRENT: 'Torrent',
-  MAGNET: 'Magnet',
-  STREAM: 'Online',
-};
-
 export function ProjectStatusBadge({
   status,
   className,

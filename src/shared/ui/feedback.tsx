@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Loader2 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { Button, ButtonLink } from '@/shared/ui/button';
 
@@ -10,24 +9,6 @@ import { Button, ButtonLink } from '@/shared/ui/button';
  */
 
 // ── Loading ──────────────────────────────────────────────────────────────────
-
-export function Spinner({
-  size = 'md',
-  className,
-  label = 'Betöltés',
-}: {
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-  label?: string;
-}) {
-  const sizes = { sm: 'size-4', md: 'size-6', lg: 'size-9' };
-  return (
-    <span role="status" aria-live="polite" className={cn('inline-flex', className)}>
-      <Loader2 className={cn(sizes[size], 'animate-spin text-bloom-400')} aria-hidden />
-      <span className="sr-only">{label}</span>
-    </span>
-  );
-}
 
 export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden className={cn('skeleton', className)} />;
@@ -62,7 +43,7 @@ export function ProjectGridSkeleton({ count = 12 }: { count?: number }) {
   );
 }
 
-export function ReleaseRowSkeleton() {
+export function EpisodeRowSkeleton() {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-border-subtle bg-surface-raised p-4">
       <Skeleton className="size-14 shrink-0 rounded-lg" />
@@ -75,11 +56,11 @@ export function ReleaseRowSkeleton() {
   );
 }
 
-export function ReleaseListSkeleton({ count = 6 }: { count?: number }) {
+export function EpisodeListSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label="Részek betöltése">
       {Array.from({ length: count }, (_, index) => (
-        <ReleaseRowSkeleton key={index} />
+        <EpisodeRowSkeleton key={index} />
       ))}
     </div>
   );

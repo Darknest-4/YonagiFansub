@@ -1,4 +1,4 @@
-import { Skeleton, ProjectGridSkeleton, ReleaseListSkeleton } from '@/shared/ui/feedback';
+import { Skeleton, ProjectGridSkeleton, EpisodeListSkeleton } from '@/shared/ui/feedback';
 
 /**
  * Loading states for the public routes.
@@ -72,7 +72,7 @@ export function ReleaseFeedSkeleton() {
         ))}
       </div>
       <div className="mt-8">
-        <ReleaseListSkeleton count={8} />
+        <EpisodeListSkeleton count={8} />
       </div>
     </PageShellSkeleton>
   );

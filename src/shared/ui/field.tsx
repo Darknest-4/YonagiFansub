@@ -319,26 +319,3 @@ export function Switch({
     </div>
   );
 }
-
-/** Groups related fields with a heading — used heavily by the admin forms. */
-export function Fieldset({
-  legend,
-  description,
-  children,
-  className,
-}: {
-  legend: string;
-  description?: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <fieldset className={cn('space-y-4', className)}>
-      <legend className="mb-1">
-        <span className="block text-sm font-semibold text-mist-100">{legend}</span>
-        {description && <span className="mt-0.5 block text-xs text-mist-500">{description}</span>}
-      </legend>
-      {children}
-    </fieldset>
-  );
-}

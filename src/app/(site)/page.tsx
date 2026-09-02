@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { ButtonLink } from '@/shared/ui/button';
 import { SectionHeading } from '@/shared/ui/card';
-import { EmptyState, ProjectGridSkeleton, ReleaseListSkeleton } from '@/shared/ui/feedback';
+import { EmptyState, ProjectGridSkeleton, EpisodeListSkeleton } from '@/shared/ui/feedback';
 import { Hero } from '@/features/projects/components/hero';
 import { ProjectCard } from '@/features/projects/components/project-card';
 import { EpisodeTile } from '@/features/projects/components/episode-tile';
@@ -100,7 +100,7 @@ export default async function HomePage() {
       */}
       <div className="container-content pt-14">
         <div className="grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-8">
-          <Suspense fallback={<ReleaseListSkeleton count={4} />}>
+          <Suspense fallback={<EpisodeListSkeleton count={4} />}>
             <LatestEpisodesSection />
           </Suspense>
 

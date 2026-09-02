@@ -92,25 +92,6 @@ export function CardBody({
   return <div className={cn('px-5 py-5 sm:px-6', className)}>{children}</div>;
 }
 
-export function CardFooter({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex flex-wrap items-center gap-3 border-t border-border-subtle px-5 py-4 sm:px-6',
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
 /**
  * Section heading used between content blocks on the public site.
  * The eyebrow carries the Japanese accent that runs through the brand.

@@ -140,34 +140,3 @@ export function ProjectCard({
     </article>
   );
 }
-
-/** Horizontal variant used in the "continue watching"-style rails. */
-export function ProjectCardCompact({ project }: { project: ProjectCardData }) {
-  return (
-    <Link
-      href={`/projektek/${project.slug}`}
-      className="group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-900/60 p-2.5 transition-colors duration-fast hover:border-ink-600 hover:bg-ink-850"
-    >
-      <span className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-ink-800">
-        {project.coverImageUrl && (
-          <Image
-            src={project.coverImageUrl}
-            alt=""
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
-        )}
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-mist-100 group-hover:text-bloom-200">
-          {project.title}
-        </span>
-        <span className="nums mt-0.5 block text-2xs text-mist-500">
-          {project._count.episodes} rész elérhető
-        </span>
-      </span>
-    </Link>
-  );
-}

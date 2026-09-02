@@ -115,39 +115,6 @@ export async function apiFetch<T = unknown>(
   return (payload as { data: T }).data;
 }
 
-/** Variant that also returns `meta` – used by paginated list views. */
-export async function apiFetchWithMeta<T = unknown>(
-  path: string,
-  options: ApiFetchOptions = {},
-): Promise<{ data: T; meta?: Record<string, unknown> }> {
-  const { body, headers, ...rest } = options;
-  const requestHeaders = new Headers(headers);
-  requestHeaders.set('Accept', 'application/json');
-
-  const response = await fetch(path, {
-    ...rest,
-    headers: requestHeaders,
-    credentials: 'same-origin',
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-
-  const payload = (await response.json()) as {
-    data?: T;
-    meta?: Record<string, unknown>;
-    error?: { code?: string; message?: string; details?: { fields?: FieldErrors } };
-  };
-
-  if (!response.ok) {
-    throw new ApiError(payload.error?.message ?? 'Ismeretlen hiba történt.', {
-      code: payload.error?.code ?? 'INTERNAL_ERROR',
-      status: response.status,
-      fields: payload.error?.details?.fields,
-    });
-  }
-
-  return { data: payload.data as T, meta: payload.meta };
-}
-
 /** Builds a query string, dropping empty values so URLs stay clean and cacheable. */
 export function buildQuery(params: Record<string, string | number | boolean | undefined | null>) {
   const search = new URLSearchParams();

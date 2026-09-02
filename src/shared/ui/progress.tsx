@@ -10,60 +10,6 @@ import { cn } from '@/shared/lib/utils';
  * percentage buried in a table.
  */
 
-export function ProgressBar({
-  value,
-  tone = 'accent',
-  size = 'md',
-  label,
-  showValue = false,
-  className,
-}: {
-  value: number;
-  tone?: 'accent' | 'orchid' | 'warm' | 'success';
-  size?: 'sm' | 'md' | 'lg';
-  label?: string;
-  showValue?: boolean;
-  className?: string;
-}) {
-  const clamped = Math.max(0, Math.min(100, Math.round(value)));
-
-  const tones = {
-    accent: 'from-bloom-500 to-bloom-300',
-    orchid: 'from-orchid-500 to-orchid-300',
-    warm: 'from-ember-500 to-ember-300',
-    success: 'from-success-500 to-success-400',
-  };
-
-  const heights = { sm: 'h-1', md: 'h-1.5', lg: 'h-2.5' };
-
-  return (
-    <div className={cn('w-full', className)}>
-      {(label || showValue) && (
-        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          {label && <span className="text-2xs text-content-muted">{label}</span>}
-          {showValue && <span className="nums text-2xs text-mist-300">{clamped}%</span>}
-        </div>
-      )}
-      <div
-        role="progressbar"
-        aria-valuenow={clamped}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={label}
-        className={cn('w-full overflow-hidden rounded-full bg-ink-800', heights[size])}
-      >
-        <div
-          className={cn(
-            'h-full rounded-full bg-linear-to-r transition-[width] duration-slow ease-out-expo',
-            tones[tone],
-          )}
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export interface WorkflowStage {
   key: string;
   label: string;
@@ -184,61 +130,6 @@ export function WorkflowProgress({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-/** Circular variant used on the admin dashboard stat tiles. */
-export function ProgressRing({
-  value,
-  size = 56,
-  strokeWidth = 5,
-  className,
-  label,
-}: {
-  value: number;
-  size?: number;
-  strokeWidth?: number;
-  className?: string;
-  label?: string;
-}) {
-  const clamped = Math.max(0, Math.min(100, value));
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (clamped / 100) * circumference;
-
-  return (
-    <div className={cn('relative inline-flex', className)}>
-      <svg
-        width={size}
-        height={size}
-        role="img"
-        aria-label={label ?? `${clamped}%`}
-        className="-rotate-90"
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={strokeWidth}
-          className="stroke-ink-800"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="stroke-bloom-400 transition-[stroke-dashoffset] duration-slow ease-out-expo"
-        />
-      </svg>
-      <span className="nums absolute inset-0 flex items-center justify-center text-xs font-semibold text-mist-100">
-        {Math.round(clamped)}
-      </span>
     </div>
   );
 }

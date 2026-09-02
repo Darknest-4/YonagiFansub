@@ -1,80 +1,26 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
-import { ForbiddenError, UnauthorizedError } from '@/shared/lib/errors';
-import {
-  canAccessAdmin,
-  hasAllPermissions,
-  hasAnyPermission,
-  hasPermission,
-  type Actor,
-  type Permission,
-} from '@/shared/auth/permissions';
+import { canAccessAdmin, hasPermission, type Permission } from '@/shared/auth/permissions';
 import { getSession, toActor, type SessionUser } from '@/shared/auth/session';
 
 /**
- * Authorisation guards.
+ * Oldal- és elrendezés-szintű hozzáférés-ellenőrzés.
  *
- * Two flavours deliberately kept apart:
- *   • `require*` — throws an `AppError`. Used inside API route handlers, where
- *     the error is turned into a JSON response by the handler wrapper.
- *   • `ensure*`  — redirects. Used inside pages and layouts, where a browser
- *     navigation is the correct outcome.
+ * Mindegyik **átirányít**, nem dob: egy oldal vagy egy layout esetén a helyes
+ * kimenet böngésző-navigáció, nem JSON-hiba.
  *
- * Mixing them is the usual way an app ends up returning an HTML login page to a
- * `fetch()` call, so the split is enforced by naming.
+ * Az API oldalán nincs párja, és ez szándékos. Ott a `defineRoute()` `auth`
+ * mezője dönt, egyetlen helyen, a rate limit és a CSRF-ellenőrzés után —
+ * korábban létezett itt egy `require*` családja ugyanennek, amit soha semmi
+ * nem hívott. Egy második, párhuzamos jogosultsági API nem kényelem, hanem
+ * kockázat: előbb-utóbb valaki azt használja, és nem veszi észre, hogy kimarad
+ * belőle minden, amit a route-gyár körülötte csinál.
  */
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const session = await getSession();
   return session?.user ?? null;
 }
-
-export async function getActor(): Promise<Actor | null> {
-  const session = await getSession();
-  return session ? toActor(session.user) : null;
-}
-
-// ── API-side guards ──────────────────────────────────────────────────────────
-
-export async function requireUser(): Promise<SessionUser> {
-  const user = await getCurrentUser();
-  if (!user) throw new UnauthorizedError();
-  return user;
-}
-
-export async function requireVerifiedUser(): Promise<SessionUser> {
-  const user = await requireUser();
-  if (!user.emailVerifiedAt) {
-    throw new ForbiddenError('Erősítsd meg az e-mail-címed a folytatáshoz.');
-  }
-  return user;
-}
-
-export async function requirePermission(permission: Permission): Promise<SessionUser> {
-  const user = await requireUser();
-  if (!hasPermission(toActor(user), permission)) {
-    throw new ForbiddenError('Nincs jogosultságod ehhez a művelethez.');
-  }
-  return user;
-}
-
-export async function requireAnyPermission(permissions: Permission[]): Promise<SessionUser> {
-  const user = await requireUser();
-  if (!hasAnyPermission(toActor(user), permissions)) {
-    throw new ForbiddenError('Nincs jogosultságod ehhez a művelethez.');
-  }
-  return user;
-}
-
-export async function requireAllPermissions(permissions: Permission[]): Promise<SessionUser> {
-  const user = await requireUser();
-  if (!hasAllPermissions(toActor(user), permissions)) {
-    throw new ForbiddenError('Nincs jogosultságod ehhez a művelethez.');
-  }
-  return user;
-}
-
-// ── Page-side guards ─────────────────────────────────────────────────────────
 
 export async function ensureAuthenticated(returnTo?: string): Promise<SessionUser> {
   const user = await getCurrentUser();

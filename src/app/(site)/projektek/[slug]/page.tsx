@@ -41,7 +41,7 @@ import {
   aggregateProgress,
 } from '@/features/projects/components/project-status-card';
 import { Avatar } from '@/shared/ui/avatar';
-import { ReleaseListSkeleton } from '@/shared/ui/feedback';
+import { EpisodeListSkeleton } from '@/shared/ui/feedback';
 import { ButtonLink } from '@/shared/ui/button';
 import { getSettings } from '@/features/settings/service';
 import { siteUrl } from '@/shared/lib/site-url';
@@ -412,7 +412,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
             </p>
           </div>
 
-          <Suspense fallback={<ReleaseListSkeleton count={6} />}>
+          <Suspense fallback={<EpisodeListSkeleton count={6} />}>
             <EpisodeList
               episodes={episodes}
               projectSlug={project.slug}

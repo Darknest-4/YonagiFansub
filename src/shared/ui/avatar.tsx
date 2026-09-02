@@ -74,38 +74,3 @@ export function Avatar({
     </span>
   );
 }
-
-/** Overlapping stack, used for project credits and comment threads. */
-export function AvatarGroup({
-  people,
-  max = 4,
-  size = 'sm',
-  className,
-}: {
-  people: Array<{ name: string; src?: string | null }>;
-  max?: number;
-  size?: AvatarProps['size'];
-  className?: string;
-}) {
-  const shown = people.slice(0, max);
-  const overflow = people.length - shown.length;
-
-  return (
-    <div className={cn('flex items-center', className)}>
-      <div className="flex -space-x-2">
-        {shown.map((person) => (
-          <Avatar
-            key={person.name}
-            name={person.name}
-            src={person.src}
-            size={size}
-            className="ring-2 ring-canvas"
-          />
-        ))}
-      </div>
-      {overflow > 0 && (
-        <span className="nums ml-2 text-2xs text-content-muted">+{overflow}</span>
-      )}
-    </div>
-  );
-}

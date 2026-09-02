@@ -1,7 +1,6 @@
 import 'server-only';
 import { db } from '@/infrastructure/db';
 import type { VideoSourceKind } from '@prisma/client';
-import { NotFoundError } from '@/shared/lib/errors';
 
 /**
  * Playback read model.
@@ -154,26 +153,6 @@ export async function listEpisodeVideos(episodeId: string) {
   });
 
   return sources;
-}
-
-export async function getAdminVideo(id: string) {
-  const video = await db.videoSource.findFirst({
-    where: { id, deletedAt: null },
-    select: {
-      id: true,
-      episodeId: true,
-      masterKey: true,
-      label: true,
-      resolution: true,
-      durationSec: true,
-      requiresAuth: true,
-      status: true,
-      viewCount: true,
-      createdAt: true,
-    },
-  });
-  if (!video) throw new NotFoundError('A videóforrás');
-  return video;
 }
 
 /**

@@ -92,11 +92,6 @@ export function resolveExternalUrl(video: PlayableVideo): string {
   return video.sourceUrl;
 }
 
-/** True when this source's bytes travel through us. */
-export function isProxied(video: PlayableVideo): boolean {
-  return video.kind === 'HLS_PROXY' || (video.kind === 'DIRECT_FILE' && video.proxied);
-}
-
 export function buildPlaybackPlan(video: PlayableVideo, binding: string): PlaybackPlan {
   const title = `${video.projectTitle} — ${video.episodeNumber}. rész`;
 
