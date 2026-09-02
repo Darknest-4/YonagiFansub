@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Logo } from '@/shared/layout/logo';
+import { Logo } from '@/shared/ui/logo';
 import { Button, ButtonLink } from '@/shared/ui/button';
 
 /**

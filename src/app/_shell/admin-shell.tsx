@@ -7,11 +7,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import * as Icons from 'lucide-react';
 import { ExternalLink, LogOut, Menu, X } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { Logo } from '@/shared/layout/logo';
+import { Logo } from '@/shared/ui/logo';
 import { Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Dropdown } from '@/shared/ui/dropdown';
-import { ADMIN_NAV, type AdminNavItem } from '@/shared/layout/admin-nav-config';
+import { ADMIN_NAV, type AdminNavItem } from '@/app/_shell/admin-nav-config';
 import { apiFetch } from '@/shared/api/client';
 
 export interface AdminShellUser {

@@ -1,4 +1,4 @@
-import { ProjectDetailSkeleton } from '@/shared/layout/page-skeletons';
+import { ProjectDetailSkeleton } from '@/shared/ui/page-skeletons';
 
 export default function Loading() {
   return <ProjectDetailSkeleton />;

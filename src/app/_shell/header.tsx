@@ -28,7 +28,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { Logo } from '@/shared/layout/logo';
+import { Logo } from '@/shared/ui/logo';
 import {
   OVERFLOW_NAV,
   PRIMARY_NAV,
@@ -37,8 +37,8 @@ import {
   visibleNav,
   type NavFeature,
   type NavItem,
-} from '@/shared/layout/nav-config';
-import { MobileTabBar } from '@/shared/layout/mobile-tab-bar';
+} from '@/app/_shell/nav-config';
+import { MobileTabBar } from '@/app/_shell/mobile-tab-bar';
 import { Avatar } from '@/shared/ui/avatar';
 import { Button, ButtonLink } from '@/shared/ui/button';
 import { Dropdown } from '@/shared/ui/dropdown';

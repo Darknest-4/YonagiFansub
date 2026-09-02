@@ -106,7 +106,7 @@ felhasználó a fiókbeállításokban felül is bírálhatja.
 
 ## Komponensek
 
-14 primitív a `src/components/ui/` alatt:
+14 primitív a `src/shared/ui/` alatt:
 
 | Komponens | Jellemző döntés |
 | --- | --- |

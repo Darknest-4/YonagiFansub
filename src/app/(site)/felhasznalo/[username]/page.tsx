@@ -7,7 +7,7 @@ import { formatDate, formatEpisodeNumber, formatRelative, truncate } from '@/sha
 import { getPublicProfile } from '@/features/users/profile-queries';
 import { getSettings } from '@/features/settings/service';
 import { ogImages } from '@/shared/lib/seo';
-import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Breadcrumbs } from '@/shared/ui/page-header';
 import { Avatar } from '@/shared/ui/avatar';
 import { siteUrl } from '@/shared/lib/site-url';
 

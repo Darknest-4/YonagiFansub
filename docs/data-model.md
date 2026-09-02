@@ -34,7 +34,7 @@ User ──► Role ──► RolePermission ──► Permission
 
 **Miért adat a jogosultság, és nem enum?** Mert a csapat összetétele változik,
 és egy „a formázó mostantól publikálhat is" döntéshez nem kell deploy. A
-`Permission.key` viszont a kódban is deklarálva van (`src/lib/auth/permissions.ts`),
+`Permission.key` viszont a kódban is deklarálva van (`src/shared/auth/permissions.ts`),
 így a hívási helyeket a TypeScript ellenőrzi — a seed a kettőt összehangolja.
 
 **A `Role.rank` a privilégium-eszkaláció elleni védelem.** Alacsonyabb szám =
@@ -51,10 +51,12 @@ egyedi — a keresés a lenyomatra megy, a nyers érték csak a sütiben létezi
 ```
 Project ─┬─► ProjectGenre ──► Genre
          ├─► ProjectStaff ──► TeamMember, Position
-         ├─► Episode ──► Release ──► DownloadLink ──► StorageHost
-         │                    │
-         │                    └──► DownloadEvent
+         ├─► Episode ──┬─► VideoSource ──► VideoProvider
+         │             ├─► WatchProgress ──► User
+         │             └─► Comment
          ├─► Favorite ──► User
+         ├─► WatchlistMark ──► User
+         ├─► Rating ──► User
          └─► Comment
 ```
 
@@ -69,24 +71,17 @@ Ez az oldal legtöbbet nézett információja, és szűrni is akarunk rá („mi
 QC-ben?"). Egy JSON blob mindkettőt megnehezítené. Az értéktartományt
 adatbázis-szintű check megszorítás védi (`prisma/sql/03-constraints.sql`).
 
-**A `Release` elválik az `Episode`-tól**, mert egy epizódhoz több kiadás
-tartozik: 1080p soft, 720p hardsub, és a v2 javított verzió. A batch kiadásnak
-pedig egyáltalán nincs epizódja (`episodeId` nullable). Az egyediség
-`(episodeId, formatId, resolution, version)` — ez teszi lehetetlenné, hogy
-véletlenül kétszer töltsük fel ugyanazt.
+**Az epizód maga a megjelenés.** Korábban volt egy külön `Release` entitás
+saját állapottal és dátummal; két nyilvántartás ugyanarról az eseményről, ami az
+első alkalommal elcsúszott, amikor valaki epizódot jelölt késznek kiadássor
+nélkül. Ami ebből megmaradt, az az `Episode.releasedAt` — a megjelenés
+időpontja, amire a naptár, a hírfolyam és a „mi jelent meg a héten" épül. Egy
+CHECK őrzi, hogy csak `RELEASED` állapotú epizódnak lehessen kitöltve.
 
-**A `DownloadLink.url` sosem kerül a HTML-be.** A kliens a
-`/api/v1/downloads/:id/resolve` végpontot hívja, ami rögzíti az eseményt és
-átirányít. Két haszna: pontos statisztika, és egy halott tükör központi
-cseréje anélkül, hogy bárkinek elavult közvetlen linkje maradna.
-
-**A `StorageHost` külön entitás**, mert egy tárhely meghalhat. Ha a Mega ma
-leáll, egy sor átállításával minden rá mutató link `OFFLINE`-ra kerül az egész
-oldalon.
-
-**A `DownloadEvent` soronként egy letöltés.** Ez adja a trend-diagramot és a
-toplistát. Az IP itt is csak sózott lenyomat, és a sorokat a retenciós job
-12 hónap után törli.
+**A `VideoSource` elválik az `Episode`-tól**, mert egy részhez több forrás
+tartozhat: saját tárhelyről egy HLS-csomag, mellette egy külső szolgáltató
+beágyazása tartaléknak. A forrás URL-je vagy tárolási kulcsa sosem kerül be a
+HTML-be — a lejátszó egy rövid életű, aláírt tokent kap, és az API oldja fel.
 
 ---
 

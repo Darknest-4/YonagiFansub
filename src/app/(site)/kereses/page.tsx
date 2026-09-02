@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { SearchX } from 'lucide-react';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { EmptyState, TextSkeleton } from '@/shared/ui/feedback';
 import { SearchInput } from '@/features/search/components/search-input';
 import { search, type SearchResult } from '@/features/search/service';

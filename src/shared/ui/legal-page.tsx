@@ -1,5 +1,5 @@
 import { renderMarkdown } from '@/shared/lib/markdown';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { formatDate } from '@/shared/lib/utils';
 
 /**

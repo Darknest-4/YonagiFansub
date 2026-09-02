@@ -28,7 +28,7 @@ védekezni, és nem is reális fenyegetés ebben a kontextusban.
 
 ## Jelszavak
 
-**Hol:** `src/lib/auth/password.ts`, `src/lib/auth/password-policy.ts`
+**Hol:** `src/features/auth/password.ts`, `src/features/auth/password-policy.ts`
 
 - **scrypt**, N=2¹⁵, r=8, p=1, egyedi 16 bájtos sóval, 64 bájtos kimenettel.
   Memóriaigényes, tehát GPU-val nem gyorsítható lényegesen.
@@ -56,7 +56,7 @@ a felület nem tud olyan jelszót ígérni, amit az API elutasít.
 
 ## Munkamenet
 
-**Hol:** `src/lib/auth/session.ts`, `src/lib/auth/tokens.ts`
+**Hol:** `src/shared/auth/session.ts`, `src/shared/auth/tokens.ts`
 
 - A süti **256 bit véletlent** hordoz; az adatbázisban csak a **SHA-256
   lenyomata** van. Egy adatbázis-szivárgás nem visszajátszható.
@@ -77,7 +77,7 @@ a felület nem tud olyan jelszót ígérni, amit az API elutasít.
 
 ## CSRF
 
-**Hol:** `src/middleware.ts`, `src/lib/api/handler.ts`
+**Hol:** `src/middleware.ts`, `src/shared/api/handler.ts`
 
 Kettős védelem minden állapotmódosító kérésnél:
 
@@ -97,7 +97,7 @@ böngészők nem ismerik).
 
 ## Jogosultságok
 
-**Hol:** `src/lib/auth/permissions.ts`, `src/server/admin/users.ts`
+**Hol:** `src/shared/auth/permissions.ts`, `src/features/users/admin-service.ts`
 
 - **Jogosultság-alapú, nem szerepkör-alapú.** A kód sosem azt kérdezi, hogy
   „admin-e", hanem hogy „van-e `project:write` joga". A szerepkör csak egy

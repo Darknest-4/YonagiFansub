@@ -27,7 +27,7 @@ import {
   ProjectStatusBadge,
   SEASON_LABEL,
 } from '@/shared/ui/badge';
-import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Breadcrumbs } from '@/shared/ui/page-header';
 import { EpisodeList } from '@/features/projects/components/episode-list';
 import { FollowButton } from '@/features/watch/components/follow-button';
 import { Comments } from '@/features/comments/components/comments';

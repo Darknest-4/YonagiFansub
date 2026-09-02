@@ -11,5 +11,39 @@
     ],
     "no-console": ["warn", { "allow": ["warn", "error", "log"] }]
   },
+  "overrides": [
+    {
+      "files": ["src/shared/**/*", "src/infrastructure/**/*"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/features/*", "@/features/**", "@/app/*", "@/app/**"],
+                "message": "A shared/ és az infrastructure/ a feature-ök ALATT van, tehát nem tudhat róluk. Ha ide kell valami egy feature-ből, akkor vagy nem közös — maradjon a feature-ben —, vagy a közös részét kell lehozni ide. Lásd docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/**/*"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/app/*", "@/app/**"],
+                "message": "A feature nem függhet az app/ rétegtől: az app a belépési pont, ami a feature-öket összerakja, nem fordítva. Lásd docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
   "ignorePatterns": [".next/", "node_modules/", "prisma/generated/"]
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Logo } from '@/shared/layout/logo';
+import { Logo } from '@/shared/ui/logo';
 import { getPublicSettings } from '@/features/settings/service';
 
 export const metadata: Metadata = {

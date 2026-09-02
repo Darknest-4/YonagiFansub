@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, Clock } from 'lucide-react';
 import { ogImages } from '@/shared/lib/seo';
 import { formatDate, formatDuration, formatEpisodeNumber, toIsoString, truncate } from '@/shared/lib/utils';
 import { getEpisode, getEpisodeNeighbours } from '@/features/projects/episode-queries';
-import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Breadcrumbs } from '@/shared/ui/page-header';
 import { EpisodeStatusBadge } from '@/shared/ui/badge';
 import { VideoPlayer } from '@/features/video/components/video-player';
 import { Comments } from '@/features/comments/components/comments';

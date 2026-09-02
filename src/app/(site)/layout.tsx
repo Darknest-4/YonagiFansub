@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
-import { SiteHeader, type HeaderUser } from '@/shared/layout/header';
-import { SiteFooter } from '@/shared/layout/footer';
-import { BetaBanner } from '@/shared/layout/beta-banner';
-import { disabledNavFeatures } from '@/shared/layout/nav-config';
+import { SiteHeader, type HeaderUser } from '@/app/_shell/header';
+import { SiteFooter } from '@/app/_shell/footer';
+import { BetaBanner } from '@/app/_shell/beta-banner';
+import { disabledNavFeatures } from '@/app/_shell/nav-config';
 import { getCurrentUser } from '@/shared/auth/guards';
 import { canAccessAdmin } from '@/shared/auth/permissions';
 import { countUnread } from '@/features/notifications/service';

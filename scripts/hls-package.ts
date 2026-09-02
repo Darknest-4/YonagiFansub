@@ -62,7 +62,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { contentTypeFor } from '../src/features/media/content-type';
+import { contentTypeFor } from '../src/infrastructure/storage/content-type';
 import { signRequest } from '../src/infrastructure/storage/s3-signature';
 import { registerSource } from './lib/hls-register';
 

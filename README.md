@@ -350,20 +350,33 @@ fájlban élnek (`src/styles/globals.css`), három rétegben: paletta → szeman
 
 ## Architektúra dióhéjban
 
+A kód **domainek szerint** van rendezve, nem aszerint, hogy ki hívja:
+
+```
+src/app/            route-ok, oldalak, az oldal kerete — belépési pont
+src/features/       egy mappa domainenként (projects, watch, video, auth, …)
+src/shared/         ui, API-váz, hozzáférés-vezérlés, formázók
+src/infrastructure/ adatbázis, cache, levél, tárhely, kimenő HTTP
+```
+
+A függés csak lefelé mehet: a `shared/` és az `infrastructure/` nem tud a
+feature-ökről, a feature-ök nem tudnak az `app/`-ról. Ezt az ESLint kényszeríti
+ki, nem a jó szándék.
+
 ```
 Böngésző
    │
-   ├─ RSC oldalak ──────────► src/server/*      (olvasás, cache-elve tag alapján)
+   ├─ RSC oldalak ──────────► features/*/queries.ts  (olvasás, tag alapján cache-elve)
    │                              │
-   └─ fetch /api/v1/* ──────► defineRoute()     (rate limit → CSRF → auth →
-                                  │              validáció → handler → boríték)
+   └─ fetch /api/v1/* ──────► defineRoute()          (rate limit → CSRF → auth →
+                                  │                   validáció → handler → boríték)
                                   │
-                            src/server/admin/*  (írás + audit + cache invalidálás)
+                            features/*/service.ts    (írás + audit + cache invalidálás)
                                   │
                               Prisma ──► PostgreSQL
 ```
 
-Az `src/lib/api/handler.ts` a rendszer legfontosabb fájlja: minden végpont rajta
+Az `src/shared/api/handler.ts` a rendszer legfontosabb fájlja: minden végpont rajta
 keresztül van definiálva, így egyetlen endpoint sem kerülhet ki rate limit
 nélkül vagy validálatlan bemenettel.
 
@@ -441,28 +454,40 @@ src/
     (auth)/              belépés, regisztráció, jelszó-visszaállítás
     admin/               adminisztrációs felület
     api/v1/              REST API
-  components/
-    ui/                  14 design system primitív
-    site/                nyilvános felület komponensei
-    admin/               admin komponensek
-    account/             fiókkezelés
-  lib/
+    _shell/              fejléc, lábléc, navigáció
+  features/              egy mappa domainenként
+    projects/            projekt és epizód (lekérdezés, írás, űrlap, lista)
+    watch/               előrehaladás, értékelés, követés, nézési lista
+    video/               videóforrások, szolgáltatók, HLS, lejátszási token
+    metadata/            AniList / Jikan import
+    auth/ users/ comments/ news/ team/ media/ notifications/
+    search/ settings/ faq/ contact/ stats/ maintenance/
+  shared/
+    ui/                  design system primitívek
     api/                 route factory, boríték, rate limit, audit, lapozás
-    auth/                jelszó, session, jogosultságok, guardok
-    media/               formátum-felismerés, tároló driverek, SigV4 aláírás
-    validation/          Zod sémák (kliens és szerver közösen használja)
-  server/                domain szolgáltatások (olvasás)
-  server/admin/          domain szolgáltatások (írás, audittal)
+    auth/                session, jogosultságok, oldalőrök
+    validation/          séma-primitívek (a kliens és a szerver közösen)
+    lib/                 formázók, markdown, hibák, SEO, site-url
+  infrastructure/
+    db.ts cache.ts logger.ts env.ts
+    mail/                levélküldés (Resend / SMTP / konzol)
+    storage/             objektumtár, SigV4 aláírás, MIME-típusok
+    http/                kimenő HTTP kliens újrapróbálkozással
+  content/               szerkesztői tartalom kódban
   styles/globals.css     a teljes design system
 ```
+
+A rétegek közti függés csak lefelé mehet, és ezt a lint őrzi. Részletek és a
+„hova kerül egy új feature / végpont / integráció" kérdések:
+[`docs/architecture.md`](docs/architecture.md).
 
 ---
 
 ## Amit szándékosan nem tartalmaz
 
-- **Videó hosting.** A platform feliratokat és linkeket kezel, fájlokat nem.
-  A `DownloadLink` külső tárhelyekre mutat, és a valódi URL sosem kerül be a
-  HTML-be — az API oldja fel, rögzíti az eseményt, majd átirányít.
+- **Letöltések.** A platform online nézést kínál, fájlokat nem oszt. A videó
+  vagy saját tárhelyről, védett HLS-en át megy, vagy egy külső szolgáltató
+  beágyazásaként — a forrás URL-je egyik esetben sem kerül be a HTML-be.
 - **Fizetés, adomány, hirdetés.** Nincs rá modell, mert nincs rá szükség.
 - **Külső analitika.** Minden statisztika saját adatból jön. Nincs harmadik
   féltől származó szkript az oldalon, és a CSP-ben nincs is rá hely.

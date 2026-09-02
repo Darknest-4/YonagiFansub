@@ -69,7 +69,7 @@ olvasható `__Host-yonagi_csrf` sütit, a kliens ezt átmásolja az
 `X-CSRF-Token` fejlécbe, a szerver pedig összeveti a kettőt *és* ellenőrzi a
 HMAC aláírást. Emellett `Origin`/`Host` egyezés is kell.
 
-A böngészőből a `src/lib/client/api.ts` mindezt automatikusan kezeli:
+A böngészőből a `src/shared/api/client.ts` mindezt automatikusan kezeli:
 
 ```ts
 await apiFetch('/api/v1/admin/projects', { method: 'POST', body: payload });
@@ -155,7 +155,7 @@ kényszeríteni.
 ## Admin
 
 Minden végpont a nevében szereplő jogosultságot követeli meg
-(lásd `src/lib/auth/permissions.ts`).
+(lásd `src/shared/auth/permissions.ts`).
 
 | Erőforrás | Végpontok | Jogosultság |
 | --- | --- | --- |
@@ -224,7 +224,7 @@ kizárólag append: sehol a kódban nincs olyan út, ami módosítaná vagy tör
 ## Rate limitek
 
 Akciónként külön keret, hogy egy böngészési hullám ne merítse ki senki belépési
-kvótáját. A táblázat forrása: `src/lib/api/rate-limit.ts`.
+kvótáját. A táblázat forrása: `src/shared/api/rate-limit.ts`.
 
 | Akció | Keret |
 | --- | --- |

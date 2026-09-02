@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { Newspaper } from 'lucide-react';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { NewsCard } from '@/features/news/components/news-card';
 import { EmptyState, Skeleton } from '@/shared/ui/feedback';
 import { Pagination } from '@/shared/ui/pagination';

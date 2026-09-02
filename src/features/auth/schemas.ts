@@ -1,12 +1,18 @@
 import { z } from 'zod';
-import {
-  booleanFlag,
-  displayName,
-  email,
-  honeypot,
-  password,
-  username,
-} from '@/shared/validation/common';
+import { booleanFlag, displayName, email, honeypot, username } from '@/shared/validation/common';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/features/auth/password-policy';
+
+/*
+  A jelszó hosszszabálya itt van, és nem a közös primitívek között.
+
+  Ott ugyanis a `shared` réteg importálta volna a jelszóházirendet a
+  `features/auth`-ból — a nyíl rossz irányba mutatott volna, és pont az a fajta
+  visszafelé mutató függés, amitől a közös réteg lassan mindent tudni kezd.
+*/
+const password = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Legalább ${PASSWORD_MIN_LENGTH} karakter.`)
+  .max(PASSWORD_MAX_LENGTH, `Legfeljebb ${PASSWORD_MAX_LENGTH} karakter.`);
 
 /**
  * A regisztrációs és jelszókezelő űrlapok alakja.

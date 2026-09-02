@@ -38,7 +38,7 @@ olvasható fájlrendszeren `MEDIA_DRIVER=s3` kell (AWS S3, Cloudflare R2,
 Backblaze B2, MinIO), `S3_ENDPOINT`-tal minden nem-AWS szolgáltatónál, és a
 `MEDIA_PUBLIC_BASE_URL`-lel a bucket vagy a CDN eredetére állítva.
 
-A `src/lib/env.ts` induláskor validál. Hiányzó vagy értelmetlen konfiguráció
+A `src/infrastructure/env.ts` induláskor validál. Hiányzó vagy értelmetlen konfiguráció
 esetén a process olvasható hibával áll le, nem három réteggel lejjebb, futás
 közben.
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalPage } from '@/shared/layout/legal-page';
+import { LegalPage } from '@/shared/ui/legal-page';
 import { LEGAL_UPDATED_AT, PRIVACY_POLICY } from '@/content/legal';
 
 export const metadata: Metadata = {

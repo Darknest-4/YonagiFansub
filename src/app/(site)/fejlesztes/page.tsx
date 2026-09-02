@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GitCommitVertical, Info } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { EmptyState } from '@/shared/ui/feedback';
 import {
   CHANGELOG,

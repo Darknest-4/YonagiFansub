@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { HelpCircle } from 'lucide-react';
 import { renderMarkdown } from '@/shared/lib/markdown';
 import { FAQ_CATEGORY_LABELS, listFaq } from '@/features/team/queries';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { EmptyState } from '@/shared/ui/feedback';
 import { ButtonLink } from '@/shared/ui/button';
 import { siteUrl } from '@/shared/lib/site-url';

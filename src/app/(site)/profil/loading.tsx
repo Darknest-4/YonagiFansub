@@ -1,4 +1,4 @@
-import { RowListSkeleton } from '@/shared/layout/page-skeletons';
+import { RowListSkeleton } from '@/shared/ui/page-skeletons';
 
 export default function Loading() {
   return <RowListSkeleton rows={5} />;

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Clock, GraduationCap, Heart, Languages, PauseCircle, Wrench } from 'lucide-react';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { ButtonLink } from '@/shared/ui/button';
 import { listPositions } from '@/features/team/queries';
 import { getSettings } from '@/features/settings/service';

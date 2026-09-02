@@ -9,7 +9,7 @@ import { db } from '@/infrastructure/db';
 import { cn } from '@/shared/lib/utils';
 import { Badge } from '@/shared/ui/badge';
 import { EmptyState } from '@/shared/ui/feedback';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 

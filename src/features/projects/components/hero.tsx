@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn, truncate } from '@/shared/lib/utils';
 import { ButtonLink } from '@/shared/ui/button';
-import { LogoMark } from '@/shared/layout/logo';
+import { LogoMark } from '@/shared/ui/logo';
 
 export interface HeroProject {
   slug: string;

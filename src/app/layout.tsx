@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Noto_Sans_JP, Sora } from 'next/font/google';
 import { getPublicSettings } from '@/features/settings/service';
-import { AppProviders } from '@/shared/providers';
+import { AppProviders } from '@/features/settings/components/settings-provider';
 import { cn } from '@/shared/lib/utils';
 import '@/styles/globals.css';
 import { siteUrl } from '@/shared/lib/site-url';

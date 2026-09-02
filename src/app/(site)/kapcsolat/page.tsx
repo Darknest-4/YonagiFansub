@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Clock, Mail, MessageSquare, ShieldAlert } from 'lucide-react';
-import { PageHeader } from '@/shared/layout/page-header';
+import { PageHeader } from '@/shared/ui/page-header';
 import { ContactForm } from '@/features/contact/components/contact-form';
 import { getPublicSettings } from '@/features/settings/service';
 import { EmptyState } from '@/shared/ui/feedback';

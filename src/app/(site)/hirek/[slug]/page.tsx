@@ -7,7 +7,7 @@ import { ogImages, twitterImages } from '@/shared/lib/seo';
 import { formatDate, formatCount, truncate, stripMarkdown, toIsoString } from '@/shared/lib/utils';
 import { renderMarkdown } from '@/shared/lib/markdown';
 import { getPublicNewsBySlug, getRelatedNews, incrementNewsView } from '@/features/news/queries';
-import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Breadcrumbs } from '@/shared/ui/page-header';
 import { NewsCard } from '@/features/news/components/news-card';
 import { Comments } from '@/features/comments/components/comments';
 import { Avatar } from '@/shared/ui/avatar';

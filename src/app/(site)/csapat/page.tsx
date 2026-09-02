@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, FolderOpen, Star, Users } from 'lucide-react';
 import { EmptyState } from '@/shared/ui/feedback';
 import { ButtonLink } from '@/shared/ui/button';
-import { LogoMark } from '@/shared/layout/logo';
+import { LogoMark } from '@/shared/ui/logo';
 import { MemberCard } from '@/features/team/components/member-card';
 import { listPositions, listTeam } from '@/features/team/queries';
 import { cn } from '@/shared/lib/utils';

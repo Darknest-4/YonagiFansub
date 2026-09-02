@@ -18,8 +18,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { isActive, type NavItem } from '@/shared/layout/nav-config';
-import { scrollToY, useScrollState } from '@/shared/layout/use-scroll-state';
+import { isActive, type NavItem } from '@/app/_shell/nav-config';
+import { scrollToY, useScrollState } from '@/shared/lib/use-scroll-state';
 
 const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
   Home,

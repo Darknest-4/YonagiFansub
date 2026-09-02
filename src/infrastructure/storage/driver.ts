@@ -4,7 +4,7 @@ import path from 'node:path';
 import { env } from '@/infrastructure/env';
 import { logger } from '@/infrastructure/logger';
 import { signRequest } from '@/infrastructure/storage/s3-signature';
-import { contentTypeFor } from '@/features/media/content-type';
+import { contentTypeFor } from '@/infrastructure/storage/content-type';
 
 /**
  * Object storage, behind one interface with two implementations.

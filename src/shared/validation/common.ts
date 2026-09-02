@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import '@/shared/validation/error-map';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/features/auth/password-policy';
 
 /**
  * Shared validation primitives.
@@ -40,11 +39,6 @@ export const displayName = z
   .trim()
   .min(2, 'Legalább 2 karakter.')
   .max(48, 'Legfeljebb 48 karakter.');
-
-export const password = z
-  .string()
-  .min(PASSWORD_MIN_LENGTH, `Legalább ${PASSWORD_MIN_LENGTH} karakter.`)
-  .max(PASSWORD_MAX_LENGTH, `Legfeljebb ${PASSWORD_MAX_LENGTH} karakter.`);
 
 /** Accepts an absolute http(s) URL or a site-relative path; rejects everything else. */
 export const safeUrl = z

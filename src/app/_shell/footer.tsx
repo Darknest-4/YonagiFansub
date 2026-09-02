@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { Logo } from '@/shared/layout/logo';
+import { Logo } from '@/shared/ui/logo';
 import {
   FOOTER_SECTIONS,
   disabledNavFeatures,
   visibleNav,
-} from '@/shared/layout/nav-config';
+} from '@/app/_shell/nav-config';
 import { getPublicSettings } from '@/features/settings/service';
 import { getPublicStats } from '@/features/stats/service';
 import { formatCount } from '@/shared/lib/utils';

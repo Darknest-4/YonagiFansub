@@ -1,4 +1,4 @@
-import { ReleaseFeedSkeleton } from '@/shared/layout/page-skeletons';
+import { ReleaseFeedSkeleton } from '@/shared/ui/page-skeletons';
 
 export default function Loading() {
   return <ReleaseFeedSkeleton />;

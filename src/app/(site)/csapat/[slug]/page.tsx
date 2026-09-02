@@ -7,7 +7,7 @@ import { ogImages } from '@/shared/lib/seo';
 import { formatDate, truncate } from '@/shared/lib/utils';
 import { renderMarkdown } from '@/shared/lib/markdown';
 import { getPublicTeamMember } from '@/features/team/queries';
-import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Breadcrumbs } from '@/shared/ui/page-header';
 import { Avatar } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
 import { EmptyState } from '@/shared/ui/feedback';
