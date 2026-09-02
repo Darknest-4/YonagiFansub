@@ -6,6 +6,9 @@
  * that then drift apart.
  */
 
+/** Destinations a site setting can remove from the menus. */
+export type NavFeature = 'schedule' | 'changelog';
+
 export interface NavItem {
   href: string;
   label: string;
@@ -18,7 +21,27 @@ export interface NavItem {
    * stays free of React imports and can be used by the sitemap and the footer,
    * neither of which renders an icon.
    */
-  icon?: 'Home' | 'Clapperboard' | 'Package' | 'Newspaper' | 'Users' | 'HelpCircle' | 'Mail' | 'Sparkles' | 'CalendarDays';
+  icon?:
+    | 'Home'
+    | 'Clapperboard'
+    | 'Package'
+    | 'Newspaper'
+    | 'Users'
+    | 'HelpCircle'
+    | 'Mail'
+    | 'Sparkles'
+    | 'CalendarDays'
+    | 'ScrollText';
+  /**
+   * The site setting that switches this destination off.
+   *
+   * A page that 404s must not still be listed in three menus — that is a dead
+   * link the team put there on purpose, which is worse than a broken one. The
+   * entry names the feature; the layout reads the settings and hands down which
+   * features are off, because `nav-config` is imported by client components and
+   * has no business touching the database.
+   */
+  feature?: NavFeature;
   /**
    * Hue for the icon tile in the "Több" sheet.
    *
@@ -74,6 +97,7 @@ export const PRIMARY_NAV: NavItem[] = [
     icon: 'CalendarDays',
     tab: true,
     description: 'Mikor jön a következő rész',
+    feature: 'schedule',
   },
   {
     href: '/hirek',
@@ -113,6 +137,14 @@ export const SECONDARY_NAV: NavItem[] = [
     icon: 'Sparkles',
     tint: 'sakura',
   },
+  {
+    href: '/fejlesztes',
+    label: 'Fejlesztési napló',
+    description: 'Mi épült meg, és mikor',
+    icon: 'ScrollText',
+    tint: 'success',
+    feature: 'changelog',
+  },
 ];
 
 export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
@@ -121,7 +153,7 @@ export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/projektek', label: 'Projektek' },
       { href: '/kiadasok', label: 'Legújabb kiadások' },
-      { href: '/naptar', label: 'Adásnaptár' },
+      { href: '/naptar', label: 'Adásnaptár', feature: 'schedule' },
       { href: '/hirek', label: 'Hírek' },
       { href: '/kereses', label: 'Keresés' },
     ],
@@ -131,6 +163,7 @@ export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/csapat', label: 'Csapattagok' },
       { href: '/csatlakozz', label: 'Csatlakozz hozzánk' },
+      { href: '/fejlesztes', label: 'Fejlesztési napló', feature: 'changelog' },
       { href: '/kapcsolat', label: 'Kapcsolat' },
       { href: '/gyik', label: 'GYIK' },
     ],
@@ -167,3 +200,39 @@ export const OVERFLOW_NAV: NavItem[] = [
   ...PRIMARY_NAV.filter((item) => !item.tab),
   ...SECONDARY_NAV,
 ];
+
+/**
+ * Drops the entries whose feature is switched off.
+ *
+ * Takes the *disabled* set rather than the enabled one on purpose: an entry
+ * with no `feature` at all is always shown, and an entry naming a feature
+ * nobody passed is shown too. Adding a menu item can therefore never make it
+ * silently invisible — the failure mode of the inverse (list what is on) is a
+ * page that disappears because somebody forgot to add its name to a list.
+ */
+export function visibleNav<T extends NavItem>(items: T[], off: readonly NavFeature[]): T[] {
+  if (off.length === 0) return items;
+  return items.filter((item) => !item.feature || !off.includes(item.feature));
+}
+
+/**
+ * Reads the settings into the disabled list.
+ *
+ * A pure function taking a plain object rather than calling `getSettings()`
+ * itself, because this module is imported by client components: it has to stay
+ * free of `server-only` and of the database. The header, the footer and the
+ * sitemap each pass in the settings they already loaded.
+ *
+ * `!== false` rather than a truthiness check — a key missing from the object
+ * means "not told", and the honest reading of that is the feature's default,
+ * which for both of these is on. Only an explicit `false` hides a page.
+ */
+export function disabledNavFeatures(settings: {
+  scheduleEnabled?: boolean;
+  changelogEnabled?: boolean;
+}): NavFeature[] {
+  const off: NavFeature[] = [];
+  if (settings.scheduleEnabled === false) off.push('schedule');
+  if (settings.changelogEnabled === false) off.push('changelog');
+  return off;
+}

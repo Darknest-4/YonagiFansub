@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import { Logo } from '@/components/site/logo';
-import { FOOTER_SECTIONS } from '@/components/site/nav-config';
+import {
+  FOOTER_SECTIONS,
+  disabledNavFeatures,
+  visibleNav,
+} from '@/components/site/nav-config';
 import { getPublicSettings } from '@/server/settings';
 import { getPublicStats } from '@/server/stats';
 import { formatCount } from '@/lib/utils';
@@ -16,6 +20,17 @@ import { formatCount } from '@/lib/utils';
 export async function SiteFooter() {
   const [settings, stats] = await Promise.all([getPublicSettings(), getPublicStats()]);
   const year = new Date().getFullYear();
+
+  /*
+    The same filtering the header does. A footer column is the one place a
+    switched-off page is most likely to survive a redesign unnoticed, because
+    nobody scrolls to the bottom to check their own work.
+  */
+  const off = disabledNavFeatures(settings);
+  const sections = FOOTER_SECTIONS.map((section) => ({
+    ...section,
+    items: visibleNav(section.items, off),
+  }));
 
   const socials = [
     { label: 'Discord', href: settings.discordUrl },
@@ -71,7 +86,7 @@ export async function SiteFooter() {
 
           <nav aria-label="Lábléc navigáció">
             <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-              {FOOTER_SECTIONS.map((section) => (
+              {sections.map((section) => (
                 <div key={section.title}>
                   <h2 className="mb-3.5 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase">
                     {section.title}
@@ -95,8 +110,22 @@ export async function SiteFooter() {
         </div>
 
         <div className="mt-12 flex flex-col gap-4 border-t border-ink-800 pt-7 text-xs text-mist-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {year} {settings.siteName}. Rajongói fordítás, nem hivatalos kiadás.
+          <p className="flex flex-wrap items-center gap-2">
+            <span>
+              © {year} {settings.siteName}. Rajongói fordítás, nem hivatalos kiadás.
+            </span>
+
+            {/*
+              The beta bar at the top scrolls away; this does not. Somebody who
+              landed mid-page, or who has read past the strip a dozen times, can
+              still find out here what state the site is in — which is the point
+              of saying it at all.
+            */}
+            {settings.betaMode && (
+              <span className="rounded-full bg-warning-500/12 px-2 py-0.5 text-2xs font-bold tracking-[0.14em] text-warning-400 uppercase">
+                Béta
+              </span>
+            )}
           </p>
 
           <p className="max-w-xl leading-relaxed sm:text-right">
@@ -108,6 +137,13 @@ export async function SiteFooter() {
             leírt módon várjuk.
           </p>
         </div>
+
+        {/* A free line for whatever the team wants down here — a thank-you, a
+            credit, a note about a hiatus. Omitted entirely when unset, rather
+            than leaving an empty row that changes the footer's height. */}
+        {settings.footerNote && (
+          <p className="mt-5 text-xs leading-relaxed text-mist-600">{settings.footerNote}</p>
+        )}
       </div>
     </footer>
   );

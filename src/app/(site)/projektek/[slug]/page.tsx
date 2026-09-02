@@ -47,6 +47,7 @@ import {
 import { Avatar } from '@/components/ui/avatar';
 import { ReleaseListSkeleton } from '@/components/ui/feedback';
 import { ButtonLink } from '@/components/ui/button';
+import { getSettings } from '@/server/settings';
 
 type Params = Promise<{ slug: string }>;
 
@@ -99,7 +100,8 @@ export default async function ProjectPage({ params }: { params: Params }) {
 
   const user = await getCurrentUser();
 
-  const [episodes, favourite, rating, watched] = await Promise.all([
+  const [settings, episodes, favourite, rating, watched] = await Promise.all([
+    getSettings(),
     getPublicEpisodes(project.id),
     user
       ? db.favorite.findUnique({
@@ -547,13 +549,22 @@ export default async function ProjectPage({ params }: { params: Params }) {
             </section>
           )}
 
-          <RatingWidget
-            projectId={project.id}
-            projectSlug={project.slug}
-            initial={rating}
-            canRate={Boolean(user?.emailVerifiedAt)}
-            isAuthenticated={Boolean(user)}
-          />
+          {/*
+            Removed entirely rather than shown read-only when ratings are off.
+
+            A score with no way to add to it is a number whose meaning nobody
+            can check — and the average shown would be frozen at whatever the
+            last vote left it, which is worse information than none.
+          */}
+          {settings.ratingsEnabled && (
+            <RatingWidget
+              projectId={project.id}
+              projectSlug={project.slug}
+              initial={rating}
+              canRate={Boolean(user?.emailVerifiedAt)}
+              isAuthenticated={Boolean(user)}
+            />
+          )}
 
           <ProjectRelations relations={project.relations} currentSlug={project.slug} />
 

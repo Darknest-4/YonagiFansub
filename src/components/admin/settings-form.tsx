@@ -17,6 +17,8 @@ export interface SettingDefinitionView {
   description?: string;
   type: 'string' | 'text' | 'boolean' | 'number' | 'url' | 'email';
   isPublic: boolean;
+  min?: number;
+  max?: number;
 }
 
 /**
@@ -158,6 +160,46 @@ function SettingControl({
           <Textarea
             id={id}
             rows={3}
+            value={String(value ?? '')}
+            onChange={(event) => onChange(event.target.value)}
+            aria-describedby={describedBy}
+          />
+        )}
+      </Field>
+    );
+  }
+
+  if (definition.type === 'number') {
+    /*
+      A real number input, with the declared bounds on it.
+
+      `min`/`max` here are a convenience, not the guard — a browser will happily
+      submit an out-of-range value, and the API is reachable without a browser
+      at all. The server clamps in `coerce()`; this only puts the stepper on the
+      field and stops the obvious mistake before it costs a round trip.
+
+      The range is spelled out under the label because an input that silently
+      corrects 5000 to 96 on save looks broken otherwise.
+    */
+    const range =
+      definition.min !== undefined && definition.max !== undefined
+        ? `${definition.min}–${definition.max} között`
+        : null;
+
+    return (
+      <Field
+        label={definition.label}
+        hint={[definition.description, range].filter(Boolean).join(' ')}
+      >
+        {({ id, describedBy }) => (
+          <Input
+            id={id}
+            type="number"
+            inputMode="numeric"
+            min={definition.min}
+            max={definition.max}
+            step={1}
+            className="max-w-32"
             value={String(value ?? '')}
             onChange={(event) => onChange(event.target.value)}
             aria-describedby={describedBy}

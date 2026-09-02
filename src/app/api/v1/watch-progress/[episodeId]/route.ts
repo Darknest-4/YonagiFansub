@@ -4,6 +4,7 @@ import { watchProgressSchema } from '@/lib/validation/schemas';
 import { recordProgress } from '@/server/watch';
 import { db } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
+import { assertFeatureEnabled } from '@/server/settings';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,11 @@ export const PUT = defineRoute({
   params: z.object({ episodeId: z.string().cuid() }),
   body: watchProgressSchema,
   async handler({ params, body, user }) {
+    await assertFeatureEnabled(
+      'watchProgressEnabled',
+      'A nézési előrehaladás mentése jelenleg ki van kapcsolva.',
+    );
+
     const episode = await db.episode.findFirst({
       where: { id: params.episodeId, deletedAt: null },
       select: { id: true },

@@ -16,6 +16,7 @@ import { listEpisodeVideos } from '@/server/video';
 import { getCurrentUser } from '@/lib/auth/guards';
 import { db } from '@/lib/db';
 import { WorkflowProgress, buildWorkflowStages } from '@/components/ui/progress';
+import { getSettings } from '@/server/settings';
 
 type Params = Promise<{ slug: string; episode: string }>;
 
@@ -62,24 +63,33 @@ export default async function EpisodePage({ params }: { params: Params }) {
   const number = parseEpisodeNumber(rawNumber);
   if (number === null) notFound();
 
+  const settings = await getSettings();
+
   const episode = await getEpisode(slug, number);
   if (!episode) notFound();
 
   const { previous, next } = await getEpisodeNeighbours(episode.project.id, number);
 
-  // Every published source, in the order the team set. The player walks that
-  // order on failure, so a dead filehost is a switch rather than a broken page.
-  const videos = await listEpisodeVideos(episode.id);
+  /*
+    Every published source, in the order the team set. The player walks that
+    order on failure, so a dead filehost is a switch rather than a broken page.
+
+    Not even queried when online playback is off: the list is only ever used to
+    decide whether to draw a player, and the endpoints behind it refuse anyway
+    (see `gatePlayback`).
+  */
+  const videos = settings.watchEnabled ? await listEpisodeVideos(episode.id) : [];
 
   // Hol hagyta abba. Kijelentkezve nincs mit folytatni és nincs hova menteni —
   // a lejátszó ilyenkor egyáltalán nem jelent semmit.
   const viewer = await getCurrentUser();
-  const watch = viewer
-    ? await db.watchProgress.findUnique({
-        where: { userId_episodeId: { userId: viewer.id, episodeId: episode.id } },
-        select: { positionSec: true },
-      })
-    : null;
+  const watch =
+    viewer && settings.watchProgressEnabled
+      ? await db.watchProgress.findUnique({
+          where: { userId_episodeId: { userId: viewer.id, episodeId: episode.id } },
+          select: { positionSec: true },
+        })
+      : null;
 
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
   const accent = episode.project.accentColor ?? '#f761a8';
@@ -222,7 +232,11 @@ export default async function EpisodePage({ params }: { params: Params }) {
                 <VideoPlayer
                   episodeId={episode.id}
                   resumeAt={watch?.positionSec ?? 0}
-                  trackProgress={Boolean(viewer)}
+                  // Signed out, or the site has progress tracking off: the
+                  // player must not call the endpoint at all. It would answer
+                  // 403 on every tick, which is a stream of failed requests for
+                  // a feature nobody asked for.
+                  trackProgress={Boolean(viewer) && settings.watchProgressEnabled}
                   sources={videos.map((source) => ({
                     id: source.id,
                     kind: source.kind,
@@ -261,8 +275,19 @@ export default async function EpisodePage({ params }: { params: Params }) {
             )}
 
             <div className="mt-8">
-              {released ? (
+              {released && settings.downloadsEnabled ? (
                 <DownloadPanel releases={releases} />
+              ) : released ? (
+                /* Released, but the links are switched off site-wide. Saying so
+                   is the point: the alternative is an episode page that looks
+                   identical to one whose release never happened. */
+                <section className="rounded-2xl border border-ink-800 bg-ink-900/50 p-5 text-sm text-content-muted sm:p-6">
+                  <h2 className="text-base font-semibold text-mist-50">Letöltés</h2>
+                  <p className="mt-2 leading-relaxed">
+                    A letöltési hivatkozások jelenleg nem érhetők el. A rész elkészült — amint a
+                    tükrök újra elérhetők, itt fognak megjelenni.
+                  </p>
+                </section>
               ) : (
                 <section
                   aria-labelledby="progress"

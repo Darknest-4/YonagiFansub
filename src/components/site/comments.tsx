@@ -60,6 +60,8 @@ export async function Comments({
           : null
       }
       requiresApproval={settings.commentsRequireApproval}
+      editMinutes={settings.commentEditMinutes}
+      profilesPublic={settings.profilesPublic}
       returnTo={returnTo}
     />
   );

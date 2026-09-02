@@ -17,6 +17,7 @@ import {
   Mail,
   Newspaper,
   Package,
+  ScrollText,
   Search,
   Settings,
   Sparkles,
@@ -28,7 +29,15 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/site/logo';
-import { OVERFLOW_NAV, PRIMARY_NAV, isActive, type NavItem } from '@/components/site/nav-config';
+import {
+  OVERFLOW_NAV,
+  PRIMARY_NAV,
+  TAB_NAV,
+  isActive,
+  visibleNav,
+  type NavFeature,
+  type NavItem,
+} from '@/components/site/nav-config';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, ButtonLink } from '@/components/ui/button';
@@ -74,6 +83,7 @@ const SHEET_ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
   HelpCircle,
   Mail,
   Sparkles,
+  ScrollText,
 };
 
 const SHEET_TINTS: Record<NonNullable<NavItem['tint']>, string> = {
@@ -88,11 +98,22 @@ const SHEET_TINTS: Record<NonNullable<NavItem['tint']>, string> = {
 export function SiteHeader({
   user,
   announcement,
+  disabledNav = [],
 }: {
   user: HeaderUser | null;
   announcement?: { text: string; href?: string } | null;
+  /**
+   * Features switched off in the settings. Their menu entries are removed here
+   * rather than in `nav-config`, which is a plain module shared with the
+   * sitemap and cannot read the database.
+   */
+  disabledNav?: NavFeature[];
 }) {
   const pathname = usePathname();
+
+  const primaryNav = visibleNav(PRIMARY_NAV, disabledNav);
+  const tabNav = visibleNav(TAB_NAV, disabledNav);
+  const overflowNav = visibleNav(OVERFLOW_NAV, disabledNav);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -171,7 +192,7 @@ export function SiteHeader({
           */}
           <nav aria-label="Fő navigáció" className="hidden lg:block">
             <ul className="flex items-center gap-0.5">
-              {PRIMARY_NAV.map((item) => {
+              {primaryNav.map((item) => {
                 const active = isActive(pathname, item);
                 return (
                   <li key={item.href} className="relative">
@@ -312,9 +333,15 @@ export function SiteHeader({
         </div>
       </header>
 
-      <MobileTabBar onMore={() => setMobileOpen(true)} moreOpen={mobileOpen} />
+      <MobileTabBar tabs={tabNav} onMore={() => setMobileOpen(true)} moreOpen={mobileOpen} />
 
-      <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} user={user} onLogout={handleLogout} />
+      <MobileNav
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        items={overflowNav}
+        user={user}
+        onLogout={handleLogout}
+      />
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
@@ -324,11 +351,13 @@ export function SiteHeader({
 function MobileNav({
   open,
   onClose,
+  items,
   user,
   onLogout,
 }: {
   open: boolean;
   onClose: () => void;
+  items: NavItem[];
   user: HeaderUser | null;
   onLogout: () => void;
 }) {
@@ -442,7 +471,7 @@ function MobileNav({
                 single destination.
               */}
               <ul className="space-y-2 pt-1">
-                {OVERFLOW_NAV.map((item) => {
+                {items.map((item) => {
                   const active = isActive(pathname, item);
                   const Icon = item.icon ? SHEET_ICONS[item.icon] : Sparkles;
                   const tint = SHEET_TINTS[item.tint ?? 'bloom'];

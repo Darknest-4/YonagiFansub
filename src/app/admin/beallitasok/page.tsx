@@ -3,6 +3,7 @@ import { ensurePermission } from '@/lib/auth/guards';
 import {
   SETTING_DEFINITIONS,
   SETTING_GROUP_LABELS,
+  SETTING_GROUP_ORDER,
   getSettings,
 } from '@/server/settings';
 import { SettingsForm } from '@/components/admin/settings-form';
@@ -14,6 +15,30 @@ export default async function AdminSettingsPage() {
   await ensurePermission('settings:read', '/admin/beallitasok');
   const values = await getSettings();
 
+  /*
+    Sorted into the declared group order before it reaches the form.
+
+    The form groups by walking the array, so the order the cards come out in is
+    whatever order the definitions happen to sit in the object — which is the
+    order somebody added them, not an order a reader would choose. Sorting here
+    means a new setting can be declared next to the ones it belongs with without
+    also deciding where its whole card lands on the page.
+  */
+  const definitions = Object.values(SETTING_DEFINITIONS)
+    .map((definition) => ({
+      key: definition.key,
+      group: definition.group,
+      label: definition.label,
+      description: definition.description,
+      type: definition.type,
+      isPublic: definition.isPublic,
+      min: 'min' in definition ? definition.min : undefined,
+      max: 'max' in definition ? definition.max : undefined,
+    }))
+    .sort(
+      (a, b) => SETTING_GROUP_ORDER.indexOf(a.group) - SETTING_GROUP_ORDER.indexOf(b.group),
+    );
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <header>
@@ -24,14 +49,7 @@ export default async function AdminSettingsPage() {
       </header>
 
       <SettingsForm
-        definitions={Object.values(SETTING_DEFINITIONS).map((definition) => ({
-          key: definition.key,
-          group: definition.group,
-          label: definition.label,
-          description: definition.description,
-          type: definition.type,
-          isPublic: definition.isPublic,
-        }))}
+        definitions={definitions}
         initial={values as unknown as Record<string, unknown>}
         groupLabels={SETTING_GROUP_LABELS}
       />

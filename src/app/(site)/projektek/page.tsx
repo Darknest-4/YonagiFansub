@@ -9,6 +9,7 @@ import { listGenres, listPublicProjects, listSeasons } from '@/server/projects';
 import { paginationSchema, parseList } from '@/lib/api/pagination';
 import { projectQuerySchema } from '@/lib/validation/schemas';
 import { PageHeader } from '@/components/site/page-header';
+import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = {
   title: 'Projektek',
@@ -35,7 +36,19 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
 
   const query = projectQuerySchema.safeParse(flat);
   const filters = query.success ? query.data : projectQuerySchema.parse({});
-  const pagination = paginationSchema.parse({ page: filters.page, perPage: 24 });
+  /*
+    Page size comes from the settings, not a literal.
+
+    It still goes through `paginationSchema` rather than straight into the
+    query: the setting is clamped on the way in, but the schema is the one place
+    that knows what this API considers a legal page size, and routing every
+    source through it is what stops the two from drifting apart.
+  */
+  const settings = await getSettings();
+  const pagination = paginationSchema.parse({
+    page: filters.page,
+    perPage: settings.projectsPerPage,
+  });
 
   const [genres, seasons] = await Promise.all([listGenres(), listSeasons()]);
 

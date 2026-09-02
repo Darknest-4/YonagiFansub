@@ -83,6 +83,8 @@ export function CommentBoard({
   total,
   viewer,
   requiresApproval,
+  editMinutes,
+  profilesPublic,
   returnTo,
 }: {
   target: CommentTargetView;
@@ -91,6 +93,10 @@ export function CommentBoard({
   total: number;
   viewer: Viewer | null;
   requiresApproval: boolean;
+  /** The `commentEditMinutes` setting. Zero means the edit button is never drawn. */
+  editMinutes: number;
+  /** The `profilesPublic` setting. Off, and the author's name is plain text. */
+  profilesPublic: boolean;
   returnTo: string;
 }) {
   const toast = useToast();
@@ -212,6 +218,8 @@ export function CommentBoard({
               <CommentRow
                 comment={thread}
                 viewer={viewer}
+                editMinutes={editMinutes}
+                profilesPublic={profilesPublic}
                 onEdited={(body, editedAt) => patch(thread.id, { body, editedAt })}
                 onDeleted={() => drop(thread.id)}
               />
@@ -224,6 +232,8 @@ export function CommentBoard({
                         comment={reply}
                         compact
                         viewer={viewer}
+                        editMinutes={editMinutes}
+                        profilesPublic={profilesPublic}
                         onEdited={(body, editedAt) => patch(reply.id, { body, editedAt })}
                         onDeleted={() => drop(reply.id)}
                       />
@@ -303,26 +313,31 @@ function Gate({ viewer, returnTo }: { viewer: Viewer | null; returnTo: string })
   );
 }
 
-/**
- * How long the edit button stays offered.
- *
- * Mirrors `EDIT_WINDOW_MS` on the server, which is the authority — this only
- * decides whether to draw a button. A clock skewed the wrong way shows a button
- * that answers with the server's own explanation, which is a better failure
- * than hiding a control that would have worked.
- */
-const EDIT_WINDOW_MS = 15 * 60 * 1000;
-
 function CommentRow({
   comment,
   compact = false,
   viewer,
+  editMinutes,
+  profilesPublic,
   onEdited,
   onDeleted,
 }: {
   comment: CommentView;
   compact?: boolean;
   viewer: Viewer | null;
+  /**
+   * The server's `commentEditMinutes`, passed down rather than mirrored as a
+   * constant here.
+   *
+   * It only decides whether to *draw* the button — the server checks the window
+   * again on the request, and it is the authority. A clock skewed the wrong way
+   * therefore shows a button that answers with the server's own explanation,
+   * which is a better failure than hiding a control that would have worked.
+   * A hardcoded copy of the number, though, would go quietly wrong the first
+   * time somebody changed the setting.
+   */
+  editMinutes: number;
+  profilesPublic: boolean;
   onEdited: (body: string, editedAt: string) => void;
   onDeleted: () => void;
 }) {
@@ -335,7 +350,10 @@ function CommentRow({
 
   const mine = Boolean(viewer && comment.user && viewer.username === comment.user.username);
   const editable =
-    mine && !comment.deleted && Date.now() - new Date(comment.createdAt).getTime() < EDIT_WINDOW_MS;
+    mine &&
+    !comment.deleted &&
+    editMinutes > 0 &&
+    Date.now() - new Date(comment.createdAt).getTime() < editMinutes * 60 * 1000;
 
   const save = async () => {
     if (busy) return;
@@ -404,13 +422,19 @@ function CommentRow({
             csak nem volt hova mutatnia — egy közösségi funkciónál pedig az a
             minimum, hogy meg lehessen nézni, ki írta.
           */}
-          {comment.user ? (
+          {comment.user && profilesPublic ? (
             <Link
               href={`/felhasznalo/${comment.user.username}`}
               className="text-sm font-medium text-mist-100 underline-offset-4 transition-colors hover:text-bloom-300 hover:underline"
             >
               {comment.user.displayName}
             </Link>
+          ) : comment.user ? (
+            /* Profiles are switched off site-wide: the name still identifies who
+               wrote this — a thread is unreadable otherwise — it just has
+               nowhere to lead. A link to a page that 404s would be worse than
+               plain text. */
+            <span className="text-sm font-medium text-mist-100">{comment.user.displayName}</span>
           ) : (
             /* Törölt fiók: nincs profil, amire mutasson. A szöveg marad, hogy a
                rá adott válaszok ne váljanak értelmezhetetlenné. */
@@ -489,7 +513,7 @@ function CommentRow({
                       type="button"
                       onClick={() => void remove()}
                       disabled={busy}
-                      className="font-medium text-danger-400 transition-colors hover:text-danger-300 disabled:opacity-60"
+                      className="font-medium text-danger-400 transition-colors hover:text-danger-500 disabled:opacity-60"
                     >
                       Igen
                     </button>

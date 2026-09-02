@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CalendarDays, Check, Clock, Info, Subtitles } from 'lucide-react';
 import { getSchedule, getUndatedOngoing, type ScheduledEpisode } from '@/server/schedule';
+import { getSettings } from '@/server/settings';
 import { getCurrentUser } from '@/lib/auth/guards';
 import { db } from '@/lib/db';
 import { cn } from '@/lib/utils';
@@ -35,8 +36,15 @@ const WEEKDAYS = ['vasárnap', 'hétfő', 'kedd', 'szerda', 'csütörtök', 'pé
  * part that is ours — whether the Hungarian release is out yet.
  */
 export default async function SchedulePage() {
+  const settings = await getSettings();
+
+  // The `scheduleEnabled` gate lives in this segment's layout, which is the only
+  // place it can set a real 404 status — see the note there.
   const [days, undated, user] = await Promise.all([
-    getSchedule(),
+    getSchedule({
+      pastDays: settings.schedulePastDays,
+      futureDays: settings.scheduleFutureDays,
+    }),
     getUndatedOngoing(),
     getCurrentUser(),
   ]);

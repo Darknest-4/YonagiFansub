@@ -192,11 +192,26 @@ export async function countComments(target: CommentTarget): Promise<number> {
  * the text they replied to turns their answer into a non-sequitur. Fifteen
  * minutes covers the typo and the forgotten word, which is what editing is
  * actually for here, and the `editedAt` marker covers the rest.
+ *
+ * The number is the `commentEditMinutes` setting; this is the fallback for the
+ * callers that have no settings to hand (tests, background work).
  */
-export const EDIT_WINDOW_MS = 15 * 60 * 1000;
+export const DEFAULT_EDIT_MINUTES = 15;
+export const EDIT_WINDOW_MS = DEFAULT_EDIT_MINUTES * 60 * 1000;
 
-export function withinEditWindow(createdAt: Date, now = new Date()): boolean {
-  return now.getTime() - createdAt.getTime() <= EDIT_WINDOW_MS;
+/**
+ * Zero minutes means editing is switched off, and that has to be checked before
+ * the subtraction: `now - createdAt <= 0` is true for a comment written this
+ * millisecond, so a naive window of 0 would let an author edit for as long as
+ * the clock took to tick.
+ */
+export function withinEditWindow(
+  createdAt: Date,
+  now = new Date(),
+  minutes = DEFAULT_EDIT_MINUTES,
+): boolean {
+  if (minutes <= 0) return false;
+  return now.getTime() - createdAt.getTime() <= minutes * 60 * 1000;
 }
 
 interface OwnComment {
@@ -235,6 +250,7 @@ export async function editOwnComment(
   userId: string,
   body: string,
   requiresApproval: boolean,
+  editMinutes = DEFAULT_EDIT_MINUTES,
 ) {
   const comment = await loadOwn(commentId, userId);
 
@@ -242,9 +258,18 @@ export async function editOwnComment(
     throw new ForbiddenError('Ezt a hozzászólást már nem lehet szerkeszteni.');
   }
 
-  if (!withinEditWindow(comment.createdAt)) {
+  // Off entirely, which is a different situation from "you were too slow" and
+  // deserves a different sentence — telling somebody their time ran out when
+  // they never had any sends them looking for a window that does not exist.
+  if (editMinutes <= 0) {
     throw new ForbiddenError(
-      'A szerkesztésre 15 perc áll rendelkezésre — ez az idő letelt. Írhatsz helyette választ.',
+      'A hozzászólások szerkesztése jelenleg ki van kapcsolva. Írhatsz helyette választ.',
+    );
+  }
+
+  if (!withinEditWindow(comment.createdAt, new Date(), editMinutes)) {
+    throw new ForbiddenError(
+      `A szerkesztésre ${editMinutes} perc áll rendelkezésre — ez az idő letelt. Írhatsz helyette választ.`,
     );
   }
 

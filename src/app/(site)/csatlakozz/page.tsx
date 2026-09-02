@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import { ArrowRight, Clock, GraduationCap, Heart, Languages, Wrench } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Clock, GraduationCap, Heart, Languages, PauseCircle, Wrench } from 'lucide-react';
 import { PageHeader } from '@/components/site/page-header';
 import { ButtonLink } from '@/components/ui/button';
 import { listPositions } from '@/server/team';
+import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = {
   title: 'Csatlakozz a csapathoz',
@@ -11,7 +13,15 @@ export const metadata: Metadata = {
   alternates: { canonical: '/csatlakozz' },
 };
 
-export const revalidate = 3600;
+/*
+  Dynamic rather than revalidated hourly.
+
+  The page reads `recruitingOpen`, and a switch that takes up to an hour to take
+  effect is a switch that does not work: the case for closing recruitment is
+  usually "we are drowning in applications", which is exactly when another
+  hour's worth is the wrong answer.
+*/
+export const dynamic = 'force-dynamic';
 
 const EXPECTATIONS = [
   {
@@ -32,7 +42,8 @@ const EXPECTATIONS = [
 ];
 
 export default async function JoinPage() {
-  const positions = await listPositions();
+  const [positions, settings] = await Promise.all([listPositions(), getSettings()]);
+  const open = settings.recruitingOpen;
 
   return (
     <div className="container-content py-10 lg:py-14">
@@ -41,6 +52,32 @@ export default async function JoinPage() {
         title={<>Gyere, csináljuk <span className="text-gradient">együtt</span></>}
         description="Önkéntes csapat vagyunk. Nincs fizetés, nincs határidőpresszó — van viszont közös munka, tanulás és egy csomó anime."
       />
+
+      {/*
+        The page stays up when recruitment is closed, with the notice at the top
+        and the application steps replaced further down.
+
+        Taking it down instead would be worse in both directions: somebody who
+        wanted to join learns nothing about the group, and the address that
+        every "we are looking for translators" post ever linked to starts
+        404ing. Saying "not right now, here is what we do and where to ask
+        later" costs one paragraph and answers the actual question.
+      */}
+      {!open && (
+        <aside className="mt-6 flex gap-3 rounded-xl border border-warning-500/25 bg-warning-900/20 px-4 py-3.5">
+          <PauseCircle className="mt-0.5 size-4 shrink-0 text-warning-400" aria-hidden />
+          <p className="text-2xs leading-relaxed text-mist-300 sm:text-xs">
+            <strong className="text-mist-100">Jelenleg nem keresünk új tagot.</strong> A csapat
+            most tele van, így a jelentkezéseket szüneteltetjük. Az oldalt nem vesszük le: ha
+            érdekel a munka, olvasd el nyugodtan, mit csinálunk — és nézz vissza később, mert ez
+            változni szokott. Sürgős esetben a{' '}
+            <Link href="/kapcsolat" className="text-warning-400 underline-offset-4 hover:underline">
+              kapcsolati űrlapon
+            </Link>{' '}
+            így is elérsz minket.
+          </p>
+        </aside>
+      )}
 
       <section className="mt-12" aria-labelledby="positions">
         <h2 id="positions" className="text-xl">Milyen pozíciókba keresünk embert?</h2>
@@ -91,6 +128,7 @@ export default async function JoinPage() {
 
       <section className="border-gradient relative mt-14 overflow-hidden rounded-2xl bg-ink-900 p-8 sm:p-10">
         <div aria-hidden className="aurora opacity-35" />
+        {open ? (
         <div className="relative max-w-2xl">
           <h2 className="text-2xl">Hogyan jelentkezz?</h2>
           <ol className="mt-5 space-y-3 text-sm leading-relaxed text-mist-300">
@@ -127,6 +165,41 @@ export default async function JoinPage() {
             </ButtonLink>
           </div>
         </div>
+        ) : (
+          /*
+            No "Jelentkezem" button while recruitment is closed. A call to
+            action that leads to a form nobody is reading is worse than no
+            button — it costs somebody the effort of writing an application and
+            then the silence of never hearing back.
+          */
+          <div className="relative max-w-2xl">
+            <h2 className="text-2xl">Most éppen szünetel a jelentkezés</h2>
+            <p className="mt-4 text-sm leading-relaxed text-mist-300">
+              Nem tudunk új tagot betanítani, így a jelentkezéseket ideiglenesen lezártuk. Amint
+              újranyitunk, ez az oldal és a hírek között is jelezni fogjuk — addig is érdemes
+              követni a munkánkat.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ButtonLink
+                href="/csapat"
+                variant="secondary"
+                size="lg"
+                leadingIcon={<Wrench className="size-4" aria-hidden />}
+              >
+                Kik dolgoznak itt?
+              </ButtonLink>
+              <ButtonLink
+                href="/hirek"
+                variant="ghost"
+                size="lg"
+                trailingIcon={<ArrowRight className="size-4" aria-hidden />}
+              >
+                Hírek
+              </ButtonLink>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

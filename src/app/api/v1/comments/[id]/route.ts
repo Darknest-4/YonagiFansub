@@ -29,6 +29,7 @@ export const PATCH = defineRoute({
       user!.id,
       body.body,
       settings.commentsRequireApproval,
+      settings.commentEditMinutes,
     );
 
     return {

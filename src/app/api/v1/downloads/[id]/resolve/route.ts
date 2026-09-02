@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { defineRoute, idParams } from '@/lib/api/handler';
 import { resolveDownload } from '@/server/releases';
+import { assertFeatureEnabled } from '@/server/settings';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/*
+  Both verbs are gated, not just the one the UI calls.
+
+  GET is the redirect a user's browser follows and POST is what the download
+  panel asks for; a mirror link that keeps resolving through the other verb
+  while downloads are "off" would make the setting decorative. The message is
+  the same either way — the reason is the same.
+*/
+const DOWNLOADS_OFF = 'A letöltések jelenleg nem érhetők el.';
 
 /**
  * Download resolution.
@@ -24,6 +35,8 @@ export const GET = defineRoute({
   params: idParams,
   csrf: false,
   async handler({ params, user, ipHash, userAgent }) {
+    await assertFeatureEnabled('downloadsEnabled', DOWNLOADS_OFF);
+
     const { url } = await resolveDownload(params.id, {
       userId: user?.id ?? null,
       ipHash,
@@ -46,6 +59,8 @@ export const POST = defineRoute({
   rateLimit: 'download:resolve',
   params: idParams,
   async handler({ params, user, ipHash, userAgent }) {
+    await assertFeatureEnabled('downloadsEnabled', DOWNLOADS_OFF);
+
     const { url, releaseId } = await resolveDownload(params.id, {
       userId: user?.id ?? null,
       ipHash,

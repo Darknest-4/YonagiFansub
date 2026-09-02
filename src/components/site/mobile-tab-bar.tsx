@@ -12,12 +12,13 @@ import {
   MoreHorizontal,
   Newspaper,
   Package,
+  ScrollText,
   Sparkles,
   Users,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TAB_NAV, isActive, type NavItem } from '@/components/site/nav-config';
+import { isActive, type NavItem } from '@/components/site/nav-config';
 import { scrollToY, useScrollState } from '@/components/site/use-scroll-state';
 
 const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
@@ -30,6 +31,7 @@ const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
   HelpCircle,
   Mail,
   Sparkles,
+  ScrollText,
 };
 
 /**
@@ -77,7 +79,20 @@ const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
  * The measured widths above are unaffected — compacting changes height, not the
  * horizontal split.
  */
-export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {
+export function MobileTabBar({
+  tabs,
+  onMore,
+  moreOpen,
+}: {
+  /**
+   * The tabs to show, already filtered for features switched off in the
+   * settings — the bar renders what it is handed rather than reading the
+   * navigation model itself, so a disabled page cannot survive here.
+   */
+  tabs: NavItem[];
+  onMore: () => void;
+  moreOpen: boolean;
+}) {
   const pathname = usePathname();
 
   const { compact, scrolled } = useScrollState();
@@ -85,7 +100,7 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
   // The sheet holds the routes that did not get a tab, so "Több" should look
   // active while you are on one of them — otherwise the bar claims you are
   // nowhere.
-  const onOverflowRoute = !TAB_NAV.some((item) => isActive(pathname, item));
+  const onOverflowRoute = !tabs.some((item) => isActive(pathname, item));
   const moreActive = moreOpen || onOverflowRoute;
 
   return (
@@ -154,7 +169,7 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
         )}
       >
         <ul className="flex items-stretch gap-0.5">
-          {TAB_NAV.map((item) => {
+          {tabs.map((item) => {
             const active = isActive(pathname, item);
             const Icon = item.icon ? ICONS[item.icon] : Home;
 

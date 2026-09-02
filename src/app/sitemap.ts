@@ -60,14 +60,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: base, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${base}/projektek`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/kiadasok`, changeFrequency: 'hourly', priority: 0.9 },
-    // Daily, because that is how often a broadcast row moves from "várható" to
-    // "készül" — the page changes on its own without anybody editing anything.
-    { url: `${base}/naptar`, changeFrequency: 'daily', priority: 0.8 },
+    /*
+      Daily, because that is how often a broadcast row moves from "várható" to
+      "készül" — the page changes on its own without anybody editing anything.
+
+      Omitted when the calendar is switched off. A sitemap is a promise that
+      these addresses are worth crawling, and the page 404s in that state;
+      listing it would spend a crawl budget on a dead URL and eventually earn
+      the sitemap a "contains errors" warning in Search Console.
+    */
+    ...(settings.scheduleEnabled
+      ? [{ url: `${base}/naptar`, changeFrequency: 'daily' as const, priority: 0.8 }]
+      : []),
     { url: `${base}/hirek`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/csapat`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${base}/gyik`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${base}/kapcsolat`, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${base}/csatlakozz`, changeFrequency: 'monthly', priority: 0.5 },
+    ...(settings.changelogEnabled
+      ? [{ url: `${base}/fejlesztes`, changeFrequency: 'weekly' as const, priority: 0.4 }]
+      : []),
     { url: `${base}/adatkezeles`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/felhasznalasi-feltetelek`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/dmca`, changeFrequency: 'yearly', priority: 0.3 },

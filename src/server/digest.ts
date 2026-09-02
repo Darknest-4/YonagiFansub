@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { mailTemplates, sendMail } from '@/lib/mail';
+import { getSettings } from '@/server/settings';
 
 /**
  * The email digest.
@@ -93,9 +94,26 @@ export interface DigestOutcome {
   sent: number;
   /** Users who were due but had nothing to report. */
   skippedEmpty: number;
+  /** The `digestEnabled` setting is off, so nothing was even considered. */
+  disabled?: boolean;
 }
 
 export async function sendDigests(now = new Date()): Promise<DigestOutcome> {
+  /*
+    The kill switch is checked here rather than in the cron route, so that every
+    caller is covered by it — including whatever calls this next year.
+
+    Nothing is written when it is off. In particular `digestSentAt` is left
+    alone: stamping it would silently swallow the window the digest covers, so
+    turning the setting back on a week later would send everyone a digest of the
+    last day and quietly drop the six before it. Leaving the column untouched
+    means the first run after the switch flips picks up where it left off, and
+    the per-period cap in `digestWindowStart` keeps that from becoming a year of
+    backlog in one email.
+  */
+  const settings = await getSettings();
+  if (!settings.digestEnabled) return { sent: 0, skippedEmpty: 0, disabled: true };
+
   /*
     Postgres cannot filter on a JSON field through Prisma's typed API here
     without a raw fragment, and the number of candidates is small either way:

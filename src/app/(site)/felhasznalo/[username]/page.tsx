@@ -6,6 +6,7 @@ import { CalendarDays, MessageSquare } from 'lucide-react';
 import { env } from '@/lib/env';
 import { formatDate, formatEpisodeNumber, formatRelative, truncate } from '@/lib/utils';
 import { getPublicProfile } from '@/server/profiles';
+import { getSettings } from '@/server/settings';
 import { ogImages } from '@/lib/seo';
 import { Breadcrumbs } from '@/components/site/page-header';
 import { Avatar } from '@/components/ui/avatar';
@@ -14,9 +15,15 @@ type Params = Promise<{ username: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { username } = await params;
-  const profile = await getPublicProfile(username);
+  const [settings, profile] = await Promise.all([getSettings(), getPublicProfile(username)]);
 
-  if (!profile) return { title: 'Felhasználó nem található', robots: { index: false } };
+  // Same answer as a missing profile when the feature is off. Metadata is
+  // generated before the page body runs, so the check has to happen in both
+  // places — a title naming a real member on a page that then 404s would leak
+  // exactly what the setting is meant to withhold.
+  if (!settings.profilesPublic || !profile) {
+    return { title: 'Felhasználó nem található', robots: { index: false } };
+  }
 
   const description = profile.bio
     ? truncate(profile.bio, 155)
@@ -47,8 +54,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function ProfilePage({ params }: { params: Params }) {
   const { username } = await params;
-  const profile = await getPublicProfile(username);
+  const [settings, profile] = await Promise.all([getSettings(), getPublicProfile(username)]);
 
+  if (!settings.profilesPublic) notFound();
   if (!profile) notFound();
 
   return (

@@ -20,11 +20,26 @@ import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
  * hour will find the Japanese broadcast, subtitled in English at best.
  */
 
-/** How far back the calendar looks. A week covers "did I miss one?". */
-const PAST_DAYS = 7;
+/**
+ * How wide a window the calendar covers.
+ *
+ * Defaults only. The real numbers come from the `schedulePastDays` and
+ * `scheduleFutureDays` settings and are passed in by the page — a week back
+ * covers "did I miss one?", and three weeks forward is about as far as upstream
+ * broadcast dates stay reliable, but a group running a long-dormant catalogue
+ * may reasonably want either end wider.
+ *
+ * They are arguments rather than a settings read inside the loader because the
+ * loader is cached: `unstable_cache` builds its key from the arguments, so a
+ * changed window gets its own entry instead of being served the old one until
+ * the TTL expires.
+ */
+export const SCHEDULE_WINDOW_DEFAULT = { pastDays: 7, futureDays: 21 } as const;
 
-/** And how far forward. Three weeks is about as far as upstream dates are reliable. */
-const FUTURE_DAYS = 21;
+export interface ScheduleWindow {
+  pastDays: number;
+  futureDays: number;
+}
 
 export interface ScheduledEpisode {
   episodeId: string;
@@ -78,10 +93,12 @@ function localDay(date: Date): string {
  * a test that called the cached version would fail on the wrapper rather than
  * exercise the filter, which is the part worth pinning.
  */
-export async function loadSchedule(): Promise<ScheduleDay[]> {
+export async function loadSchedule(
+  window: ScheduleWindow = SCHEDULE_WINDOW_DEFAULT,
+): Promise<ScheduleDay[]> {
   const now = new Date();
-  const from = new Date(now.getTime() - PAST_DAYS * 86_400_000);
-  const to = new Date(now.getTime() + FUTURE_DAYS * 86_400_000);
+  const from = new Date(now.getTime() - window.pastDays * 86_400_000);
+  const to = new Date(now.getTime() + window.futureDays * 86_400_000);
 
   const episodes = await db.episode.findMany({
     where: {

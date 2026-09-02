@@ -5,6 +5,7 @@ import { clientIp } from '@/lib/auth/tokens';
 import { getSession } from '@/lib/auth/session';
 import { getPlayableVideo, type PlayableVideo } from '@/server/video';
 import { viewerBinding } from '@/lib/video/token';
+import { getSettings } from '@/server/settings';
 
 /**
  * The checks every playback request runs, in one place.
@@ -52,6 +53,23 @@ export async function gatePlayback(
 ): Promise<GateSuccess | GateFailure> {
   if (!sameOriginish(request)) {
     return { ok: false, status: 403, reason: 'Csak a Yonagi Fansub oldaláról játszható le.' };
+  }
+
+  /*
+    The kill switch for online playback.
+
+    Checked here rather than in the four routes above it, because this is the
+    one function all of them go through — the manifest, the playlist, the
+    segments and the direct file. Gating the manifest alone would stop the
+    player starting while leaving every segment URL live for anybody who had
+    already loaded one.
+  */
+  if (!(await getSettings()).watchEnabled) {
+    return {
+      ok: false,
+      status: 403,
+      reason: 'Az online lejátszás jelenleg ki van kapcsolva.',
+    };
   }
 
   // Re-read on every request: a video unpublished a minute ago must stop

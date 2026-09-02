@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { SiteHeader, type HeaderUser } from '@/components/site/header';
 import { SiteFooter } from '@/components/site/footer';
+import { BetaBanner } from '@/components/site/beta-banner';
+import { disabledNavFeatures } from '@/components/site/nav-config';
 import { getCurrentUser } from '@/lib/auth/guards';
 import { canAccessAdmin } from '@/lib/auth/permissions';
 import { countUnread } from '@/server/notifications';
@@ -44,8 +46,22 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/*
+        Above the header rather than inside it. The header is `sticky`, and a
+        beta notice that follows you down every page is nagging; this one says
+        its piece at the top and then scrolls away, which is the same treatment
+        the announcement bar gets.
+      */}
+      {settings.betaMode && (
+        <BetaBanner
+          message={settings.betaMessage ?? ''}
+          feedbackUrl={settings.betaFeedbackUrl ?? ''}
+        />
+      )}
+
       <SiteHeader
         user={headerUser}
+        disabledNav={disabledNavFeatures(settings)}
         announcement={
           settings.announcement
             ? { text: settings.announcement, href: settings.announcementHref || undefined }

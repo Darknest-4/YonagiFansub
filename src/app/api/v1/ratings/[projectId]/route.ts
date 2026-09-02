@@ -5,11 +5,14 @@ import { clearRating, getRatingSummary, setRating } from '@/server/watch';
 import { db } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
 import { CACHE_TAGS, invalidate } from '@/lib/cache';
+import { assertFeatureEnabled } from '@/server/settings';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const params = z.object({ projectId: z.string().cuid() });
+
+const RATINGS_OFF = 'Az értékelés jelenleg ki van kapcsolva ezen az oldalon.';
 
 async function requirePublishedProject(projectId: string): Promise<string> {
   const project = await db.project.findFirst({
@@ -37,6 +40,7 @@ export const PUT = defineRoute({
   params,
   body: ratingSchema,
   async handler({ params: { projectId }, body, user }) {
+    await assertFeatureEnabled('ratingsEnabled', RATINGS_OFF);
     const slug = await requirePublishedProject(projectId);
     const summary = await setRating(user!.id, projectId, body.score);
 
@@ -52,6 +56,7 @@ export const DELETE = defineRoute({
   rateLimit: 'rating:write',
   params,
   async handler({ params: { projectId }, user }) {
+    await assertFeatureEnabled('ratingsEnabled', RATINGS_OFF);
     const slug = await requirePublishedProject(projectId);
     const summary = await clearRating(user!.id, projectId);
 
