@@ -10,22 +10,22 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import { ButtonLink } from '@/components/ui/button';
-import { SectionHeading } from '@/components/ui/card';
-import { EmptyState, ProjectGridSkeleton, ReleaseListSkeleton } from '@/components/ui/feedback';
-import { Hero } from '@/components/site/hero';
-import { ProjectCard } from '@/components/site/project-card';
-import { EpisodeTile } from '@/components/site/episode-tile';
-import { NewsItem } from '@/components/site/news-item';
-import { NewsCard } from '@/components/site/news-card';
-import { formatCount } from '@/lib/utils';
-import { getFeaturedProjects, getOngoingProjects } from '@/server/projects';
-import { getLatestEpisodes } from '@/server/episodes';
-import { listPublicNews } from '@/server/news';
-import { getPublicStats } from '@/server/stats';
-import { getPublicSettings } from '@/server/settings';
-import { siteJsonLd } from '@/lib/seo';
-import { siteUrl } from '@/lib/site-url';
+import { ButtonLink } from '@/shared/ui/button';
+import { SectionHeading } from '@/shared/ui/card';
+import { EmptyState, ProjectGridSkeleton, ReleaseListSkeleton } from '@/shared/ui/feedback';
+import { Hero } from '@/features/projects/components/hero';
+import { ProjectCard } from '@/features/projects/components/project-card';
+import { EpisodeTile } from '@/features/projects/components/episode-tile';
+import { NewsItem } from '@/features/news/components/news-item';
+import { NewsCard } from '@/features/news/components/news-card';
+import { formatCount } from '@/shared/lib/utils';
+import { getFeaturedProjects, getOngoingProjects } from '@/features/projects/queries';
+import { getLatestEpisodes } from '@/features/projects/episode-feed';
+import { listPublicNews } from '@/features/news/queries';
+import { getPublicStats } from '@/features/stats/service';
+import { getPublicSettings } from '@/features/settings/service';
+import { siteJsonLd } from '@/shared/lib/seo';
+import { siteUrl } from '@/shared/lib/site-url';
 
 /**
  * Home page.

@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { ForbiddenError } from '@/lib/errors';
-import { db } from '@/lib/db';
-import { verifyPassword } from '@/lib/auth/password';
-import { destroyCurrentSession } from '@/lib/auth/session';
-import { recordAudit } from '@/lib/api/audit';
-import { deleteOwnAccount } from '@/server/account-data';
+import { defineRoute } from '@/shared/api/handler';
+import { ForbiddenError } from '@/shared/lib/errors';
+import { db } from '@/infrastructure/db';
+import { verifyPassword } from '@/features/auth/password';
+import { destroyCurrentSession } from '@/shared/auth/session';
+import { recordAudit } from '@/shared/api/audit';
+import { deleteOwnAccount } from '@/features/users/account-data';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

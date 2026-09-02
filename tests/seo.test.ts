@@ -12,10 +12,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 process.env.NEXT_PUBLIC_SITE_URL = 'https://yonagi.example';
 process.env.AUTH_SECRET = 'teszt-titok-elegge-hosszu-ahhoz-hogy-atmenjen-1234';
 
-let seo: typeof import('@/lib/seo');
+let seo: typeof import('@/shared/lib/seo');
 
 beforeAll(async () => {
-  seo = await import('@/lib/seo');
+  seo = await import('@/shared/lib/seo');
 });
 
 describe('megosztási kép', () => {

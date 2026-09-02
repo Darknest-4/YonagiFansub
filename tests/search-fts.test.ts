@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toTsQuery } from '@/server/search-fts';
+import { toTsQuery } from '@/features/search/fts';
 
 /**
  * `toTsQuery` builds a string that is interpolated into `to_tsquery()`, so its

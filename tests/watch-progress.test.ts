@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextPosition } from '@/server/watch';
+import { nextPosition } from '@/features/watch/service';
 
 /**
  * Melyik pozíció kerüljön be.

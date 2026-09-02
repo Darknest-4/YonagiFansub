@@ -1,4 +1,4 @@
-import { ArticleSkeleton } from '@/components/site/page-skeletons';
+import { ArticleSkeleton } from '@/shared/layout/page-skeletons';
 
 export default function Loading() {
   return <ArticleSkeleton lines={10} />;

@@ -1,11 +1,11 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
+import { defineRoute, idParams } from '@/shared/api/handler';
 import { teamMemberWriteSchema } from '@/lib/validation/schemas';
 import {
   getAdminTeamMember,
   softDeleteTeamMember,
   updateTeamMember,
-} from '@/server/admin/team';
-import { mutationContext } from '@/server/admin/context';
+} from '@/features/team/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

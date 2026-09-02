@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getPublicSettings } from '@/server/settings';
+import { getPublicSettings } from '@/features/settings/service';
 
 export const dynamic = 'force-dynamic';
 

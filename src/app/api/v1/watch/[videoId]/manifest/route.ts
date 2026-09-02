@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
-import { buildPlaybackPlan } from '@/lib/video/plan';
-import { checkRateLimit } from '@/lib/api/rate-limit';
-import { recordView } from '@/server/video';
+import { gatePlayback, playbackHeaders } from '@/features/video/gate';
+import { buildPlaybackPlan } from '@/features/video/plan';
+import { checkRateLimit } from '@/shared/api/rate-limit';
+import { recordView } from '@/features/video/queries';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

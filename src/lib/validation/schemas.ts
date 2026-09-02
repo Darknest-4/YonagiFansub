@@ -25,8 +25,8 @@ import {
   slug,
   text,
   username,
-} from '@/lib/validation/common';
-import { paginationSchema } from '@/lib/api/pagination';
+} from '@/shared/validation/common';
+import { paginationSchema } from '@/shared/api/pagination';
 
 /**
  * Request schemas, grouped by domain.

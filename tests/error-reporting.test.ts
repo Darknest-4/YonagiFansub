@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEnvelope, parseDsn } from '@/lib/error-reporting';
+import { buildEnvelope, parseDsn } from '@/infrastructure/error-reporting';
 
 /**
  * Error reporting.

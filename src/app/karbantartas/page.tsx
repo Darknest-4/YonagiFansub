@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { Logo } from '@/components/site/logo';
-import { getPublicSettings } from '@/server/settings';
+import { Logo } from '@/shared/layout/logo';
+import { getPublicSettings } from '@/features/settings/service';
 
 export const metadata: Metadata = {
   title: 'Karbantartás',

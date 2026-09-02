@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { isAppError } from '@/lib/errors';
-import { getAdminNews } from '@/server/admin/news';
-import { listNewsCategories } from '@/server/news';
-import { NewsForm } from '@/components/admin/news-form';
-import { toLocalDateTimeValue, type NewsFormValues } from '@/lib/forms/defaults';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { isAppError } from '@/shared/lib/errors';
+import { getAdminNews } from '@/features/news/admin-service';
+import { listNewsCategories } from '@/features/news/queries';
+import { NewsForm } from '@/features/news/components/news-form';
+import { toLocalDateTimeValue, type NewsFormValues } from '@/features/projects/form-defaults';
 
 export const metadata: Metadata = { title: 'Hír szerkesztése' };
 export const dynamic = 'force-dynamic';

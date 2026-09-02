@@ -143,6 +143,6 @@ describe('konfiguráció', () => {
     stubEnv();
     delete process.env.RESEND_API_KEY;
 
-    await expect(import('@/lib/env')).rejects.toThrow(/RESEND_API_KEY/);
+    await expect(import('@/infrastructure/env')).rejects.toThrow(/RESEND_API_KEY/);
   });
 });

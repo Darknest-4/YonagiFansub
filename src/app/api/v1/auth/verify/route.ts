@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { verifyEmailSchema } from '@/lib/validation/schemas';
-import { verifyEmail } from '@/server/auth-service';
+import { verifyEmail } from '@/features/auth/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

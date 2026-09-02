@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import { verifyEmail } from '@/server/auth-service';
-import { isAppError } from '@/lib/errors';
-import { logger } from '@/lib/logger';
+import { verifyEmail } from '@/features/auth/service';
+import { isAppError } from '@/shared/lib/errors';
+import { logger } from '@/infrastructure/logger';
 
 export const metadata: Metadata = {
   title: 'E-mail megerősítése',

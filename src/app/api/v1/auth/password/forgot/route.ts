@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { forgotPasswordSchema } from '@/lib/validation/schemas';
-import { requestPasswordReset } from '@/server/auth-service';
+import { requestPasswordReset } from '@/features/auth/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

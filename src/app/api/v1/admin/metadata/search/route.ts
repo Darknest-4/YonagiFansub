@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { searchJikanAnime } from '@/lib/anime/jikan';
+import { defineRoute } from '@/shared/api/handler';
+import { searchJikanAnime } from '@/features/metadata/jikan';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

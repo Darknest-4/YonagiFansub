@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { listPermissions, listRoles } from '@/server/admin/users';
-import { RoleMatrix } from '@/components/admin/role-matrix';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { listPermissions, listRoles } from '@/features/users/admin-service';
+import { RoleMatrix } from '@/features/users/components/role-matrix';
 
 export const metadata: Metadata = { title: 'Szerepkörök' };
 export const dynamic = 'force-dynamic';

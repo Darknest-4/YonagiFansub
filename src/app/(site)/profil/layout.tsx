@@ -1,6 +1,6 @@
-import { ensureAuthenticated } from '@/lib/auth/guards';
-import { AccountNav } from '@/components/account/account-nav';
-import { PageHeader } from '@/components/site/page-header';
+import { ensureAuthenticated } from '@/shared/auth/guards';
+import { AccountNav } from '@/features/users/components/account-nav';
+import { PageHeader } from '@/shared/layout/page-header';
 
 /**
  * Account area shell.

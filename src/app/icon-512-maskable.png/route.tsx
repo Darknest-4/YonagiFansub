@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { BrandIcon } from '@/lib/brand-icon';
+import { BrandIcon } from '@/shared/ui/brand-icon';
 
 export const runtime = 'nodejs';
 

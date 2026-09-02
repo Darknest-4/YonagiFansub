@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ResendVerificationForm } from '@/components/auth/resend-verification-form';
+import { ResendVerificationForm } from '@/features/auth/components/resend-verification-form';
 
 export const metadata: Metadata = {
   title: 'Megerősítő e-mail újraküldése',

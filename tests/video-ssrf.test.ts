@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPublicAddress } from '@/lib/video/ssrf';
+import { isPublicAddress } from '@/features/video/ssrf';
 
 /**
  * The address filter behind the file proxy.

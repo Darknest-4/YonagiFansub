@@ -4,7 +4,7 @@ import {
   WATCHLIST_ORDER,
   resolveWatchlistStatus,
   type WatchlistSignals,
-} from '@/lib/watchlist';
+} from '@/features/watch/watchlist-rules';
 
 /**
  * A nézési lista szabálykészlete.

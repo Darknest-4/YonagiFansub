@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { db } from '@/lib/db';
-import { NotFoundError } from '@/lib/errors';
-import { invalidate, CACHE_TAGS } from '@/lib/cache';
+import { defineRoute } from '@/shared/api/handler';
+import { db } from '@/infrastructure/db';
+import { NotFoundError } from '@/shared/lib/errors';
+import { invalidate, CACHE_TAGS } from '@/infrastructure/cache';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

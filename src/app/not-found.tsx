@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Search } from 'lucide-react';
-import { Logo } from '@/components/site/logo';
-import { ButtonLink } from '@/components/ui/button';
+import { Logo } from '@/shared/layout/logo';
+import { ButtonLink } from '@/shared/ui/button';
 
 export const metadata: Metadata = {
   title: 'Az oldal nem található',

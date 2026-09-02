@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { getSettings } from '@/server/settings';
-import { siteUrl } from '@/lib/site-url';
+import { getSettings } from '@/features/settings/service';
+import { siteUrl } from '@/shared/lib/site-url';
 
 /*
  * Generated per request rather than at build time: it reads site settings from

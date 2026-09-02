@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
+import { gatePlayback, playbackHeaders } from '@/features/video/gate';
 import {
   createPlaybackToken,
   MANIFEST_TTL_SECONDS,
   SEGMENT_TTL_SECONDS,
   verifyPlaybackToken,
-} from '@/lib/video/token';
-import { mediaDriver } from '@/lib/media/driver';
-import { dirOf, rewritePlaylist } from '@/lib/video/playlist';
+} from '@/features/video/token';
+import { mediaDriver } from '@/infrastructure/storage/driver';
+import { dirOf, rewritePlaylist } from '@/features/video/playlist';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

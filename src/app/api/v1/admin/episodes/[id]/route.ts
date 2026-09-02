@@ -1,7 +1,7 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
+import { defineRoute, idParams } from '@/shared/api/handler';
 import { episodeWriteSchema } from '@/lib/validation/schemas';
-import { softDeleteEpisode, updateEpisode } from '@/server/admin/projects';
-import { mutationContext } from '@/server/admin/context';
+import { softDeleteEpisode, updateEpisode } from '@/features/projects/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

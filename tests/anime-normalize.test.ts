@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeAnime } from '@/lib/anime/normalize';
-import { parseJikanDuration } from '@/lib/anime/jikan';
-import { aniListDate, aniListTrailerUrl } from '@/lib/anime/anilist';
-import type { AniListMedia } from '@/lib/anime/anilist';
-import type { JikanAnime, JikanEpisode } from '@/lib/anime/jikan';
+import { normalizeAnime } from '@/features/metadata/normalize';
+import { parseJikanDuration } from '@/features/metadata/jikan';
+import { aniListDate, aniListTrailerUrl } from '@/features/metadata/anilist';
+import type { AniListMedia } from '@/features/metadata/anilist';
+import type { JikanAnime, JikanEpisode } from '@/features/metadata/jikan';
 
 /**
  * Merging two upstream metadata sources.

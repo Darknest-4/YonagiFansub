@@ -1,5 +1,5 @@
-import { defineRoute } from '@/lib/api/handler';
-import { listGenres } from '@/server/projects';
+import { defineRoute } from '@/shared/api/handler';
+import { listGenres } from '@/features/projects/queries';
 
 // Rendered per request: the response depends on the database, which is not
 // reachable during `next build`. See `(site)/layout.tsx` for the full reasoning.

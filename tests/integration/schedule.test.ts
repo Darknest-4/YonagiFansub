@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
-import { loadSchedule, loadUndatedOngoing } from '@/server/schedule';
+import { db } from '@/infrastructure/db';
+import { loadSchedule, loadUndatedOngoing } from '@/features/projects/schedule';
 import * as make from './factories';
 
 const days = (n: number) => new Date(Date.now() + n * 86_400_000);

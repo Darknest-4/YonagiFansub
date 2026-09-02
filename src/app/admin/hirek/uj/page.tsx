@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { listNewsCategories } from '@/server/news';
-import { NewsForm } from '@/components/admin/news-form';
-import { EMPTY_NEWS } from '@/lib/forms/defaults';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { listNewsCategories } from '@/features/news/queries';
+import { NewsForm } from '@/features/news/components/news-form';
+import { EMPTY_NEWS } from '@/features/projects/form-defaults';
 
 export const metadata: Metadata = { title: 'Új hír' };
 export const dynamic = 'force-dynamic';

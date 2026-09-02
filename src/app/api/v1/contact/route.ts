@@ -1,10 +1,10 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { contactSchema } from '@/lib/validation/schemas';
-import { db } from '@/lib/db';
-import { logger } from '@/lib/logger';
-import { ForbiddenError } from '@/lib/errors';
+import { db } from '@/infrastructure/db';
+import { logger } from '@/infrastructure/logger';
+import { ForbiddenError } from '@/shared/lib/errors';
 import { mailTemplates, sendMail } from '@/lib/mail';
-import { getSettings } from '@/server/settings';
+import { getSettings } from '@/features/settings/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

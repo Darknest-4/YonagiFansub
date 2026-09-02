@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { NotFoundError } from '@/lib/errors';
+import { defineRoute } from '@/shared/api/handler';
+import { NotFoundError } from '@/shared/lib/errors';
 import { episodeWriteSchema } from '@/lib/validation/schemas';
-import { createEpisode, lookupEpisode } from '@/server/admin/projects';
-import { mutationContext } from '@/server/admin/context';
+import { createEpisode, lookupEpisode } from '@/features/projects/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

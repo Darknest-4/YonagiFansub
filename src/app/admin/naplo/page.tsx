@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { db } from '@/lib/db';
-import { paginationSchema, toSkipTake, paginationMeta } from '@/lib/api/pagination';
-import { formatDateTime } from '@/lib/utils';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
-import { EmptyState } from '@/components/ui/feedback';
-import { Pagination } from '@/components/ui/pagination';
+import { ensurePermission } from '@/shared/auth/guards';
+import { db } from '@/infrastructure/db';
+import { paginationSchema, toSkipTake, paginationMeta } from '@/shared/api/pagination';
+import { formatDateTime } from '@/shared/lib/utils';
+import { Avatar } from '@/shared/ui/avatar';
+import { Badge, type BadgeTone } from '@/shared/ui/badge';
+import { EmptyState } from '@/shared/ui/feedback';
+import { Pagination } from '@/shared/ui/pagination';
 
 export const metadata: Metadata = { title: 'Audit napló' };
 export const dynamic = 'force-dynamic';

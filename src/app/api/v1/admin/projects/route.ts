@@ -1,9 +1,9 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { projectQuerySchema, projectWriteSchema } from '@/lib/validation/schemas';
-import { parseList } from '@/lib/api/pagination';
-import { listProjects } from '@/server/projects';
-import { createProject } from '@/server/admin/projects';
-import { mutationContext } from '@/server/admin/context';
+import { parseList } from '@/shared/api/pagination';
+import { listProjects } from '@/features/projects/queries';
+import { createProject } from '@/features/projects/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

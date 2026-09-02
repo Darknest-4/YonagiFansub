@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ensurePermission } from '@/lib/auth/guards';
-import { AnimeImport } from '@/components/admin/anime-import';
+import { ensurePermission } from '@/shared/auth/guards';
+import { AnimeImport } from '@/features/metadata/components/anime-import';
 
 export const metadata: Metadata = { title: 'Anime importálása' };
 export const dynamic = 'force-dynamic';

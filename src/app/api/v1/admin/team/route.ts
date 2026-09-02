@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { teamMemberWriteSchema } from '@/lib/validation/schemas';
-import { createTeamMember, listAdminTeam } from '@/server/admin/team';
-import { mutationContext } from '@/server/admin/context';
+import { createTeamMember, listAdminTeam } from '@/features/team/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

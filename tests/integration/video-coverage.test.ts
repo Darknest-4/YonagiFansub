@@ -3,7 +3,7 @@ import {
   getVideoCoverageSummary,
   listCoverageGaps,
   listProjectCoverage,
-} from '@/server/admin/video-overview';
+} from '@/features/video/coverage';
 import * as make from './factories';
 
 /**

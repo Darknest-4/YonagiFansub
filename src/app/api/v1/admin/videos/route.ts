@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { videoWriteSchema } from '@/lib/validation/schemas';
-import { createVideoSource, listEpisodeVideosAdmin } from '@/server/admin/video';
-import { mutationContext } from '@/server/admin/context';
+import { createVideoSource, listEpisodeVideosAdmin } from '@/features/video/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

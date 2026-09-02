@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LibraryBig } from 'lucide-react';
-import { EmptyState, ProjectGridSkeleton } from '@/components/ui/feedback';
-import { Pagination } from '@/components/ui/pagination';
-import { ProjectCard } from '@/components/site/project-card';
-import { ProjectFilters } from '@/components/site/project-filters';
-import { listGenres, listPublicProjects, listSeasons } from '@/server/projects';
-import { paginationSchema, parseList } from '@/lib/api/pagination';
+import { EmptyState, ProjectGridSkeleton } from '@/shared/ui/feedback';
+import { Pagination } from '@/shared/ui/pagination';
+import { ProjectCard } from '@/features/projects/components/project-card';
+import { ProjectFilters } from '@/features/projects/components/project-filters';
+import { listGenres, listPublicProjects, listSeasons } from '@/features/projects/queries';
+import { paginationSchema, parseList } from '@/shared/api/pagination';
 import { projectQuerySchema } from '@/lib/validation/schemas';
-import { PageHeader } from '@/components/site/page-header';
-import { getSettings } from '@/server/settings';
+import { PageHeader } from '@/shared/layout/page-header';
+import { getSettings } from '@/features/settings/service';
 
 export const metadata: Metadata = {
   title: 'Projektek',

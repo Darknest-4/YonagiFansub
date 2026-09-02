@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { updateProfileSchema } from '@/lib/validation/schemas';
-import { db } from '@/lib/db';
-import { recordAudit } from '@/lib/api/audit';
+import { db } from '@/infrastructure/db';
+import { recordAudit } from '@/shared/api/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

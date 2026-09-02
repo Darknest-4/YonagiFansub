@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Logo } from '@/components/site/logo';
-import { Button, ButtonLink } from '@/components/ui/button';
+import { Logo } from '@/shared/layout/logo';
+import { Button, ButtonLink } from '@/shared/ui/button';
 
 /**
  * Route-level error boundary.

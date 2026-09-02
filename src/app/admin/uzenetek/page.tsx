@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { db } from '@/lib/db';
-import { paginationMeta, paginationSchema, toSkipTake } from '@/lib/api/pagination';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { db } from '@/infrastructure/db';
+import { paginationMeta, paginationSchema, toSkipTake } from '@/shared/api/pagination';
 import { contactQuerySchema } from '@/lib/validation/schemas';
-import { EmptyState } from '@/components/ui/feedback';
-import { ContactInbox } from '@/components/admin/contact-inbox';
+import { EmptyState } from '@/shared/ui/feedback';
+import { ContactInbox } from '@/features/contact/components/contact-inbox';
 import type { Prisma } from '@prisma/client';
 
 export const metadata: Metadata = { title: 'Üzenetek' };

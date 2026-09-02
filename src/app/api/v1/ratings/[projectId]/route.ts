@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { ratingSchema } from '@/lib/validation/schemas';
-import { clearRating, getRatingSummary, setRating } from '@/server/watch';
-import { db } from '@/lib/db';
-import { NotFoundError } from '@/lib/errors';
-import { CACHE_TAGS, invalidate } from '@/lib/cache';
-import { assertFeatureEnabled } from '@/server/settings';
+import { clearRating, getRatingSummary, setRating } from '@/features/watch/service';
+import { db } from '@/infrastructure/db';
+import { NotFoundError } from '@/shared/lib/errors';
+import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
+import { assertFeatureEnabled } from '@/features/settings/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

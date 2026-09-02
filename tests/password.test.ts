@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { hashPassword, needsRehash, verifyPassword } from '@/lib/auth/password';
-import { evaluatePasswordStrength, isPasswordAcceptable } from '@/lib/auth/password-policy';
+import { hashPassword, needsRehash, verifyPassword } from '@/features/auth/password';
+import { evaluatePasswordStrength, isPasswordAcceptable } from '@/features/auth/password-policy';
 
 /**
  * Password hashing and policy.

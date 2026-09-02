@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { Clapperboard, MessageSquare, Package, Play, Users } from 'lucide-react';
-import { ensurePermission } from '@/lib/auth/guards';
-import { getDashboardStats, getTopEpisodes, getWatchTrend } from '@/server/stats';
-import { formatCount, formatDate } from '@/lib/utils';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
-import { Sparkline } from '@/components/admin/sparkline';
-import { StatTile } from '@/components/admin/stat-tile';
+import { ensurePermission } from '@/shared/auth/guards';
+import { getDashboardStats, getTopEpisodes, getWatchTrend } from '@/features/stats/service';
+import { formatCount, formatDate } from '@/shared/lib/utils';
+import { Card, CardBody, CardHeader } from '@/shared/ui/card';
+import { Sparkline } from '@/features/stats/components/sparkline';
+import { StatTile } from '@/features/stats/components/stat-tile';
 
 export const metadata: Metadata = { title: 'Statisztika' };
 export const dynamic = 'force-dynamic';

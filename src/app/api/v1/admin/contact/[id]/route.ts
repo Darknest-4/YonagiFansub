@@ -1,8 +1,8 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
+import { defineRoute, idParams } from '@/shared/api/handler';
 import { contactUpdateSchema } from '@/lib/validation/schemas';
-import { db } from '@/lib/db';
-import { NotFoundError } from '@/lib/errors';
-import { recordAudit } from '@/lib/api/audit';
+import { db } from '@/infrastructure/db';
+import { NotFoundError } from '@/shared/lib/errors';
+import { recordAudit } from '@/shared/api/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

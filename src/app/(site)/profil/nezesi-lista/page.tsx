@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ListChecks } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ensureAuthenticated } from '@/lib/auth/guards';
-import { EmptyState } from '@/components/ui/feedback';
-import { getWatchlist, type WatchlistItem } from '@/server/watchlist';
-import { WATCHLIST_LABELS, WATCHLIST_ORDER, type WatchlistStatus } from '@/lib/watchlist';
+import { cn } from '@/shared/lib/utils';
+import { ensureAuthenticated } from '@/shared/auth/guards';
+import { EmptyState } from '@/shared/ui/feedback';
+import { getWatchlist, type WatchlistItem } from '@/features/watch/watchlist-service';
+import { WATCHLIST_LABELS, WATCHLIST_ORDER, type WatchlistStatus } from '@/features/watch/watchlist-rules';
 
 export const metadata: Metadata = {
   title: 'Nézési listám',

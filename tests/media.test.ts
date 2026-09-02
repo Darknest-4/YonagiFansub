@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deflateSync } from 'node:zlib';
-import { identifyImage, ALLOWED_IMAGE_TYPES } from '@/lib/media/image';
-import { deriveSigningKey, signRequest, uriEncode } from '@/lib/media/s3-signature';
+import { identifyImage, ALLOWED_IMAGE_TYPES } from '@/features/media/image';
+import { deriveSigningKey, signRequest, uriEncode } from '@/infrastructure/storage/s3-signature';
 
 /**
  * Media internals.

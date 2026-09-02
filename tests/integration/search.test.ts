@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
-import { isFullTextAvailable, resetFullTextProbe } from '@/server/search-fts';
-import { search } from '@/server/search';
+import { db } from '@/infrastructure/db';
+import { isFullTextAvailable, resetFullTextProbe } from '@/features/search/fts';
+import { search } from '@/features/search/service';
 import * as make from './factories';
 
 /**

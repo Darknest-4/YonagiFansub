@@ -3,13 +3,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, MessageSquare } from 'lucide-react';
-import { formatDate, formatEpisodeNumber, formatRelative, truncate } from '@/lib/utils';
-import { getPublicProfile } from '@/server/profiles';
-import { getSettings } from '@/server/settings';
-import { ogImages } from '@/lib/seo';
-import { Breadcrumbs } from '@/components/site/page-header';
-import { Avatar } from '@/components/ui/avatar';
-import { siteUrl } from '@/lib/site-url';
+import { formatDate, formatEpisodeNumber, formatRelative, truncate } from '@/shared/lib/utils';
+import { getPublicProfile } from '@/features/users/profile-queries';
+import { getSettings } from '@/features/settings/service';
+import { ogImages } from '@/shared/lib/seo';
+import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Avatar } from '@/shared/ui/avatar';
+import { siteUrl } from '@/shared/lib/site-url';
 
 type Params = Promise<{ username: string }>;
 

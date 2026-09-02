@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { assertPublishAllowed, mutationContext } from '@/server/admin/context';
-import { ForbiddenError } from '@/lib/errors';
-import type { SessionUser } from '@/lib/auth/session';
+import { assertPublishAllowed, mutationContext } from '@/shared/api/mutation-context';
+import { ForbiddenError } from '@/shared/lib/errors';
+import type { SessionUser } from '@/shared/auth/session';
 
 /**
  * Publish authorisation.

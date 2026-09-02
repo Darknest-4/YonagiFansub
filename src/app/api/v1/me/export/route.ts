@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { defineRoute } from '@/lib/api/handler';
-import { exportAccount } from '@/server/account-data';
-import { recordAudit } from '@/lib/api/audit';
+import { defineRoute } from '@/shared/api/handler';
+import { exportAccount } from '@/features/users/account-data';
+import { recordAudit } from '@/shared/api/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

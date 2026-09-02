@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { loginSchema } from '@/lib/validation/schemas';
-import { loginUser } from '@/server/auth-service';
-import { getSession } from '@/lib/auth/session';
+import { loginUser } from '@/features/auth/service';
+import { getSession } from '@/shared/auth/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

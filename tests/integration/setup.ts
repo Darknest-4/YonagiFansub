@@ -1,5 +1,5 @@
 import { afterAll, beforeEach } from 'vitest';
-import { db } from '@/lib/db';
+import { db } from '@/infrastructure/db';
 import { truncateAll } from './database';
 
 /**

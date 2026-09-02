@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { canManageRole, hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { listRoles, listUsers } from '@/server/admin/users';
-import { paginationSchema } from '@/lib/api/pagination';
+import { ensurePermission } from '@/shared/auth/guards';
+import { canManageRole, hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { listRoles, listUsers } from '@/features/users/admin-service';
+import { paginationSchema } from '@/shared/api/pagination';
 import { userQuerySchema } from '@/lib/validation/schemas';
-import { EmptyState } from '@/components/ui/feedback';
-import { AdminUserTable } from '@/components/admin/user-table';
+import { EmptyState } from '@/shared/ui/feedback';
+import { AdminUserTable } from '@/features/users/components/user-table';
 
 export const metadata: Metadata = { title: 'Felhasználók' };
 export const dynamic = 'force-dynamic';

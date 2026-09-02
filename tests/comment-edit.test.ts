@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EDIT_WINDOW_MS, withinEditWindow } from '@/server/comments';
+import { EDIT_WINDOW_MS, withinEditWindow } from '@/features/comments/queries';
 
 /**
  * The edit window, pinned as a pure function.

@@ -1,8 +1,8 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { settingsWriteSchema } from '@/lib/validation/schemas';
-import { CACHE_TAGS, invalidate } from '@/lib/cache';
-import { SETTING_DEFINITIONS, getSettings, writeSettings } from '@/server/settings';
-import { recordAudit } from '@/lib/api/audit';
+import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
+import { SETTING_DEFINITIONS, getSettings, writeSettings } from '@/features/settings/service';
+import { recordAudit } from '@/shared/api/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

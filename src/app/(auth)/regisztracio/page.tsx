@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { ensureGuest } from '@/lib/auth/guards';
-import { RegisterForm } from '@/components/auth/register-form';
-import { TextSkeleton } from '@/components/ui/feedback';
-import { getPublicSettings } from '@/server/settings';
+import { ensureGuest } from '@/shared/auth/guards';
+import { RegisterForm } from '@/features/auth/components/register-form';
+import { TextSkeleton } from '@/shared/ui/feedback';
+import { getPublicSettings } from '@/features/settings/service';
 
 export const metadata: Metadata = {
   title: 'Regisztráció',

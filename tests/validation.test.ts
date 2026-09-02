@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import '@/lib/validation/error-map';
+import '@/shared/validation/error-map';
 import {
   email,
   hexColor,
@@ -10,7 +10,7 @@ import {
   percent,
   slug,
   text,
-} from '@/lib/validation/common';
+} from '@/shared/validation/common';
 import { teamMemberWriteSchema } from '@/lib/validation/schemas';
 
 /**

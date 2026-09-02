@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Star } from 'lucide-react';
-import { db } from '@/lib/db';
-import { ensureAuthenticated } from '@/lib/auth/guards';
-import { ProjectCard } from '@/components/site/project-card';
-import { EmptyState } from '@/components/ui/feedback';
-import { projectCardArgs } from '@/server/projects';
+import { db } from '@/infrastructure/db';
+import { ensureAuthenticated } from '@/shared/auth/guards';
+import { ProjectCard } from '@/features/projects/components/project-card';
+import { EmptyState } from '@/shared/ui/feedback';
+import { projectCardArgs } from '@/features/projects/queries';
 
 export const metadata: Metadata = {
   title: 'Kedvenceim',

@@ -1,10 +1,10 @@
 import 'server-only';
-import { env } from '@/lib/env';
-import { logger } from '@/lib/logger';
-import { escapeHtml } from '@/lib/markdown';
-import { optionalImport } from '@/lib/optional-module';
-import { memoizeWithTtl } from '@/lib/cache';
-import { mailSiteUrl } from '@/lib/site-url';
+import { env } from '@/infrastructure/env';
+import { logger } from '@/infrastructure/logger';
+import { escapeHtml } from '@/shared/lib/markdown';
+import { optionalImport } from '@/infrastructure/optional-module';
+import { memoizeWithTtl } from '@/infrastructure/cache';
+import { mailSiteUrl } from '@/shared/lib/site-url';
 
 /**
  * Transactional mail.

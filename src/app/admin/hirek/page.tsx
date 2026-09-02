@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Pin, Plus } from 'lucide-react';
-import { ensurePermission } from '@/lib/auth/guards';
-import { listNews } from '@/server/news';
-import { paginationSchema } from '@/lib/api/pagination';
+import { ensurePermission } from '@/shared/auth/guards';
+import { listNews } from '@/features/news/queries';
+import { paginationSchema } from '@/shared/api/pagination';
 import { newsQuerySchema } from '@/lib/validation/schemas';
-import { formatDate } from '@/lib/utils';
-import { ButtonLink } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/feedback';
+import { formatDate } from '@/shared/lib/utils';
+import { ButtonLink } from '@/shared/ui/button';
+import { EmptyState } from '@/shared/ui/feedback';
 
 export const metadata: Metadata = { title: 'Hírek' };
 export const dynamic = 'force-dynamic';

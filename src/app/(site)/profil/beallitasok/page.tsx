@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
-import { db } from '@/lib/db';
-import { ensureAuthenticated } from '@/lib/auth/guards';
+import { db } from '@/infrastructure/db';
+import { ensureAuthenticated } from '@/shared/auth/guards';
 import {
   PasswordForm,
   PreferencesForm,
   ProfileForm,
   type PreferenceValues,
-} from '@/components/account/settings-forms';
-import { SessionList } from '@/components/account/session-list';
-import { VerifyEmailCard } from '@/components/account/verify-email-card';
-import { DataRightsCard } from '@/components/account/data-rights-card';
+} from '@/features/users/components/settings-forms';
+import { SessionList } from '@/features/users/components/session-list';
+import { VerifyEmailCard } from '@/features/auth/components/verify-email-card';
+import { DataRightsCard } from '@/features/users/components/data-rights-card';
 
 export const metadata: Metadata = {
   title: 'Beállítások',

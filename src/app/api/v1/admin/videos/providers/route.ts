@@ -1,5 +1,5 @@
-import { defineRoute } from '@/lib/api/handler';
-import { listUsableProviders } from '@/server/admin/video-provider';
+import { defineRoute } from '@/shared/api/handler';
+import { listUsableProviders } from '@/features/video/provider-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

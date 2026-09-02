@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
-import { SiteHeader, type HeaderUser } from '@/components/site/header';
-import { SiteFooter } from '@/components/site/footer';
-import { BetaBanner } from '@/components/site/beta-banner';
-import { disabledNavFeatures } from '@/components/site/nav-config';
-import { getCurrentUser } from '@/lib/auth/guards';
-import { canAccessAdmin } from '@/lib/auth/permissions';
-import { countUnread } from '@/server/notifications';
-import { getPublicSettings } from '@/server/settings';
+import { SiteHeader, type HeaderUser } from '@/shared/layout/header';
+import { SiteFooter } from '@/shared/layout/footer';
+import { BetaBanner } from '@/shared/layout/beta-banner';
+import { disabledNavFeatures } from '@/shared/layout/nav-config';
+import { getCurrentUser } from '@/shared/auth/guards';
+import { canAccessAdmin } from '@/shared/auth/permissions';
+import { countUnread } from '@/features/notifications/service';
+import { getPublicSettings } from '@/features/settings/service';
 
 /**
  * Public site shell.

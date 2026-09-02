@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { listAdminTeam } from '@/server/admin/team';
-import { listPositions } from '@/server/team';
-import { TeamManager } from '@/components/admin/team-manager';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { listAdminTeam } from '@/features/team/admin-service';
+import { listPositions } from '@/features/team/queries';
+import { TeamManager } from '@/features/team/components/team-manager';
 
 export const metadata: Metadata = { title: 'Csapat' };
 export const dynamic = 'force-dynamic';

@@ -4,9 +4,9 @@ import {
   verifyPlaybackToken,
   viewerBinding,
   SEGMENT_TTL_SECONDS,
-} from '@/lib/video/token';
-import { dirOf, resolveWithin, rewritePlaylist } from '@/lib/video/playlist';
-import { parseRange } from '@/lib/media/driver';
+} from '@/features/video/token';
+import { dirOf, resolveWithin, rewritePlaylist } from '@/features/video/playlist';
+import { parseRange } from '@/infrastructure/storage/driver';
 
 /**
  * Protected playback.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_ROLE_KEY, OWNER_ROLE_KEY, SYSTEM_ROLES } from '@/lib/auth/permissions';
+import { DEFAULT_ROLE_KEY, OWNER_ROLE_KEY, SYSTEM_ROLES } from '@/shared/auth/permissions';
 
 /**
  * Bootstrap: az első fiók tulajdonos lesz.

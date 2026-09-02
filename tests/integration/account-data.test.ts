@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
-import { deleteOwnAccount, exportAccount } from '@/server/account-data';
-import { listCommentThreads } from '@/server/comments';
-import { SUPER_PERMISSION } from '@/lib/auth/permissions';
+import { db } from '@/infrastructure/db';
+import { deleteOwnAccount, exportAccount } from '@/features/users/account-data';
+import { listCommentThreads } from '@/features/comments/queries';
+import { SUPER_PERMISSION } from '@/shared/auth/permissions';
 import * as make from './factories';
 
 /**

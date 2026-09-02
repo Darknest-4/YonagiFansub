@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { listTeamCandidates } from '@/server/admin/team';
+import { defineRoute } from '@/shared/api/handler';
+import { listTeamCandidates } from '@/features/team/admin-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

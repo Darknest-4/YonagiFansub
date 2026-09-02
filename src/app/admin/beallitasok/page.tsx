@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
+import { ensurePermission } from '@/shared/auth/guards';
 import {
   SETTING_DEFINITIONS,
   SETTING_GROUP_LABELS,
   SETTING_GROUP_ORDER,
   getSettings,
-} from '@/server/settings';
-import { SettingsForm } from '@/components/admin/settings-form';
+} from '@/features/settings/service';
+import { SettingsForm } from '@/features/settings/components/settings-form';
 
 export const metadata: Metadata = { title: 'Beállítások' };
 export const dynamic = 'force-dynamic';

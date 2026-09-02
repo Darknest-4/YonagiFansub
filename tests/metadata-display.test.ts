@@ -4,7 +4,7 @@ import {
   parseRelations,
   parseSiteLinks,
   relationRank,
-} from '@/lib/anime/metadata-display';
+} from '@/features/metadata/display';
 
 /**
  * Narrowing what AniList and Jikan wrote into our `Json` columns.

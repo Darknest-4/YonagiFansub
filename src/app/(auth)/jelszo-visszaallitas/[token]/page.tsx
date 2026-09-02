@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ResetPasswordForm } from '@/components/auth/password-reset-forms';
+import { ResetPasswordForm } from '@/features/auth/components/password-reset-forms';
 
 export const metadata: Metadata = {
   title: 'Új jelszó beállítása',

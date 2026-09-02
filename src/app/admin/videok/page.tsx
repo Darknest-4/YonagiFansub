@@ -1,17 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AlertTriangle, Check, FileVideo, Film, MonitorPlay, Server } from 'lucide-react';
-import { ensurePermission } from '@/lib/auth/guards';
+import { ensurePermission } from '@/shared/auth/guards';
 import {
   getVideoCoverageSummary,
   listCoverageGaps,
   listProjectCoverage,
-} from '@/server/admin/video-overview';
-import { formatDate, formatEpisodeNumber } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/feedback';
-import { StatTile } from '@/components/admin/stat-tile';
+} from '@/features/video/coverage';
+import { formatDate, formatEpisodeNumber } from '@/shared/lib/utils';
+import { Badge } from '@/shared/ui/badge';
+import { Card, CardBody, CardHeader } from '@/shared/ui/card';
+import { EmptyState } from '@/shared/ui/feedback';
+import { StatTile } from '@/features/stats/components/stat-tile';
 
 export const metadata: Metadata = { title: 'Videóforrások' };
 export const dynamic = 'force-dynamic';

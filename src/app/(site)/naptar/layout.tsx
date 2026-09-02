@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getSettings } from '@/server/settings';
+import { getSettings } from '@/features/settings/service';
 
 /**
  * The `scheduleEnabled` gate. In the layout for the same reason as the

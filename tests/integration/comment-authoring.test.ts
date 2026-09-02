@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
-import { deleteOwnComment, editOwnComment, listCommentThreads } from '@/server/comments';
+import { db } from '@/infrastructure/db';
+import { deleteOwnComment, editOwnComment, listCommentThreads } from '@/features/comments/queries';
 import * as make from './factories';
 
 const page = { page: 1, perPage: 20 };

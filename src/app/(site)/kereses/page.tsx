@@ -3,11 +3,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { SearchX } from 'lucide-react';
-import { PageHeader } from '@/components/site/page-header';
-import { EmptyState, TextSkeleton } from '@/components/ui/feedback';
-import { SearchInput } from '@/components/site/search-input';
-import { search, type SearchResult } from '@/server/search';
-import { getSearchSuggestions } from '@/server/search';
+import { PageHeader } from '@/shared/layout/page-header';
+import { EmptyState, TextSkeleton } from '@/shared/ui/feedback';
+import { SearchInput } from '@/features/search/components/search-input';
+import { search, type SearchResult } from '@/features/search/service';
+import { getSearchSuggestions } from '@/features/search/service';
 
 export const metadata: Metadata = {
   title: 'Keresés',

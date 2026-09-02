@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { defineRoute, idParams } from '@/lib/api/handler';
-import { syncProjectMetadata } from '@/server/admin/metadata-sync';
-import { mutationContext } from '@/server/admin/context';
+import { defineRoute, idParams } from '@/shared/api/handler';
+import { syncProjectMetadata } from '@/features/metadata/sync-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

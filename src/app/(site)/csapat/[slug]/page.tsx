@@ -3,15 +3,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, ExternalLink } from 'lucide-react';
-import { ogImages } from '@/lib/seo';
-import { formatDate, truncate } from '@/lib/utils';
-import { renderMarkdown } from '@/lib/markdown';
-import { getPublicTeamMember } from '@/server/team';
-import { Breadcrumbs } from '@/components/site/page-header';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { EmptyState } from '@/components/ui/feedback';
-import { siteUrl } from '@/lib/site-url';
+import { ogImages } from '@/shared/lib/seo';
+import { formatDate, truncate } from '@/shared/lib/utils';
+import { renderMarkdown } from '@/shared/lib/markdown';
+import { getPublicTeamMember } from '@/features/team/queries';
+import { Breadcrumbs } from '@/shared/layout/page-header';
+import { Avatar } from '@/shared/ui/avatar';
+import { Badge } from '@/shared/ui/badge';
+import { EmptyState } from '@/shared/ui/feedback';
+import { siteUrl } from '@/shared/lib/site-url';
 
 type Params = Promise<{ slug: string }>;
 

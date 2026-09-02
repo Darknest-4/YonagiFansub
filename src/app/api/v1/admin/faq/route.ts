@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { faqWriteSchema } from '@/lib/validation/schemas';
-import { mutationContext } from '@/server/admin/context';
-import { createFaqEntry, listAdminFaq } from '@/server/admin/faq';
+import { mutationContext } from '@/shared/api/mutation-context';
+import { createFaqEntry, listAdminFaq } from '@/features/faq/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

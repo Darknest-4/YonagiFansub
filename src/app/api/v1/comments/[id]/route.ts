@@ -1,7 +1,7 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
+import { defineRoute, idParams } from '@/shared/api/handler';
 import { commentEditSchema } from '@/lib/validation/schemas';
-import { getSettings } from '@/server/settings';
-import { deleteOwnComment, editOwnComment } from '@/server/comments';
+import { getSettings } from '@/features/settings/service';
+import { deleteOwnComment, editOwnComment } from '@/features/comments/queries';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

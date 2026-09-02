@@ -17,22 +17,22 @@ const anilistMock = vi.fn();
 const jikanMock = vi.fn();
 const episodesMock = vi.fn();
 
-vi.mock('@/lib/anime/anilist', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/anime/anilist')>(
-    '@/lib/anime/anilist',
+vi.mock('@/features/metadata/anilist', async () => {
+  const actual = await vi.importActual<typeof import('@/features/metadata/anilist')>(
+    '@/features/metadata/anilist',
   );
   return { ...actual, fetchAniListMedia: anilistMock };
 });
 
-vi.mock('@/lib/anime/jikan', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/anime/jikan')>('@/lib/anime/jikan');
+vi.mock('@/features/metadata/jikan', async () => {
+  const actual = await vi.importActual<typeof import('@/features/metadata/jikan')>('@/features/metadata/jikan');
   return { ...actual, fetchJikanAnime: jikanMock, fetchJikanEpisodes: episodesMock };
 });
 
-vi.mock('@/lib/db', () => ({ db: {} }));
+vi.mock('@/infrastructure/db', () => ({ db: {} }));
 
-const { lookupAnime } = await import('@/server/admin/metadata-sync');
-const { UpstreamError } = await import('@/lib/anime/http');
+const { lookupAnime } = await import('@/features/metadata/sync-service');
+const { UpstreamError } = await import('@/infrastructure/http/upstream');
 
 const JIKAN_ANIME = {
   mal_id: 9253,

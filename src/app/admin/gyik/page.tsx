@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
-import { ensurePermission } from '@/lib/auth/guards';
-import { listAdminFaq } from '@/server/admin/faq';
-import { FaqManager } from '@/components/admin/faq-manager';
+import { ensurePermission } from '@/shared/auth/guards';
+import { listAdminFaq } from '@/features/faq/service';
+import { FaqManager } from '@/features/faq/components/faq-manager';
 
 export const metadata: Metadata = { title: 'GYIK' };
 export const dynamic = 'force-dynamic';

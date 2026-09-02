@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { db } from '@/lib/db';
-import { ensureAdminAccess } from '@/lib/auth/guards';
-import { AdminShell } from '@/components/admin/admin-shell';
+import { db } from '@/infrastructure/db';
+import { ensureAdminAccess } from '@/shared/auth/guards';
+import { AdminShell } from '@/shared/layout/admin-shell';
 
 export const metadata: Metadata = {
   title: { default: 'Admin', template: '%s · Yonagi Admin' },

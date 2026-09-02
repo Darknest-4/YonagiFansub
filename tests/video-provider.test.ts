@@ -5,7 +5,7 @@ import {
   cspSourceList,
   extractExternalId,
   isAllowedUrl,
-} from '@/lib/video/provider';
+} from '@/features/video/provider';
 
 /**
  * Provider URL handling.

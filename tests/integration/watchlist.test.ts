@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
-import { getProjectWatchState, getWatchlist, setWatchlistMark } from '@/server/watchlist';
-import { recordProgress } from '@/server/watch';
+import { db } from '@/infrastructure/db';
+import { getProjectWatchState, getWatchlist, setWatchlistMark } from '@/features/watch/watchlist-service';
+import { recordProgress } from '@/features/watch/service';
 import * as make from './factories';
 
 /**

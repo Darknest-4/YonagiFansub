@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import { MessageSquare } from 'lucide-react';
 import type { Prisma } from '@prisma/client';
 import { CommentStatus } from '@prisma/client';
-import { ensurePermission } from '@/lib/auth/guards';
-import { db } from '@/lib/db';
-import { paginationMeta, paginationSchema, toSkipTake } from '@/lib/api/pagination';
-import { EmptyState } from '@/components/ui/feedback';
-import { CommentModeration } from '@/components/admin/comment-moderation';
+import { ensurePermission } from '@/shared/auth/guards';
+import { db } from '@/infrastructure/db';
+import { paginationMeta, paginationSchema, toSkipTake } from '@/shared/api/pagination';
+import { EmptyState } from '@/shared/ui/feedback';
+import { CommentModeration } from '@/features/comments/components/comment-moderation';
 
 export const metadata: Metadata = { title: 'Hozzászólások' };
 export const dynamic = 'force-dynamic';

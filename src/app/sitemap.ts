@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { db } from '@/lib/db';
-import { getSettings } from '@/server/settings';
-import { siteUrl } from '@/lib/site-url';
+import { db } from '@/infrastructure/db';
+import { getSettings } from '@/features/settings/service';
+import { siteUrl } from '@/shared/lib/site-url';
 
 /*
  * Generated per request, not at build time — the URLs come from the database,

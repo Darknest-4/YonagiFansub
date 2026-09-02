@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkDatabase } from '@/lib/db';
+import { checkDatabase } from '@/infrastructure/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

@@ -3,15 +3,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock, Eye } from 'lucide-react';
-import { ogImages, twitterImages } from '@/lib/seo';
-import { formatDate, formatCount, truncate, stripMarkdown, toIsoString } from '@/lib/utils';
-import { renderMarkdown } from '@/lib/markdown';
-import { getPublicNewsBySlug, getRelatedNews, incrementNewsView } from '@/server/news';
-import { Breadcrumbs } from '@/components/site/page-header';
-import { NewsCard } from '@/components/site/news-card';
-import { Comments } from '@/components/site/comments';
-import { Avatar } from '@/components/ui/avatar';
-import { siteUrl } from '@/lib/site-url';
+import { ogImages, twitterImages } from '@/shared/lib/seo';
+import { formatDate, formatCount, truncate, stripMarkdown, toIsoString } from '@/shared/lib/utils';
+import { renderMarkdown } from '@/shared/lib/markdown';
+import { getPublicNewsBySlug, getRelatedNews, incrementNewsView } from '@/features/news/queries';
+import { Breadcrumbs } from '@/shared/layout/page-header';
+import { NewsCard } from '@/features/news/components/news-card';
+import { Comments } from '@/features/comments/components/comments';
+import { Avatar } from '@/shared/ui/avatar';
+import { siteUrl } from '@/shared/lib/site-url';
 
 type Params = Promise<{ slug: string }>;
 

@@ -7,7 +7,7 @@ import {
   TAB_NAV,
   disabledNavFeatures,
   visibleNav,
-} from '@/components/site/nav-config';
+} from '@/shared/layout/nav-config';
 
 /**
  * Menu entries for pages a setting can switch off.

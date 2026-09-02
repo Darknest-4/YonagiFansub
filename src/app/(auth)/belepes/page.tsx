@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ensureGuest } from '@/lib/auth/guards';
-import { LoginForm } from '@/components/auth/login-form';
-import { TextSkeleton } from '@/components/ui/feedback';
+import { ensureGuest } from '@/shared/auth/guards';
+import { LoginForm } from '@/features/auth/components/login-form';
+import { TextSkeleton } from '@/shared/ui/feedback';
 
 export const metadata: Metadata = {
   title: 'Bejelentkezés',

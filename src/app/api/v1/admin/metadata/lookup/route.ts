@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { lookupAnime } from '@/server/admin/metadata-sync';
+import { defineRoute } from '@/shared/api/handler';
+import { lookupAnime } from '@/features/metadata/sync-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

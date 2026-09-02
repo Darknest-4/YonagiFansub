@@ -1,5 +1,5 @@
-import { getSettings } from '@/server/settings';
-import { escapeHtml } from '@/lib/markdown';
+import { getSettings } from '@/features/settings/service';
+import { escapeHtml } from '@/shared/lib/markdown';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

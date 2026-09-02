@@ -1,8 +1,8 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { newsQuerySchema, newsWriteSchema } from '@/lib/validation/schemas';
-import { listNews } from '@/server/news';
-import { createNews } from '@/server/admin/news';
-import { mutationContext } from '@/server/admin/context';
+import { listNews } from '@/features/news/queries';
+import { createNews } from '@/features/news/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

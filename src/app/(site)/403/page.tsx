@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ShieldX } from 'lucide-react';
-import { EmptyState } from '@/components/ui/feedback';
+import { EmptyState } from '@/shared/ui/feedback';
 
 export const metadata: Metadata = {
   title: 'Nincs jogosultságod',

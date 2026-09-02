@@ -1,5 +1,5 @@
-import { defineRoute } from '@/lib/api/handler';
-import { getDashboardStats, getTopEpisodes, getWatchTrend } from '@/server/stats';
+import { defineRoute } from '@/shared/api/handler';
+import { getDashboardStats, getTopEpisodes, getWatchTrend } from '@/features/stats/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

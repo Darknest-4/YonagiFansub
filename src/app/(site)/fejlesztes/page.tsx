@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GitCommitVertical, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { PageHeader } from '@/components/site/page-header';
-import { EmptyState } from '@/components/ui/feedback';
+import { cn } from '@/shared/lib/utils';
+import { PageHeader } from '@/shared/layout/page-header';
+import { EmptyState } from '@/shared/ui/feedback';
 import {
   CHANGELOG,
   CHANGE_KIND_LABELS,

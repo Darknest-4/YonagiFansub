@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { db } from '@/lib/db';
+import { db } from '@/infrastructure/db';
 
 /**
  * Row builders for the integration suite.

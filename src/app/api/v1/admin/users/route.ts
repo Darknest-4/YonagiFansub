@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { userQuerySchema } from '@/lib/validation/schemas';
-import { listUsers } from '@/server/admin/users';
+import { listUsers } from '@/features/users/admin-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

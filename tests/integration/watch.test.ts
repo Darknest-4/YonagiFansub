@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
+import { db } from '@/infrastructure/db';
 import {
   clearRating,
   getContinueWatching,
@@ -7,7 +7,7 @@ import {
   getRatingSummary,
   recordProgress,
   setRating,
-} from '@/server/watch';
+} from '@/features/watch/service';
 import * as make from './factories';
 
 /**

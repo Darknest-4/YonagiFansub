@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ForgotPasswordForm } from '@/components/auth/password-reset-forms';
+import { ForgotPasswordForm } from '@/features/auth/components/password-reset-forms';
 
 export const metadata: Metadata = {
   title: 'Elfelejtett jelszó',

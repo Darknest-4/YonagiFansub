@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { Newspaper } from 'lucide-react';
-import { PageHeader } from '@/components/site/page-header';
-import { NewsCard } from '@/components/site/news-card';
-import { EmptyState, Skeleton } from '@/components/ui/feedback';
-import { Pagination } from '@/components/ui/pagination';
-import { listNewsCategories, listPublicNews } from '@/server/news';
-import { paginationSchema } from '@/lib/api/pagination';
+import { PageHeader } from '@/shared/layout/page-header';
+import { NewsCard } from '@/features/news/components/news-card';
+import { EmptyState, Skeleton } from '@/shared/ui/feedback';
+import { Pagination } from '@/shared/ui/pagination';
+import { listNewsCategories, listPublicNews } from '@/features/news/queries';
+import { paginationSchema } from '@/shared/api/pagination';
 import { newsQuerySchema } from '@/lib/validation/schemas';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Hírek',

@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { updatePreferencesSchema } from '@/lib/validation/schemas';
-import { db } from '@/lib/db';
+import { db } from '@/infrastructure/db';
 import type { Prisma } from '@prisma/client';
 
 export const runtime = 'nodejs';

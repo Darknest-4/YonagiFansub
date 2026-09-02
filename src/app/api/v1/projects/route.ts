@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { projectQuerySchema } from '@/lib/validation/schemas';
-import { parseList } from '@/lib/api/pagination';
-import { listProjects } from '@/server/projects';
+import { parseList } from '@/shared/api/pagination';
+import { listProjects } from '@/features/projects/queries';
 
 // Rendered per request: the response depends on the database, which is not
 // reachable during `next build`. See `(site)/layout.tsx` for the full reasoning.

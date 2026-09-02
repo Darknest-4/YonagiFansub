@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { listVideoProviders } from '@/server/admin/video-provider';
-import { VideoProviderManager } from '@/components/admin/video-provider-manager';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { listVideoProviders } from '@/features/video/provider-service';
+import { VideoProviderManager } from '@/features/video/components/video-provider-manager';
 
 export const metadata: Metadata = { title: 'Videó-szolgáltatók' };
 export const dynamic = 'force-dynamic';

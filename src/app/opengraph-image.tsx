@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { getPublicSettings } from '@/server/settings';
+import { getPublicSettings } from '@/features/settings/service';
 
 export const runtime = 'nodejs';
 /* Reads the site settings, so it cannot be generated at build time. */

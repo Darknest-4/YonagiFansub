@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CalendarDays, Check, Clock, Info, Subtitles } from 'lucide-react';
-import { getSchedule, getUndatedOngoing, type ScheduledEpisode } from '@/server/schedule';
-import { getSettings } from '@/server/settings';
-import { getCurrentUser } from '@/lib/auth/guards';
-import { db } from '@/lib/db';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { EmptyState } from '@/components/ui/feedback';
-import { PageHeader } from '@/components/site/page-header';
+import { getSchedule, getUndatedOngoing, type ScheduledEpisode } from '@/features/projects/schedule';
+import { getSettings } from '@/features/settings/service';
+import { getCurrentUser } from '@/shared/auth/guards';
+import { db } from '@/infrastructure/db';
+import { cn } from '@/shared/lib/utils';
+import { Badge } from '@/shared/ui/badge';
+import { EmptyState } from '@/shared/ui/feedback';
+import { PageHeader } from '@/shared/layout/page-header';
 
 export const dynamic = 'force-dynamic';
 

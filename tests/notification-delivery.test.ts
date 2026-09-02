@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { digestPeriod, digestWindowStart, isDigestDue } from '@/server/digest';
+import { digestPeriod, digestWindowStart, isDigestDue } from '@/features/notifications/digest';
 
 /**
  * The rule behind the digest job.

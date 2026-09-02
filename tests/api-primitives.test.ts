@@ -8,16 +8,16 @@ import {
   parseSort,
   toOrderBy,
   toSkipTake,
-} from '@/lib/api/pagination';
+} from '@/shared/api/pagination';
 import {
   AppError,
   ConflictError,
   NotFoundError,
   RateLimitError,
   toAppError,
-} from '@/lib/errors';
-import { formatBytes, formatEpisodeNumber, safeRedirectPath, slugify, truncate } from '@/lib/utils';
-import { jsonCreated, jsonError, jsonNoContent, jsonOk } from '@/lib/api/response';
+} from '@/shared/lib/errors';
+import { formatBytes, formatEpisodeNumber, safeRedirectPath, slugify, truncate } from '@/shared/lib/utils';
+import { jsonCreated, jsonError, jsonNoContent, jsonOk } from '@/shared/api/response';
 
 describe('pagination', () => {
   it('applies defaults and clamps out-of-range input', () => {

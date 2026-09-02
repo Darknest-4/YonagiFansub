@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { BellOff } from 'lucide-react';
-import { ensureAuthenticated } from '@/lib/auth/guards';
-import { listNotifications } from '@/server/notifications';
-import { EmptyState } from '@/components/ui/feedback';
-import { NotificationList } from '@/components/account/notification-list';
+import { ensureAuthenticated } from '@/shared/auth/guards';
+import { listNotifications } from '@/features/notifications/service';
+import { EmptyState } from '@/shared/ui/feedback';
+import { NotificationList } from '@/features/notifications/components/notification-list';
 
 export const metadata: Metadata = {
   title: 'Értesítések',

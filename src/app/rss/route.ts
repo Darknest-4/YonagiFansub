@@ -1,8 +1,8 @@
-import { db } from '@/lib/db';
-import { escapeHtml } from '@/lib/markdown';
-import { getSettings } from '@/server/settings';
-import { siteUrl } from '@/lib/site-url';
-import { stripMarkdown, truncate } from '@/lib/utils';
+import { db } from '@/infrastructure/db';
+import { escapeHtml } from '@/shared/lib/markdown';
+import { getSettings } from '@/features/settings/service';
+import { siteUrl } from '@/shared/lib/site-url';
+import { stripMarkdown, truncate } from '@/shared/lib/utils';
 import { CHANGELOG, CHANGE_KIND_LABELS } from '@/content/changelog';
 
 export const runtime = 'nodejs';

@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
-import { destroyCurrentSession } from '@/lib/auth/session';
-import { recordAudit } from '@/lib/api/audit';
+import { defineRoute } from '@/shared/api/handler';
+import { destroyCurrentSession } from '@/shared/auth/session';
+import { recordAudit } from '@/shared/api/audit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

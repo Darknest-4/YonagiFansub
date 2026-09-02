@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
-import { canAccessAdmin } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { countUnread } from '@/server/notifications';
+import { defineRoute } from '@/shared/api/handler';
+import { canAccessAdmin } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { countUnread } from '@/features/notifications/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

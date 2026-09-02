@@ -1,5 +1,5 @@
-import { defineRoute } from '@/lib/api/handler';
-import { listTeam } from '@/server/team';
+import { defineRoute } from '@/shared/api/handler';
+import { listTeam } from '@/features/team/queries';
 
 // Rendered per request: the response depends on the database, which is not
 // reachable during `next build`. See `(site)/layout.tsx` for the full reasoning.

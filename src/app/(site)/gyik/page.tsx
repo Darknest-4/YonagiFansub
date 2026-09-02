@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { HelpCircle } from 'lucide-react';
-import { renderMarkdown } from '@/lib/markdown';
-import { FAQ_CATEGORY_LABELS, listFaq } from '@/server/team';
-import { PageHeader } from '@/components/site/page-header';
-import { EmptyState } from '@/components/ui/feedback';
-import { ButtonLink } from '@/components/ui/button';
-import { siteUrl } from '@/lib/site-url';
+import { renderMarkdown } from '@/shared/lib/markdown';
+import { FAQ_CATEGORY_LABELS, listFaq } from '@/features/team/queries';
+import { PageHeader } from '@/shared/layout/page-header';
+import { EmptyState } from '@/shared/ui/feedback';
+import { ButtonLink } from '@/shared/ui/button';
+import { siteUrl } from '@/shared/lib/site-url';
 
 export const metadata: Metadata = {
   title: 'Gyakori kérdések',

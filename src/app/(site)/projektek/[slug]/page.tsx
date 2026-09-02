@@ -13,43 +13,43 @@ import {
   Timer,
   Users,
 } from 'lucide-react';
-import { ogImages, twitterImages } from '@/lib/seo';
-import { formatCount, formatDate, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
-import { db } from '@/lib/db';
+import { ogImages, twitterImages } from '@/shared/lib/seo';
+import { formatCount, formatDate, formatEpisodeNumber, toIsoString, truncate } from '@/shared/lib/utils';
+import { db } from '@/infrastructure/db';
 import {
   getPublicEpisodes,
   getPublicProjectBySlug,
   incrementProjectView,
-} from '@/server/projects';
-import { getCurrentUser } from '@/lib/auth/guards';
-import { getProjectProgress, getRatingSummary } from '@/server/watch';
+} from '@/features/projects/queries';
+import { getCurrentUser } from '@/shared/auth/guards';
+import { getProjectProgress, getRatingSummary } from '@/features/watch/service';
 import {
   AGE_RATING_LABEL,
   Badge,
   PROJECT_TYPE_LABEL,
   ProjectStatusBadge,
   SEASON_LABEL,
-} from '@/components/ui/badge';
-import { Breadcrumbs } from '@/components/site/page-header';
-import { EpisodeList } from '@/components/site/episode-list';
-import { FollowButton } from '@/components/site/follow-button';
-import { Comments } from '@/components/site/comments';
-import { ExternalLinks } from '@/components/site/external-links';
-import { OfficialLinks } from '@/components/site/official-links';
-import { ProductionCredits } from '@/components/site/production-credits';
-import { ProjectRelations } from '@/components/site/project-relations';
-import { RatingWidget } from '@/components/site/rating-widget';
+} from '@/shared/ui/badge';
+import { Breadcrumbs } from '@/shared/layout/page-header';
+import { EpisodeList } from '@/features/projects/components/episode-list';
+import { FollowButton } from '@/features/watch/components/follow-button';
+import { Comments } from '@/features/comments/components/comments';
+import { ExternalLinks } from '@/features/projects/components/external-links';
+import { OfficialLinks } from '@/features/projects/components/official-links';
+import { ProductionCredits } from '@/features/team/components/production-credits';
+import { ProjectRelations } from '@/features/projects/components/project-relations';
+import { RatingWidget } from '@/features/watch/components/rating-widget';
 import {
   ProjectStatusCard,
   aggregateProgress,
-} from '@/components/site/project-status-card';
-import { Avatar } from '@/components/ui/avatar';
-import { ReleaseListSkeleton } from '@/components/ui/feedback';
-import { ButtonLink } from '@/components/ui/button';
-import { getSettings } from '@/server/settings';
-import { siteUrl } from '@/lib/site-url';
-import { getProjectWatchState } from '@/server/watchlist';
-import { WatchlistControl } from '@/components/site/watchlist-control';
+} from '@/features/projects/components/project-status-card';
+import { Avatar } from '@/shared/ui/avatar';
+import { ReleaseListSkeleton } from '@/shared/ui/feedback';
+import { ButtonLink } from '@/shared/ui/button';
+import { getSettings } from '@/features/settings/service';
+import { siteUrl } from '@/shared/lib/site-url';
+import { getProjectWatchState } from '@/features/watch/watchlist-service';
+import { WatchlistControl } from '@/features/watch/components/watchlist-control';
 
 type Params = Promise<{ slug: string }>;
 

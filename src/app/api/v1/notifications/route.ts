@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { countUnread, listNotifications, markRead } from '@/server/notifications';
+import { defineRoute } from '@/shared/api/handler';
+import { countUnread, listNotifications, markRead } from '@/features/notifications/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

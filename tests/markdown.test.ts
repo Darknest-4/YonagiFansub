@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeHtml, renderMarkdown } from '@/lib/markdown';
+import { escapeHtml, renderMarkdown } from '@/shared/lib/markdown';
 
 /**
  * Markdown renderer.

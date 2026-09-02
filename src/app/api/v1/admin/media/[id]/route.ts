@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { defineRoute, idParams } from '@/lib/api/handler';
-import { mutationContext } from '@/server/admin/context';
-import { deleteMedia, getMediaAsset, updateMediaAlt } from '@/server/media';
+import { defineRoute, idParams } from '@/shared/api/handler';
+import { mutationContext } from '@/shared/api/mutation-context';
+import { deleteMedia, getMediaAsset, updateMediaAlt } from '@/features/media/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

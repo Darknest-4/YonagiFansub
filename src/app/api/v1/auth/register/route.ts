@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { registerSchema } from '@/lib/validation/schemas';
-import { registerUser } from '@/server/auth-service';
-import { logger } from '@/lib/logger';
+import { registerUser } from '@/features/auth/service';
+import { logger } from '@/infrastructure/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

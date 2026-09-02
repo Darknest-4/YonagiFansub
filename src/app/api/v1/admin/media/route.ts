@@ -1,15 +1,15 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { paginationSchema } from '@/lib/api/pagination';
-import { BadRequestError, PayloadTooLargeError, UnsupportedMediaTypeError } from '@/lib/errors';
-import { mutationContext } from '@/server/admin/context';
+import { defineRoute } from '@/shared/api/handler';
+import { paginationSchema } from '@/shared/api/pagination';
+import { BadRequestError, PayloadTooLargeError, UnsupportedMediaTypeError } from '@/shared/lib/errors';
+import { mutationContext } from '@/shared/api/mutation-context';
 import {
   MAX_UPLOAD_BYTES,
   MEDIA_FOLDERS,
   listMedia,
   storeUpload,
   type MediaFolder,
-} from '@/server/media';
+} from '@/features/media/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

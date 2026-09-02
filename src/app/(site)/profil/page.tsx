@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AlertCircle, Download, Star } from 'lucide-react';
-import { db } from '@/lib/db';
-import { ensureAuthenticated } from '@/lib/auth/guards';
-import { formatDate, formatEpisodeNumber, formatRelative } from '@/lib/utils';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ButtonLink } from '@/components/ui/button';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/feedback';
-import { countUnread } from '@/server/notifications';
-import { getContinueWatching } from '@/server/watch';
+import { db } from '@/infrastructure/db';
+import { ensureAuthenticated } from '@/shared/auth/guards';
+import { formatDate, formatEpisodeNumber, formatRelative } from '@/shared/lib/utils';
+import { Avatar } from '@/shared/ui/avatar';
+import { Badge } from '@/shared/ui/badge';
+import { ButtonLink } from '@/shared/ui/button';
+import { Card, CardBody, CardHeader } from '@/shared/ui/card';
+import { EmptyState } from '@/shared/ui/feedback';
+import { countUnread } from '@/features/notifications/service';
+import { getContinueWatching } from '@/features/watch/service';
 
 export const metadata: Metadata = {
   title: 'Profilom',

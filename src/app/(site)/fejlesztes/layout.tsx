@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getSettings } from '@/server/settings';
+import { getSettings } from '@/features/settings/service';
 
 /**
  * The `changelogEnabled` gate, in a layout rather than in the page.

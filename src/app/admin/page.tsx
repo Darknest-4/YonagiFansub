@@ -16,9 +16,9 @@ import {
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { ensureAdminAccess } from '@/lib/auth/guards';
-import { hasPermission, type Actor, type Permission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
+import { ensureAdminAccess } from '@/shared/auth/guards';
+import { hasPermission, type Actor, type Permission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
 import {
   getDashboardStats,
   getDashboardTrends,
@@ -27,16 +27,16 @@ import {
   getRecentActivity,
   getTopEpisodes,
   periodDelta,
-} from '@/server/stats';
-import { db } from '@/lib/db';
-import { env } from '@/lib/env';
+} from '@/features/stats/service';
+import { db } from '@/infrastructure/db';
+import { env } from '@/infrastructure/env';
 import { getMailStatus } from '@/lib/mail';
-import { cn, formatCount, formatRelative } from '@/lib/utils';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
-import { Skeleton, TableSkeleton } from '@/components/ui/feedback';
-import { ProjectStatusBadge } from '@/components/ui/badge';
-import { Sparkline } from '@/components/admin/sparkline';
-import { StatTile } from '@/components/admin/stat-tile';
+import { cn, formatCount, formatRelative } from '@/shared/lib/utils';
+import { Card, CardBody, CardHeader } from '@/shared/ui/card';
+import { Skeleton, TableSkeleton } from '@/shared/ui/feedback';
+import { ProjectStatusBadge } from '@/shared/ui/badge';
+import { Sparkline } from '@/features/stats/components/sparkline';
+import { StatTile } from '@/features/stats/components/stat-tile';
 import type { ProjectStatus } from '@prisma/client';
 
 export const metadata: Metadata = { title: 'Vezérlőpult' };

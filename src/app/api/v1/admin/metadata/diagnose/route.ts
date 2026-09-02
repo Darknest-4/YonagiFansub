@@ -1,5 +1,5 @@
-import { defineRoute } from '@/lib/api/handler';
-import { env } from '@/lib/env';
+import { defineRoute } from '@/shared/api/handler';
+import { env } from '@/infrastructure/env';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

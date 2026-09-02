@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { Logo } from '@/components/site/logo';
-import { AuthShowcase } from '@/components/auth/auth-showcase';
+import { Logo } from '@/shared/layout/logo';
+import { AuthShowcase } from '@/features/auth/components/auth-showcase';
 
 /**
  * Authentication shell.

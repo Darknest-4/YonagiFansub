@@ -1,5 +1,5 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
-import { db } from '@/lib/db';
+import { defineRoute, idParams } from '@/shared/api/handler';
+import { db } from '@/infrastructure/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

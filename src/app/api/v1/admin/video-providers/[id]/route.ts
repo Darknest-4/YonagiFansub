@@ -1,7 +1,7 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
+import { defineRoute, idParams } from '@/shared/api/handler';
 import { videoProviderWriteSchema } from '@/lib/validation/schemas';
-import { deleteVideoProvider, updateVideoProvider } from '@/server/admin/video-provider';
-import { mutationContext } from '@/server/admin/context';
+import { deleteVideoProvider, updateVideoProvider } from '@/features/video/provider-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { Plus } from 'lucide-react';
-import { ensurePermission } from '@/lib/auth/guards';
-import { listProjects } from '@/server/projects';
-import { paginationSchema, parseList } from '@/lib/api/pagination';
+import { ensurePermission } from '@/shared/auth/guards';
+import { listProjects } from '@/features/projects/queries';
+import { paginationSchema, parseList } from '@/shared/api/pagination';
 import { projectQuerySchema } from '@/lib/validation/schemas';
-import { ButtonLink } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/feedback';
-import { AdminProjectTable } from '@/components/admin/project-table';
+import { ButtonLink } from '@/shared/ui/button';
+import { EmptyState } from '@/shared/ui/feedback';
+import { AdminProjectTable } from '@/features/projects/components/project-table';
 
 export const metadata: Metadata = { title: 'Projektek' };
 export const dynamic = 'force-dynamic';

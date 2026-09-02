@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Clock, Mail, MessageSquare, ShieldAlert } from 'lucide-react';
-import { PageHeader } from '@/components/site/page-header';
-import { ContactForm } from '@/components/site/contact-form';
-import { getPublicSettings } from '@/server/settings';
-import { EmptyState } from '@/components/ui/feedback';
+import { PageHeader } from '@/shared/layout/page-header';
+import { ContactForm } from '@/features/contact/components/contact-form';
+import { getPublicSettings } from '@/features/settings/service';
+import { EmptyState } from '@/shared/ui/feedback';
 
 export const metadata: Metadata = {
   title: 'Kapcsolat',

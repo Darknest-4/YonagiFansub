@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Noto_Sans_JP, Sora } from 'next/font/google';
-import { getPublicSettings } from '@/server/settings';
-import { AppProviders } from '@/components/providers';
-import { cn } from '@/lib/utils';
+import { getPublicSettings } from '@/features/settings/service';
+import { AppProviders } from '@/shared/providers';
+import { cn } from '@/shared/lib/utils';
 import '@/styles/globals.css';
-import { siteUrl } from '@/lib/site-url';
+import { siteUrl } from '@/shared/lib/site-url';
 
 /**
  * Root layout.

@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { roleWriteSchema } from '@/lib/validation/schemas';
-import { listPermissions, listRoles, upsertRole } from '@/server/admin/users';
-import { mutationContext } from '@/server/admin/context';
+import { listPermissions, listRoles, upsertRole } from '@/features/users/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

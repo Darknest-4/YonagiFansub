@@ -1,16 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
-import { logger } from '@/lib/logger';
-import { pruneAuditLogs } from '@/lib/api/audit';
-import { pruneExpiredSessions } from '@/lib/auth/session';
-import { pruneNotifications } from '@/server/notifications';
-import { publishDueNews } from '@/server/news';
-import { sendDigests } from '@/server/digest';
-import { resendMissedVerifications } from '@/server/auth-service';
-import { runScheduledSync } from '@/server/admin/metadata-sync';
-import { env } from '@/lib/env';
-import { db } from '@/lib/db';
-import { CACHE_TAGS, invalidate } from '@/lib/cache';
+import { logger } from '@/infrastructure/logger';
+import { pruneAuditLogs } from '@/shared/api/audit';
+import { pruneExpiredSessions } from '@/shared/auth/session';
+import { pruneNotifications } from '@/features/notifications/service';
+import { publishDueNews } from '@/features/news/queries';
+import { sendDigests } from '@/features/notifications/digest';
+import { resendMissedVerifications } from '@/features/auth/service';
+import { runScheduledSync } from '@/features/metadata/sync-service';
+import { env } from '@/infrastructure/env';
+import { db } from '@/infrastructure/db';
+import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

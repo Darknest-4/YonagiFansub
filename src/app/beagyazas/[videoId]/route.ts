@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { gatePlayback } from '@/lib/video/gate';
-import { verifyPlaybackToken } from '@/lib/video/token';
-import { resolveExternalUrl } from '@/lib/video/plan';
-import { cspHostOf, cspSourceList } from '@/lib/video/provider';
+import { gatePlayback } from '@/features/video/gate';
+import { verifyPlaybackToken } from '@/features/video/token';
+import { resolveExternalUrl } from '@/features/video/plan';
+import { cspHostOf, cspSourceList } from '@/features/video/provider';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

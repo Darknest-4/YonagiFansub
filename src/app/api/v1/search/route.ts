@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { searchQuerySchema } from '@/lib/validation/schemas';
-import { search } from '@/server/search';
+import { search } from '@/features/search/service';
 
 // Rendered per request: the response depends on the database, which is not
 // reachable during `next build`. See `(site)/layout.tsx` for the full reasoning.

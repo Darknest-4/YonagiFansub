@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { AuditAction } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
-import { defineRoute } from '@/lib/api/handler';
-import { db } from '@/lib/db';
-import { paginationMeta, paginationSchema, toSkipTake } from '@/lib/api/pagination';
+import { defineRoute } from '@/shared/api/handler';
+import { db } from '@/infrastructure/db';
+import { paginationMeta, paginationSchema, toSkipTake } from '@/shared/api/pagination';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

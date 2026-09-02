@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { watchProgressSchema } from '@/lib/validation/schemas';
-import { recordProgress } from '@/server/watch';
-import { db } from '@/lib/db';
-import { NotFoundError } from '@/lib/errors';
-import { assertFeatureEnabled } from '@/server/settings';
+import { recordProgress } from '@/features/watch/service';
+import { db } from '@/infrastructure/db';
+import { NotFoundError } from '@/shared/lib/errors';
+import { assertFeatureEnabled } from '@/features/settings/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

@@ -1,6 +1,6 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
-import { restoreProject } from '@/server/admin/projects';
-import { mutationContext } from '@/server/admin/context';
+import { defineRoute, idParams } from '@/shared/api/handler';
+import { restoreProject } from '@/features/projects/admin-service';
+import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

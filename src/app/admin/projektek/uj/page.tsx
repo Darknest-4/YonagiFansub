@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { listGenres } from '@/server/projects';
-import { ProjectForm } from '@/components/admin/project-form';
-import { EMPTY_PROJECT } from '@/lib/forms/defaults';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { listGenres } from '@/features/projects/queries';
+import { ProjectForm } from '@/features/projects/components/project-form';
+import { EMPTY_PROJECT } from '@/features/projects/form-defaults';
 
 export const metadata: Metadata = { title: 'Új projekt' };
 export const dynamic = 'force-dynamic';

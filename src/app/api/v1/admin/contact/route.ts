@@ -1,7 +1,7 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { contactQuerySchema } from '@/lib/validation/schemas';
-import { db } from '@/lib/db';
-import { paginationMeta, toSkipTake } from '@/lib/api/pagination';
+import { db } from '@/infrastructure/db';
+import { paginationMeta, toSkipTake } from '@/shared/api/pagination';
 import type { Prisma } from '@prisma/client';
 
 export const runtime = 'nodejs';

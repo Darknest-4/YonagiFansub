@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, FolderOpen, Star, Users } from 'lucide-react';
-import { EmptyState } from '@/components/ui/feedback';
-import { ButtonLink } from '@/components/ui/button';
-import { LogoMark } from '@/components/site/logo';
-import { MemberCard } from '@/components/site/member-card';
-import { listPositions, listTeam } from '@/server/team';
-import { cn } from '@/lib/utils';
+import { EmptyState } from '@/shared/ui/feedback';
+import { ButtonLink } from '@/shared/ui/button';
+import { LogoMark } from '@/shared/layout/logo';
+import { MemberCard } from '@/features/team/components/member-card';
+import { listPositions, listTeam } from '@/features/team/queries';
+import { cn } from '@/shared/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Csapat',

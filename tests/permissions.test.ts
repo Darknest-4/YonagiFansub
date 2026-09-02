@@ -10,7 +10,7 @@ import {
   hasAnyPermission,
   hasPermission,
   type Actor,
-} from '@/lib/auth/permissions';
+} from '@/shared/auth/permissions';
 
 /**
  * Authorisation rules.

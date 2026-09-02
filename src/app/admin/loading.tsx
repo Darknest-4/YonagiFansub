@@ -1,4 +1,4 @@
-import { Skeleton, TableSkeleton } from '@/components/ui/feedback';
+import { Skeleton, TableSkeleton } from '@/shared/ui/feedback';
 
 /**
  * Shared by every admin screen that has not declared its own.

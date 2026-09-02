@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
-import { setWatchlistMark } from '@/server/watchlist';
+import { defineRoute } from '@/shared/api/handler';
+import { setWatchlistMark } from '@/features/watch/watchlist-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

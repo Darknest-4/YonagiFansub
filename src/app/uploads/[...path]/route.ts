@@ -1,8 +1,8 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
-import { env } from '@/lib/env';
-import { localMediaRoot } from '@/lib/media/driver';
+import { env } from '@/infrastructure/env';
+import { localMediaRoot } from '@/infrastructure/storage/driver';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

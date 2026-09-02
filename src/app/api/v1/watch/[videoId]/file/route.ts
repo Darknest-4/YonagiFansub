@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { request as httpsRequest } from 'node:https';
 import { Readable } from 'node:stream';
-import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
-import { verifyPlaybackToken } from '@/lib/video/token';
-import { resolveExternalUrl } from '@/lib/video/plan';
-import { assertPublicHost, BlockedAddressError, guardedLookup } from '@/lib/video/ssrf';
-import { checkRateLimit } from '@/lib/api/rate-limit';
-import { logger } from '@/lib/logger';
+import { gatePlayback, playbackHeaders } from '@/features/video/gate';
+import { verifyPlaybackToken } from '@/features/video/token';
+import { resolveExternalUrl } from '@/features/video/plan';
+import { assertPublicHost, BlockedAddressError, guardedLookup } from '@/features/video/ssrf';
+import { checkRateLimit } from '@/shared/api/rate-limit';
+import { logger } from '@/infrastructure/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

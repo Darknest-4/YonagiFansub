@@ -1,5 +1,5 @@
-import { defineRoute, idParams } from '@/lib/api/handler';
-import { findMediaReferences, getMediaAsset } from '@/server/media';
+import { defineRoute, idParams } from '@/shared/api/handler';
+import { findMediaReferences, getMediaAsset } from '@/features/media/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

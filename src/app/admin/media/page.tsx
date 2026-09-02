@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { ensurePermission } from '@/lib/auth/guards';
-import { hasPermission } from '@/lib/auth/permissions';
-import { toActor } from '@/lib/auth/session';
-import { formatBytes } from '@/lib/utils';
-import { mediaUsage } from '@/server/media';
-import { MediaLibrary } from '@/components/admin/media-library';
+import { ensurePermission } from '@/shared/auth/guards';
+import { hasPermission } from '@/shared/auth/permissions';
+import { toActor } from '@/shared/auth/session';
+import { formatBytes } from '@/shared/lib/utils';
+import { mediaUsage } from '@/features/media/service';
+import { MediaLibrary } from '@/features/media/components/media-library';
 
 export const metadata: Metadata = { title: 'Médiatár' };
 export const dynamic = 'force-dynamic';

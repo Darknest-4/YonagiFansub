@@ -5,7 +5,7 @@ import {
   SETTING_GROUP_ORDER,
   coerceSettingValue,
   type SettingDefinition,
-} from '@/server/settings';
+} from '@/features/settings/service';
 
 /**
  * What a setting turns into on the way in and out.

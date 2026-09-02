@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { gatePlayback, playbackHeaders } from '@/lib/video/gate';
-import { verifyPlaybackToken } from '@/lib/video/token';
-import { contentTypeFor, mediaDriver } from '@/lib/media/driver';
+import { gatePlayback, playbackHeaders } from '@/features/video/gate';
+import { verifyPlaybackToken } from '@/features/video/token';
+import { contentTypeFor, mediaDriver } from '@/infrastructure/storage/driver';
 
-import { checkRateLimit } from '@/lib/api/rate-limit';
+import { checkRateLimit } from '@/shared/api/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

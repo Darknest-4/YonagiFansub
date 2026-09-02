@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { CommentStatus } from '@prisma/client';
-import { defineRoute, idParams } from '@/lib/api/handler';
-import { db } from '@/lib/db';
-import { NotFoundError } from '@/lib/errors';
-import { recordAudit } from '@/lib/api/audit';
-import { notify } from '@/server/notifications';
+import { defineRoute, idParams } from '@/shared/api/handler';
+import { db } from '@/infrastructure/db';
+import { NotFoundError } from '@/shared/lib/errors';
+import { recordAudit } from '@/shared/api/audit';
+import { notify } from '@/features/notifications/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

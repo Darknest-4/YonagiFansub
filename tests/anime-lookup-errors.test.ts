@@ -39,7 +39,7 @@ afterEach(() => {
 
 describe('sikertelen metaadat-lekérés üzenete', () => {
   it('manga azonosítója esetén megmondja, hogy nem anime', async () => {
-    const { lookupAnime } = await import('@/server/admin/metadata-sync');
+    const { lookupAnime } = await import('@/features/metadata/sync-service');
 
     fetchMock
       // A fő lekérdezés `type: ANIME`-re szűr, tehát üres.
@@ -59,7 +59,7 @@ describe('sikertelen metaadat-lekérés üzenete', () => {
   });
 
   it('nem létező azonosítónál a helyes URL-alakot mutatja', async () => {
-    const { lookupAnime } = await import('@/server/admin/metadata-sync');
+    const { lookupAnime } = await import('@/features/metadata/sync-service');
 
     fetchMock
       .mockResolvedValueOnce(ok({ data: { Media: null } }))
@@ -71,7 +71,7 @@ describe('sikertelen metaadat-lekérés üzenete', () => {
   });
 
   it('MAL-azonosítónál a MyAnimeList címét mutatja', async () => {
-    const { lookupAnime } = await import('@/server/admin/metadata-sync');
+    const { lookupAnime } = await import('@/features/metadata/sync-service');
 
     fetchMock
       // AniList idMal alapján: nincs találat.
@@ -90,7 +90,7 @@ describe('sikertelen metaadat-lekérés üzenete', () => {
    * number while the real answer is "try again in ten minutes".
    */
   it('elérhetetlen forrásnál nem az azonosítót hibáztatja', async () => {
-    const { lookupAnime } = await import('@/server/admin/metadata-sync');
+    const { lookupAnime } = await import('@/features/metadata/sync-service');
 
     fetchMock.mockResolvedValue({
       ok: false,

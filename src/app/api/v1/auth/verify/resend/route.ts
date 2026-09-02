@@ -1,6 +1,6 @@
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { resendVerificationSchema } from '@/lib/validation/schemas';
-import { resendVerificationEmail } from '@/server/auth-service';
+import { resendVerificationEmail } from '@/features/auth/service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

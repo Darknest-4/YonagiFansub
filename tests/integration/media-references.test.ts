@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { db } from '@/lib/db';
-import { findMediaReferences } from '@/server/media';
+import { db } from '@/infrastructure/db';
+import { findMediaReferences } from '@/features/media/service';
 import * as make from './factories';
 
 const KEY = 'projects/abc123def456.webp';

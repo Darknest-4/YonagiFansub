@@ -1,4 +1,4 @@
-import { RowListSkeleton } from '@/components/site/page-skeletons';
+import { RowListSkeleton } from '@/shared/layout/page-skeletons';
 
 export default function Loading() {
   // Grouped, because the calendar renders day headings with rows underneath.

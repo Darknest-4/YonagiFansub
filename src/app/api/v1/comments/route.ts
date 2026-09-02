@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { defineRoute } from '@/lib/api/handler';
+import { defineRoute } from '@/shared/api/handler';
 import { commentCreateSchema } from '@/lib/validation/schemas';
-import { db } from '@/lib/db';
-import { ForbiddenError, NotFoundError } from '@/lib/errors';
-import { getSettings } from '@/server/settings';
-import { notify } from '@/server/notifications';
-import { listCommentThreads } from '@/server/comments';
-import { paginationSchema } from '@/lib/api/pagination';
+import { db } from '@/infrastructure/db';
+import { ForbiddenError, NotFoundError } from '@/shared/lib/errors';
+import { getSettings } from '@/features/settings/service';
+import { notify } from '@/features/notifications/service';
+import { listCommentThreads } from '@/features/comments/queries';
+import { paginationSchema } from '@/shared/api/pagination';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
