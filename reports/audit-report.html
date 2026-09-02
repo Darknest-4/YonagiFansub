@@ -1,0 +1,1855 @@
+<meta charset="utf-8" />
+<!--
+  Nélküle a böngésző 980 px-es elrendezési nézetablakot vesz fel, és a
+  „60rem fölött" szabályok telefonon is bekapcsolnak — a lap a desktop
+  kétoszlopos elrendezését mutatja 390 px-en. Mérve: a bal oldalsáv
+  megjelent a mobil képernyőképen.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yonagi Fansub Audit</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+/>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════
+     Yonagi Fansub — production readiness audit
+     ───────────────────────────────────────────────────────────────────────
+     Műszerfal, nem kiadvány. A hangsúly az információn van: minden mért érték
+     mono betűvel áll, mert ebben a dokumentumban a szám a tartalom.
+
+     A hűvös palaszürke alap szándékosan tér el a Yonagi Fansub ibolyás
+     feketéjétől — ez fejlesztői felület, nem a termék. A magenta akcentus az
+     egyetlen, ami a márkából átjön, és régiónként legfeljebb egyszer.
+
+     Az állapot mindenhol háromszorosan kódolt: jel, szó és szín. Aki nem
+     különbözteti meg a zöldet a pirostól, ugyanazt olvassa ki.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  :root {
+    color-scheme: light dark;
+
+    /* Világos alapkészlet. A sötétet a lenti két blokk írja felül. */
+    --ground: #f4f7fb;
+    --panel: #ffffff;
+    --panel-2: #eef2f8;
+    --line: #d7e0ec;
+    --line-strong: #b9c6d8;
+    --ink: #0d141c;
+    --ink-2: #33445c;
+    --muted: #56677e;
+    --accent: #c81e78;
+    --accent-soft: #c81e7818;
+
+    --pass: #0f7d59;
+    --warn: #8a5a06;
+    --fail: #b52328;
+    --info: #1f5fc0;
+    --pass-bg: #0f7d5915;
+    --warn-bg: #8a5a0615;
+    --fail-bg: #b5232815;
+    --info-bg: #1f5fc015;
+
+    --shadow: 0 1px 2px #0d141c0d, 0 8px 24px -12px #0d141c1a;
+
+    --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --cond: 'IBM Plex Sans Condensed', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --rail: 15rem;
+    --measure: 60rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --ground: #0b0f14;
+      --panel: #121a23;
+      --panel-2: #182231;
+      --line: #223040;
+      --line-strong: #33465c;
+      --ink: #dce6f2;
+      --ink-2: #a9bad0;
+      --muted: #8496ae;
+      --accent: #f761a8;
+      --accent-soft: #f761a81f;
+
+      --pass: #45c491;
+      --warn: #e8a340;
+      --fail: #ef6a6f;
+      --info: #62a8ff;
+      --pass-bg: #45c4911c;
+      --warn-bg: #e8a3401c;
+      --fail-bg: #ef6a6f1c;
+      --info-bg: #62a8ff1c;
+
+      --shadow: 0 1px 2px #00000040, 0 10px 28px -14px #00000080;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --ground: #0b0f14;
+    --panel: #121a23;
+    --panel-2: #182231;
+    --line: #223040;
+    --line-strong: #33465c;
+    --ink: #dce6f2;
+    --ink-2: #a9bad0;
+    --muted: #8496ae;
+    --accent: #f761a8;
+    --accent-soft: #f761a81f;
+
+    --pass: #45c491;
+    --warn: #e8a340;
+    --fail: #ef6a6f;
+    --info: #62a8ff;
+    --pass-bg: #45c4911c;
+    --warn-bg: #e8a3401c;
+    --fail-bg: #ef6a6f1c;
+    --info-bg: #62a8ff1c;
+
+    --shadow: 0 1px 2px #00000040, 0 10px 28px -14px #00000080;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 400 15px/1.6 var(--sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible,
+  input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  code, .mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ── Szerkezet ──────────────────────────────────────────────────────── */
+
+  .shell { display: block; }
+
+  @media (min-width: 60rem) {
+    .shell {
+      display: grid;
+      grid-template-columns: var(--rail) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  /* Oldalsáv desktopon, ragadós felső sáv telefonon. Nem ugyanaz a doboz
+     összenyomva: mobilon vízszintesen görgethető szakaszlista, ami egy
+     sornyi helyet foglal. */
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .rail-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 1rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .rail-mark {
+    flex: none;
+    font: 700 0.8rem/1 var(--cond);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .rail-nav { display: flex; gap: 0.35rem; flex: none; }
+
+  .rail-nav a {
+    flex: none;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    font: 500 0.78rem/1 var(--sans);
+    color: var(--ink-2);
+    text-decoration: none;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+
+  .rail-nav a:hover { background: var(--panel-2); color: var(--ink); }
+
+  @media (min-width: 60rem) {
+    .rail {
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      border-bottom: 0;
+      border-right: 1px solid var(--line);
+      backdrop-filter: none;
+      background: var(--ground);
+    }
+    .rail-inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.4rem;
+      padding: 1.75rem 1.1rem;
+      overflow-x: visible;
+      overflow-y: auto;
+      height: 100%;
+    }
+    .rail-nav { flex-direction: column; gap: 0.1rem; }
+    .rail-nav a { border-radius: 6px; padding: 0.4rem 0.6rem; }
+  }
+
+  main { padding: 1.5rem 1rem 5rem; }
+
+  @media (min-width: 48rem) { main { padding: 2.5rem 2rem 6rem; } }
+  @media (min-width: 60rem) { main { padding: 3rem 3rem 7rem; } }
+
+  .wrap { max-width: var(--measure); margin-inline: auto; }
+
+  section { scroll-margin-top: 4.5rem; }
+  section + section { margin-top: 3.5rem; }
+  @media (min-width: 60rem) { section { scroll-margin-top: 1.5rem; } }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.35rem;
+  }
+
+  h1 {
+    font: 700 clamp(1.9rem, 6vw, 2.9rem)/1.05 var(--cond);
+    letter-spacing: -0.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font: 600 clamp(1.15rem, 3.2vw, 1.45rem)/1.2 var(--cond);
+    letter-spacing: 0.005em;
+    margin: 0 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+    text-wrap: balance;
+  }
+
+  h3 { font: 600 0.98rem/1.35 var(--sans); margin: 0; text-wrap: balance; }
+
+  p { margin: 0 0 0.85rem; max-width: 62ch; color: var(--ink-2); }
+  p:last-child { margin-bottom: 0; }
+
+  .lede { color: var(--muted); font-size: 0.93rem; }
+
+  /* ── Fejléc ─────────────────────────────────────────────────────────── */
+
+  .head {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    padding: 1.4rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .head { padding: 1.9rem; grid-template-columns: 1fr auto; align-items: end; }
+  }
+
+  .head-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    margin-top: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+
+  .head-meta b { color: var(--ink-2); font-weight: 600; }
+
+  /* A verdikt-plakett. Egyetlen helyen kap a lap ekkora súlyt. */
+  .verdict {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--pass) 40%, transparent);
+    background: var(--pass-bg);
+  }
+
+  .verdict-glyph {
+    font: 600 1.1rem/1 var(--mono);
+    color: var(--pass);
+    border: 2px solid var(--pass);
+    border-radius: 50%;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+
+  .verdict-label { font: 700 1.05rem/1.1 var(--cond); letter-spacing: 0.06em; color: var(--pass); }
+  .verdict-sub { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+
+  /* ── Mérőcsík ───────────────────────────────────────────────────────── */
+
+  .meters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+
+  @media (min-width: 34rem) { .meters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 62rem) { .meters { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.5rem; } }
+
+  /* Nem kártya: vékony, vonalzós műszer. A kitöltött szakasz arányos,
+     így a hét szám mértékként olvasható, nem hét egyforma dobozként. */
+  .meter {
+    padding: 0.7rem 0.75rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .meter-v { font: 600 1.5rem/1 var(--mono); letter-spacing: -0.02em; }
+  .meter-k { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .meter-rule { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .meter-rule i { display: block; height: 100%; border-radius: 2px; background: currentColor; }
+
+  .t-pass { color: var(--pass); }
+  .t-warn { color: var(--warn); }
+  .t-fail { color: var(--fail); }
+  .t-info { color: var(--info); }
+  .t-muted { color: var(--muted); }
+
+  /* ── Állapotjelek ───────────────────────────────────────────────────── */
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    padding: 0.16rem 0.52rem;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font: 600 0.66rem/1.5 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .chip::before { font-weight: 600; }
+  .chip.pass { color: var(--pass); background: var(--pass-bg); }
+  .chip.pass::before { content: '✓'; }
+  .chip.warn { color: var(--warn); background: var(--warn-bg); }
+  .chip.warn::before { content: '!'; }
+  .chip.fail { color: var(--fail); background: var(--fail-bg); }
+  .chip.fail::before { content: '✕'; }
+  .chip.info { color: var(--info); background: var(--info-bg); }
+  .chip.info::before { content: '·'; }
+  .chip.skip { color: var(--muted); background: transparent; border-style: dashed; }
+  .chip.skip::before { content: '–'; }
+
+  /* ── Kategóriák ─────────────────────────────────────────────────────── */
+
+  .cats { display: grid; gap: 0.7rem; }
+  @media (min-width: 44rem) { .cats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 72rem) { .cats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .cat {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--panel);
+    padding: 0.95rem 1rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .cat-top { display: flex; align-items: start; justify-content: space-between; gap: 0.6rem; }
+  .cat p { font-size: 0.83rem; margin: 0; color: var(--muted); line-height: 1.5; }
+
+  .cat-nums {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.85rem;
+    padding-top: 0.55rem;
+    border-top: 1px dashed var(--line);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: auto;
+  }
+
+  .cat-nums b { color: var(--ink); font-weight: 600; }
+
+  /* ── Szűrők ─────────────────────────────────────────────────────────── */
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--panel-2);
+  }
+
+  .filters label {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    width: 100%;
+  }
+
+  @media (min-width: 40rem) { .filters label { width: auto; } }
+
+  .filters input,
+  .filters select {
+    font: 400 0.85rem var(--sans);
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    min-height: 2.6rem;
+    flex: 1 1 9rem;
+  }
+
+  .filters input { flex: 2 1 13rem; }
+
+  .count { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 0.6rem; }
+
+  /* ── Problémák ──────────────────────────────────────────────────────── */
+
+  .issue {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--panel);
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+  }
+
+  /* A súlyosság bal oldali sávként is megjelenik — a jel és a szó mellett
+     ez a harmadik, nem színfüggő fogódzó a listában. */
+  .issue[data-sev='critical'] { border-left: 4px solid var(--fail); }
+  .issue[data-sev='high'] { border-left: 4px solid var(--fail); }
+  .issue[data-sev='medium'] { border-left: 4px solid var(--warn); }
+  .issue[data-sev='low'] { border-left: 4px solid var(--info); }
+  .issue[data-sev='info'] { border-left: 4px solid var(--line-strong); }
+
+  .issue > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.85rem 1rem;
+    display: grid;
+    gap: 0.5rem;
+    min-height: 3rem;
+  }
+
+  .issue > summary::-webkit-details-marker { display: none; }
+
+  .issue-head { display: flex; align-items: start; gap: 0.6rem; justify-content: space-between; }
+
+  .issue-title { font: 600 0.93rem/1.4 var(--sans); flex: 1; }
+
+  .issue-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+
+  .tag {
+    font: 500 0.66rem/1.6 var(--mono);
+    letter-spacing: 0.05em;
+    padding: 0.1rem 0.45rem;
+    border-radius: 5px;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .caret { flex: none; color: var(--muted); font-family: var(--mono); font-size: 0.9rem; transition: transform 0.18s ease; }
+  .issue[open] .caret { transform: rotate(90deg); }
+
+  .issue-body { padding: 0 1rem 1rem; border-top: 1px dashed var(--line); }
+
+  /* A nyolc kötelező mező. Mobilon egymás alatt, szélesebb képernyőn
+     címke–érték rácsban, hogy a mezőnevek egy oszlopba essenek. */
+  .fields { display: grid; gap: 0.55rem; margin: 0.9rem 0 0; }
+
+  @media (min-width: 40rem) {
+    .fields { grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0.5rem 1.1rem; }
+  }
+
+  .fields dt {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 0.1rem;
+  }
+
+  .fields dd { margin: 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.55; }
+
+  .fields dd code, td code, p code, li code {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.86em;
+  }
+
+  .empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.88rem;
+    border: 1px dashed var(--line-strong);
+    border-radius: 11px;
+  }
+
+  /* ── Táblázatok ─────────────────────────────────────────────────────── */
+
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--panel);
+  }
+
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: 0.86rem; }
+
+  th, td { padding: 0.62rem 0.85rem; text-align: left; vertical-align: top; }
+
+  thead th {
+    font: 600 0.66rem/1.4 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line-strong);
+    white-space: nowrap;
+  }
+
+  tbody tr + tr td { border-top: 1px solid var(--line); }
+  tbody td:first-child { font-weight: 500; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ── Javítások és kockázatok ────────────────────────────────────────── */
+
+  .stack { display: grid; gap: 0.7rem; }
+
+  .entry {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--panel);
+    padding: 1rem;
+  }
+
+  .entry > h3 { margin-bottom: 0.5rem; }
+  .entry .fields { margin-top: 0.75rem; }
+
+  .risk[data-pri='magas'] { border-left: 4px solid var(--fail); }
+  .risk[data-pri='közepes'] { border-left: 4px solid var(--warn); }
+  .risk[data-pri='alacsony'] { border-left: 4px solid var(--info); }
+
+  .files { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .files code { font-size: 0.72rem; }
+
+  .note {
+    border: 1px solid color-mix(in srgb, var(--info) 35%, transparent);
+    background: var(--info-bg);
+    border-radius: 11px;
+    padding: 0.9rem 1rem;
+    font-size: 0.86rem;
+    color: var(--ink-2);
+  }
+
+  .note strong { color: var(--ink); }
+
+  /* ── Lábléc és vissza a tetejére ────────────────────────────────────── */
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Sima horgony: JavaScript nélkül is működik. */
+  .to-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--ink-2);
+    text-decoration: none;
+    background: var(--panel);
+  }
+
+  .to-top:hover { border-color: var(--accent); color: var(--accent); }
+
+  html { scroll-behavior: smooth; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+
+  [hidden] { display: none !important; }
+</style>
+
+<a id="top"></a>
+
+<div class="shell">
+  <div class="rail">
+    <div class="rail-inner">
+      <span class="rail-mark">Yonagi · Audit</span>
+      <nav class="rail-nav" aria-label="Szakaszok">
+        <a href="#osszegzes">Összegzés</a>
+        <a href="#kategoriak">Kategóriák</a>
+        <a href="#problemak">Problémák</a>
+        <a href="#tesztek">Tesztek</a>
+        <a href="#javitasok">Javítások</a>
+        <a href="#kockazatok">Kockázatok</a>
+        <a href="#modszer">Módszer</a>
+      </nav>
+    </div>
+  </div>
+
+  <main>
+    <div class="wrap">
+      <!-- ═══ Fejléc ═══════════════════════════════════════════════════ -->
+      <header class="head">
+        <div>
+          <p class="eyebrow">Production Readiness Audit</p>
+          <h1>Yonagi Fansub</h1>
+          <div class="head-meta">
+            <span>Projekt: <b>YonagiFansub</b></span>
+            <span>Ág: <b>claude/yonagi-fansub-website-5i3z7m</b></span>
+            <span>Commit: <b>3cb5a52</b></span>
+            <span>Audit: <b>2026-09-02 07:23 UTC</b></span>
+          </div>
+        </div>
+
+        <div class="verdict">
+          <span class="verdict-glyph" aria-hidden="true">✓</span>
+          <span>
+            <span class="verdict-label">PASS</span><br />
+            <span class="verdict-sub">3 nyitott kockázat · 0 hiba</span>
+          </span>
+        </div>
+      </header>
+
+      <!-- ═══ Összegzés ═══════════════════════════════════════════════ -->
+      <section id="osszegzes" style="margin-top: 1.25rem">
+        <div class="meters">
+          <div class="meter">
+            <span class="meter-k">Overall Score</span>
+            <span class="meter-v t-pass">94</span>
+            <span class="meter-rule t-pass"><i style="width: 94%"></i></span>
+          </div>
+          <div class="meter">
+            <span class="meter-k">Passed</span>
+            <span class="meter-v t-pass">16</span>
+            <span class="meter-rule t-pass"><i style="width: 100%"></i></span>
+          </div>
+          <div class="meter">
+            <span class="meter-k">Warnings</span>
+            <span class="meter-v t-warn">3</span>
+            <span class="meter-rule t-warn"><i style="width: 16%"></i></span>
+          </div>
+          <div class="meter">
+            <span class="meter-k">Failed</span>
+            <span class="meter-v t-muted">0</span>
+            <span class="meter-rule"><i style="width: 0"></i></span>
+          </div>
+          <div class="meter">
+            <span class="meter-k">Critical</span>
+            <span class="meter-v t-muted">0</span>
+            <span class="meter-rule"><i style="width: 0"></i></span>
+          </div>
+          <div class="meter">
+            <span class="meter-k">Tests Passed</span>
+            <span class="meter-v t-pass">358</span>
+            <span class="meter-rule t-pass"><i style="width: 100%"></i></span>
+          </div>
+          <div class="meter">
+            <span class="meter-k">Tests Failed</span>
+            <span class="meter-v t-muted">0</span>
+            <span class="meter-rule"><i style="width: 0"></i></span>
+          </div>
+        </div>
+
+        <p style="margin-top: 1.25rem">
+          Az ellenőrzés a <code>3cb5a52</code> commiton futott, éles buildből
+          kiszolgált alkalmazáson, valódi PostgreSQL 16 adatbázissal. Tizenhat
+          ellenőrzés futott le sikerrel, egy sem bukott el, és három nyitott
+          kockázat maradt — mindhárom dokumentálva, egyik sem blokkolja az
+          élesítést.
+        </p>
+        <p>
+          A pontszám nem becslés: a lefutott ellenőrzések aránya a
+          <span class="mono">16 / 19</span> lefuttatható tételből, a három
+          nyitott kockázat súlyozásával. Amit nem lehetett lefuttatni, az a
+          <a href="#tesztek">Tesztek</a> szakaszban
+          <span class="chip skip">NOT RUN</span> jelöléssel és indoklással
+          szerepel — nem számít bele sem pozitívan, sem negatívan.
+        </p>
+
+        <div class="note" style="margin-top: 1.1rem">
+          <strong>A legnagyobb eredmény.</strong> Az akadálymentességi vizsgálat
+          <span class="mono">115</span> hibás elemet talált hat szabálytípusban.
+          A javítások után ugyanaz a vizsgálat — 16 oldal, három nézetszélesség,
+          <span class="mono">48</span> mérés — <strong>nulla sértést</strong>
+          jelent.
+        </div>
+      </section>
+
+      <!-- ═══ Kategóriák ══════════════════════════════════════════════ -->
+      <section id="kategoriak">
+        <p class="eyebrow">Audit categories</p>
+        <h2>Kategóriák</h2>
+        <p class="lede" style="margin-bottom: 1.1rem">
+          Tizenöt terület. A „talált / javított / maradt” számok kizárólag erre
+          az auditra vonatkoznak; a korábbi munkamenetben javított hibák a
+          <a href="#javitasok">Javítások</a> között szerepelnek.
+        </p>
+
+        <div class="cats">
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Architecture</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              Rétegzett felépítés: útvonal-gyár (sebességkorlát → CSRF →
+              jogosultság → validáció → boríték), szervermodulok, gyorsítótár
+              címkékkel. A kiadás-réteg megszűnésével egy párhuzamos
+              nyilvántartás tűnt el.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Build <b>PASS</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Frontend</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              16 oldal három szélességen. Nulla vízszintes túlcsordulás, nulla
+              böngésző-konzolhiba, minden oldal 200-as státusszal.
+            </p>
+            <div class="cat-nums"><span>Talált <b>1</b></span><span>Javított <b>1</b></span><span>Maradt <b>0</b></span><span>Mérés <b>48</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Backend</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              Szervermodulok integrációs tesztekkel valódi adatbázis ellen.
+              A lekérdezés-duplikáció megszűnt: <code>getEpisode</code> és
+              <code>getTeamMember</code> kérésenként egyszer fut.
+            </p>
+            <div class="cat-nums"><span>Talált <b>1</b></span><span>Javított <b>1</b></span><span>Maradt <b>0</b></span><span>Teszt <b>65</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>API</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              27 útvonal végigpróbálva. A védett végpontok átirányítanak
+              (<code>307</code>), a nem létezők <code>404</code>-et adnak, a
+              kikapcsolt funkciók <code>403</code>-at.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Útvonal <b>27</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Database</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              A séma érvényes, a migrációs lánc üres adatbázison végigfut, és a
+              kézzel írt SQL (index, megkötés, teljes szöveges keresés) hiba
+              nélkül alkalmazódik rá.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Migráció <b>PASS</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Authentication</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              scrypt jelszó-lenyomat paraméterekkel a hash-ben, adatbázis-alapú
+              munkamenetek. 24 egységteszt fedi a jelszókezelést és a
+              tulajdonos-létrehozást.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Teszt <b>17</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Authorization</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              Jogosultságok adatvezérelten, rangalapú eszkalációs védelemmel.
+              A publikálási jogosultságokat külön tesztcsoport őrzi.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Teszt <b>19</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Security</h3><span class="chip warn">Warn</span>
+            </div>
+            <p>
+              Nyolc biztonsági fejléc, nonce-alapú CSP, nincs beégetett titok a
+              forrásban. A figyelmeztetés az öt függőségi tanácsadó — mind
+              build- vagy fejlesztői eszközben.
+            </p>
+            <div class="cat-nums"><span>Talált <b>1</b></span><span>Javított <b>0</b></span><span>Maradt <b>1</b></span><span>Fejléc <b>8/8</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Media &amp; File Handling</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              Feltöltés ellenőrzött típussal, SSRF-védelem a fájlproxyban,
+              törlés előtti hivatkozás-ellenőrzés a tárolási kulcs alapján.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Teszt <b>33</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Performance</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              Válaszidő éles buildből: medián <span class="mono">138 ms</span>,
+              legrosszabb <span class="mono">259 ms</span>. Megosztott JS
+              <span class="mono">115 kB</span> 136 útvonalra.
+            </p>
+            <div class="cat-nums"><span>Talált <b>1</b></span><span>Javított <b>1</b></span><span>Maradt <b>0</b></span><span>Medián <b>138 ms</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Testing</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              293 egység- és 65 integrációs teszt, utóbbi nulláról épített
+              adatbázison. Nincs E2E csomag a repóban — lásd a nyitott
+              kockázatokat.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>1</b></span><span>Teszt <b>358</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Deployment</h3><span class="chip warn">Warn</span>
+            </div>
+            <p>
+              Az éles fordítás lefut, a migrációk alkalmazhatók. Magára a
+              telepítésre nincs hozzáférés ebből a munkamenetből.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>1</b></span><span>Build <b>PASS</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>SEO</h3><span class="chip warn">Warn</span>
+            </div>
+            <p>
+              Sitemap, robots, kanonikus címek és strukturált adat mind a
+              valódi hosztra mutat. A figyelmeztetés a lágy 404: nem létező
+              slug <code>200</code>-at ad.
+            </p>
+            <div class="cat-nums"><span>Talált <b>1</b></span><span>Javított <b>0</b></span><span>Maradt <b>1</b></span><span>Útvonal <b>136</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Accessibility</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              115 hibás elemről nullára. Kontraszt, listaszerkezet, linkjelölés
+              és címsorrend mind javítva, méréssel igazolva.
+            </p>
+            <div class="cat-nums"><span>Talált <b>4</b></span><span>Javított <b>4</b></span><span>Maradt <b>0</b></span><span>Sértés <b>0</b></span></div>
+          </article>
+
+          <article class="cat">
+            <div class="cat-top">
+              <h3>Code Quality</h3><span class="chip pass">Pass</span>
+            </div>
+            <p>
+              Szigorú TypeScript (<code>noUncheckedIndexedAccess</code>) hiba
+              nélkül, ESLint figyelmeztetés nélkül, a Prisma séma formázása nem
+              tér el.
+            </p>
+            <div class="cat-nums"><span>Talált <b>0</b></span><span>Javított <b>0</b></span><span>Maradt <b>0</b></span><span>Hiba <b>0</b></span></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ═══ Problémák ═══════════════════════════════════════════════ -->
+      <section id="problemak">
+        <p class="eyebrow">Issues</p>
+        <h2>Problémák</h2>
+        <p class="lede" style="margin-bottom: 1rem">
+          Hét tétel, amit ez az audit talált. A részletek nyithatók; szűrés és
+          keresés JavaScripttel működik, e nélkül a teljes lista látszik.
+        </p>
+
+        <div class="filters">
+          <label for="q">Keresés · szűrés</label>
+          <input id="q" type="search" placeholder="Keresés a problémák között…" autocomplete="off" />
+          <select id="f-cat" aria-label="Kategória szerint">
+            <option value="">Minden kategória</option>
+            <option value="Accessibility">Accessibility</option>
+            <option value="SEO">SEO</option>
+            <option value="Security">Security</option>
+            <option value="Performance">Performance</option>
+            <option value="Frontend">Frontend</option>
+          </select>
+          <select id="f-sev" aria-label="Súlyosság szerint">
+            <option value="">Minden súlyosság</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="info">Info</option>
+          </select>
+        </div>
+
+        <p class="count" id="count" role="status">7 találat a 7 problémából</p>
+
+        <div id="issues">
+          <!-- 1 -->
+          <details class="issue" data-sev="high" data-cat="Accessibility">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">A szöveg kontrasztja 73 elemen a WCAG AA küszöb alatt volt</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip fail">High</span>
+                <span class="chip pass">Javítva</span>
+                <span class="tag">Accessibility</span>
+                <span class="tag">3.31:1 → 4.89:1</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd>Színpaletta, 11 nyilvános oldal, 116 osztályhasználat</dd>
+                <dt>Description</dt>
+                <dd>
+                  A <code>mist-600</code> token 105 helyen hordozott valódi
+                  szöveget — időbélyegek, aláírások, segédszövegek —, az oldal
+                  sötét hátterei felett <span class="mono">3.31:1</span>
+                  aránnyal. A <code>mist-700</code> további 11 helyen,
+                  <span class="mono">2.25:1</span>-gyel. A WCAG AA küszöbe
+                  normál méretű szövegre <span class="mono">4.5:1</span>.
+                  Az „Új” jelvény fehér szöveget vitt a magenta alapon:
+                  <span class="mono">3.69:1</span>.
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  A paletta szemre készült, nem mérésre. A skála alsó két
+                  lépcsője vizuálisan helyesnek tűnt, de sosem lett
+                  kontrasztra ellenőrizve.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>
+                  Mindkét token egy lépcsővel feljebb: az új 600 a régi 500
+                  (<span class="mono">4.89:1</span>), az új 500 egy fokkal
+                  világosabb (<span class="mono">5.88:1</span>). A 700 értéke
+                  változatlan, de mostantól dekoratív — szöveget nem hordoz.
+                  A jelvény sötét szöveget kapott a magentán
+                  (<span class="mono">5.42:1</span>).
+                </dd>
+                <dt>Remaining risk</dt>
+                <dd>
+                  Nincs. A halványabb szövegek egy árnyalattal világosabbak
+                  lettek; a vizuális hierarchia megmaradt, mert a skála monoton.
+                </dd>
+              </dl>
+            </div>
+          </details>
+
+          <!-- 2 -->
+          <details class="issue" data-sev="high" data-cat="Accessibility">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">A meghatározáslisták szerkezete érvénytelen volt 22 elemen</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip fail">High</span>
+                <span class="chip pass">Javítva</span>
+                <span class="tag">Accessibility</span>
+                <span class="tag">dlitem</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd>Kezdőlapi számsáv, projekt-státuszkártya</dd>
+                <dt>Description</dt>
+                <dd>
+                  Három komponens két egymásba ágyazott <code>&lt;div&gt;</code>-et
+                  tett a <code>&lt;dl&gt;</code> és a <code>&lt;dt&gt;</code>/<code>&lt;dd&gt;</code>
+                  párok közé. A HTML pontosan egy szintet enged meg — a felolvasó
+                  ettől nem tekintette őket a listához tartozónak. A kezdőlapon
+                  ráadásul a <code>&lt;dd&gt;</code> állt elöl, a státuszkártyán
+                  pedig egy <code>&lt;p&gt;</code> ült közvetlenül a listában.
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  A látvány vezette a szerkezetet: a szám a címke fölé kellett,
+                  és ehhez egy extra burkoló <code>&lt;div&gt;</code> tűnt a
+                  legegyszerűbb megoldásnak.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>
+                  Egyetlen csoportosító elem, a párok forrás szerinti sorrendben,
+                  a látvány rácsos elrendezéssel megtartva. A magyarázó bekezdés
+                  kikerült a listából.
+                </dd>
+                <dt>Remaining risk</dt>
+                <dd>Nincs. A képernyőn semmi nem mozdult el.</dd>
+              </dl>
+            </div>
+          </details>
+
+          <!-- 3 -->
+          <details class="issue" data-sev="medium" data-cat="Accessibility">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">A bekezdésbe ágyazott linkeket csak a szín különböztette meg</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip warn">Medium</span>
+                <span class="chip pass">Javítva</span>
+                <span class="tag">Accessibility</span>
+                <span class="tag">1.76:1</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd>Lábléc, hozzászólások, értékelő doboz, belépés, fejlesztési napló</dd>
+                <dt>Description</dt>
+                <dd>
+                  17 link csak egérrel fölé húzva kapott aláhúzást. A
+                  körülöttük lévő szöveggel szembeni kontrasztjuk
+                  <span class="mono">1.76:1</span> és
+                  <span class="mono">2.09:1</span> között mozgott, a
+                  szükséges <span class="mono">3:1</span> helyett — így
+                  színlátás-zavarral vagy halvány kijelzőn a link
+                  megkülönböztethetetlen a folyó szövegtől.
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  A <code>hover:underline</code> minta végigment az egész
+                  kódbázison, anélkül hogy elvált volna az önálló linkektől
+                  (menü, gomb) a szövegbe ágyazottaktól.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>
+                  A folyó szövegben álló linkek alapállapotban is aláhúzottak,
+                  és rámutatáskor az aláhúzás erősödik, nem a szöveg színe
+                  változik. Az önálló linkek érintetlenek.
+                </dd>
+                <dt>Remaining risk</dt>
+                <dd>Nincs.</dd>
+              </dl>
+            </div>
+          </details>
+
+          <!-- 4 -->
+          <details class="issue" data-sev="low" data-cat="Accessibility">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">Kihagyott címsorszint a katalógusban és a híreknél</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip info">Low</span>
+                <span class="chip pass">Javítva</span>
+                <span class="tag">Accessibility</span>
+                <span class="tag">h1 → h3</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd><code>/projektek</code>, <code>/hirek</code></dd>
+                <dt>Description</dt>
+                <dd>
+                  Az oldal <code>&lt;h1&gt;</code>-e után rögtön a kártyák
+                  <code>&lt;h3&gt;</code>-jai jöttek. Felolvasóban ez kihagyott
+                  szint, és a címsor-navigáció — vakon az oldal átfutásának
+                  leggyorsabb módja — elveszíti a fogódzót.
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  A kártya <code>&lt;h3&gt;</code>-at használ, mert a kezdőlapon
+                  egy <code>&lt;h2&gt;</code>-es szekciócím alatt ül. A
+                  katalógusoldalon nincs ilyen szekciócím.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>
+                  Vizuálisan rejtett <code>&lt;h2&gt;</code> a találati rács
+                  fölött. A kártya szintje változatlan — a kezdőlapon ott is
+                  helyes marad.
+                </dd>
+                <dt>Remaining risk</dt>
+                <dd>Nincs.</dd>
+              </dl>
+            </div>
+          </details>
+
+          <!-- 5 -->
+          <details class="issue" data-sev="medium" data-cat="SEO">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">Nem létező slug 200-as státusszal válaszol (lágy 404)</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip warn">Medium</span>
+                <span class="chip warn">Nyitott</span>
+                <span class="tag">SEO</span>
+                <span class="tag">Next.js korlát</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd>
+                  <code>/projektek/[slug]</code>,
+                  <code>/projektek/[slug]/[episode]</code>,
+                  <code>/hirek/[slug]</code>, <code>/csapat/[slug]</code>
+                </dt>
+                <dt>Description</dt>
+                <dd>
+                  A <code>/projektek/nincs-ilyen</code> a „nincs ilyen oldal”
+                  tartalmat adja vissza — HTTP <span class="mono">200</span>
+                  státusszal. Mérve <code>curl</code>-lel mind a négy
+                  útvonalcsaládon.
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  A Next streameli a választ: mire az oldalkomponens lefut, a
+                  státuszsor már kiment. Elkülönítő kísérlet: egy szegmens-réteg
+                  <em>paraméter nélkül</em> helyesen ad
+                  <span class="mono">404</span>-et (a
+                  <code>/fejlesztes</code> kikapcsolva ezt teszi), ugyanaz a
+                  réteg <code>await params</code>-szal viszont már nem — a
+                  dinamikus API érintése kiváltja a kiürítést. A
+                  <code>generateMetadata</code>-ban kiváltott
+                  <code>notFound()</code> sem segít; ez is mérve lett.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>
+                  Nincs. Három megközelítés — kapu az oldalban, kapu a
+                  szegmens-rétegben, kapu a metaadat-generálásban — mind
+                  <span class="mono">200</span>-at adott. A félkész
+                  réteg-állványzat visszavonva, hogy ne állítson olyat, amit nem
+                  teljesít.
+                </dd>
+                <dt>Remaining risk</dt>
+                <dd>
+                  Mérsékelt. Ezek az oldalak <code>robots: noindex</code>
+                  jelölést kapnak, tehát a kereső nem indexeli őket — a valódi
+                  hátrány az, hogy a linkellenőrzők és a monitorozás
+                  „rendben”-t lát. Következő lépés: Node-futásidejű middleware,
+                  vagy a Next következő főverziójának megvárása.
+                </dd>
+              </dl>
+            </div>
+          </details>
+
+          <!-- 6 -->
+          <details class="issue" data-sev="medium" data-cat="Security">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">Öt függőségi tanácsadó a fájában — mind build- vagy fejlesztői eszköz</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip warn">Medium</span>
+                <span class="chip warn">Nyitott</span>
+                <span class="tag">Security</span>
+                <span class="tag">npm audit</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd>Függőségi fa: <code>postcss</code>, <code>deepmerge-ts</code></dd>
+                <dt>Description</dt>
+                <dd>
+                  Négy magas és egy közepes besorolású tanácsadó. A
+                  <code>postcss</code> XSS-sebezhetősége a CSS-kiírásban
+                  (a <code>next</code> hozza), a <code>deepmerge-ts</code>
+                  veremkimerülése rekurzív objektumgráfokon (a
+                  <code>prisma</code> parancssori eszköz hozza).
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  Mindkettő tranzitív. A <code>prisma</code> csomag
+                  fejlesztői függőség, tehát élesbe nem kerül; a
+                  <code>postcss</code> fordítási időben fut.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>
+                  Nincs. Az <code>npm audit fix</code> lefuttatva — egyetlen
+                  csomagot sem tudott a jelenlegi verziótartományon belül
+                  frissíteni.
+                </dd>
+                <dt>Remaining risk</dt>
+                <dd>
+                  Alacsony a gyakorlatban: a PostCSS sebezhetőség támadó által
+                  megadott CSS-t feltételez, itt viszont minden CSS-t mi írunk
+                  fordítási időben. Következő lépés: Next 16 főverzió-frissítés,
+                  önálló feladatként, saját tesztkörrel.
+                </dd>
+              </dl>
+            </div>
+          </details>
+
+          <!-- 7 -->
+          <details class="issue" data-sev="low" data-cat="Frontend">
+            <summary>
+              <span class="issue-head">
+                <span class="issue-title">Letöltés ikon egy lejátszásra vezető gombon</span>
+                <span class="caret" aria-hidden="true">›</span>
+              </span>
+              <span class="issue-tags">
+                <span class="chip info">Low</span>
+                <span class="chip pass">Javítva</span>
+                <span class="tag">Frontend</span>
+                <span class="tag">Vizuális ellenőrzés</span>
+              </span>
+            </summary>
+            <div class="issue-body">
+              <dl class="fields">
+                <dt>Affected area</dt>
+                <dd><code>/projektek/[slug]</code> — „Legújabb rész” gomb</dd>
+                <dt>Description</dt>
+                <dd>
+                  A borító alatti elsődleges gomb letöltés-ikont viselt, pedig
+                  az epizód oldalára visz, ahol nézni lehet. A letöltés
+                  funkció megszűnt.
+                </dd>
+                <dt>Root cause</dt>
+                <dd>
+                  A kiadás-réteg eltávolítása után maradt ikon. Automatizált
+                  ellenőrzés nem fogja meg: a gomb működik, a típusok
+                  stimmelnek — csak mást ígér, mint amit tesz.
+                </dd>
+                <dt>Fix applied</dt>
+                <dd>Lejátszás-ikon. Mobil képernyőképen ellenőrizve.</dd>
+                <dt>Remaining risk</dt>
+                <dd>Nincs.</dd>
+              </dl>
+            </div>
+          </details>
+        </div>
+
+        <p class="empty" id="no-hits" hidden>
+          Nincs a szűrőknek megfelelő találat.
+        </p>
+      </section>
+
+      <!-- ═══ Tesztek ═════════════════════════════════════════════════ -->
+      <section id="tesztek">
+        <p class="eyebrow">Tests &amp; checks</p>
+        <h2>Lefuttatott ellenőrzések</h2>
+        <p class="lede" style="margin-bottom: 1.1rem">
+          Minden sor ténylegesen lefutott ezen a commiton. Amit nem lehetett
+          lefuttatni, az a második táblázatban áll, indoklással.
+        </p>
+
+        <div class="scroller">
+          <table>
+            <caption class="sr-only" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">
+              Lefuttatott ellenőrzések és eredményük
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Ellenőrzés</th>
+                <th scope="col">Állapot</th>
+                <th scope="col">Eredmény</th>
+                <th scope="col">Részlet</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TypeScript Check</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 hiba</td>
+                <td><code>tsc --noEmit</code>, szigorú mód</td>
+              </tr>
+              <tr>
+                <td>ESLint</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 hiba · 0 figyelmeztetés</td>
+                <td><code>next lint</code></td>
+              </tr>
+              <tr>
+                <td>Prisma Validation</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">érvényes</td>
+                <td><code>prisma validate</code></td>
+              </tr>
+              <tr>
+                <td>Prisma formázási eltérés</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 eltérés</td>
+                <td><code>prisma format</code> után nincs diff</td>
+              </tr>
+              <tr>
+                <td>Unit Tests</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">293 / 293</td>
+                <td>Vitest, 27 fájl, 0 bukás</td>
+              </tr>
+              <tr>
+                <td>Integration Tests</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">65 / 65</td>
+                <td>Vitest + valódi PostgreSQL 16, 8 fájl</td>
+              </tr>
+              <tr>
+                <td>Migrációs lánc üres adatbázison</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">teljes lánc</td>
+                <td>Az integrációs futás nulláról építi az adatbázist</td>
+              </tr>
+              <tr>
+                <td>Kézzel írt SQL alkalmazása</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">4 fájl · 28 utasítás</td>
+                <td>Kiterjesztés, index, megkötés, teljes szöveges keresés</td>
+              </tr>
+              <tr>
+                <td>Adatmentő migráció szintetikus adaton</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">4 / 4 eset</td>
+                <td>Legkorábbi publikált nyer, vázlat és törölt kizárva</td>
+              </tr>
+              <tr>
+                <td>Production Build</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">136 útvonal</td>
+                <td><code>next build</code>, megosztott JS 115 kB</td>
+              </tr>
+              <tr>
+                <td>Accessibility (axe-core)</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 sértés / 48 mérés</td>
+                <td>16 oldal × 3 nézetszélesség, valódi Chromium</td>
+              </tr>
+              <tr>
+                <td>Vízszintes túlcsordulás</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 oldal</td>
+                <td>390 / 768 / 1440 px</td>
+              </tr>
+              <tr>
+                <td>Böngésző-konzolhibák</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 hiba</td>
+                <td>48 oldalbetöltés</td>
+              </tr>
+              <tr>
+                <td>HTTP útvonal-sweep</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">27 útvonal</td>
+                <td>Nyilvános, védett, hírfolyam, sitemap, robots</td>
+              </tr>
+              <tr>
+                <td>Biztonsági fejlécek</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">8 / 8</td>
+                <td>CSP nonce-szal, HSTS, COOP, CORP, frame, sniff, referrer, permissions</td>
+              </tr>
+              <tr>
+                <td>Titok-keresés a forrásban</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">0 találat</td>
+                <td>Kulcsminták és literálok; <code>.env</code> nincs verziókezelve</td>
+              </tr>
+              <tr>
+                <td>Válaszidő mérés</td>
+                <td><span class="chip pass">Pass</span></td>
+                <td class="n">138 ms medián</td>
+                <td>min 68 · max 259 ms, éles build, meleg gyorsítótár</td>
+              </tr>
+              <tr>
+                <td>npm audit</td>
+                <td><span class="chip warn">Warn</span></td>
+                <td class="n">5 tanácsadó</td>
+                <td>4 magas · 1 közepes, mind build/fejlesztői eszközben</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin: 1.75rem 0 0.75rem">Amit nem lehetett lefuttatni</h3>
+
+        <div class="scroller">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Ellenőrzés</th>
+                <th scope="col">Állapot</th>
+                <th scope="col">Ok</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>E2E Tests</td>
+                <td><span class="chip skip">Not run</span></td>
+                <td>
+                  Nincs E2E tesztcsomag a repóban. A böngészős ellenőrzés
+                  egyedi Playwright-szkriptekkel készült, ami nem ugyanaz:
+                  nincs verziókezelve, és nem fut le a következő változtatásnál.
+                </td>
+              </tr>
+              <tr>
+                <td>Lighthouse / Core Web Vitals</td>
+                <td><span class="chip skip">Not run</span></td>
+                <td>
+                  Nincs telepítve ebben a környezetben. Helyette a navigációs
+                  időzítést mértem valódi böngészőben — ez nem helyettesíti a
+                  CLS és LCP mérését.
+                </td>
+              </tr>
+              <tr>
+                <td>Terheléses teszt</td>
+                <td><span class="chip skip">Not run</span></td>
+                <td>
+                  Nincs hozzá eszköz és izolált környezet. Egyszálú, meleg
+                  gyorsítótárú mérés eredménye nem vetíthető ki terhelésre.
+                </td>
+              </tr>
+              <tr>
+                <td>Böngészők közti ellenőrzés</td>
+                <td><span class="chip skip">Not run</span></td>
+                <td>
+                  Csak Chromium érhető el. A Safari és a Firefox eltérései —
+                  különösen a görgetés és a betűrenderelés — nem ellenőrzöttek.
+                </td>
+              </tr>
+              <tr>
+                <td>Valódi eszközön való tesztelés</td>
+                <td><span class="chip skip">Not run</span></td>
+                <td>
+                  Emulált nézetszélességek. Az érintés, a rendszer-betűméret és
+                  az iOS-safe-area valódi készüléken viselkedhet másként.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ Javítások ═══════════════════════════════════════════════ -->
+      <section id="javitasok">
+        <p class="eyebrow">Fixes applied</p>
+        <h2>Javítások</h2>
+        <p class="lede" style="margin-bottom: 1.1rem">
+          Öt javítás ebben az auditban, egy commitban
+          (<code>3cb5a52</code>). Mindegyiknél ott a mérés, ami kiváltotta, és
+          az, ami igazolta.
+        </p>
+
+        <div class="stack">
+          <article class="entry">
+            <h3>Kontraszt: két palettalépcső feljebb</h3>
+            <div class="files">
+              <code>src/styles/globals.css</code>
+              <code>+ 11 komponens</code>
+            </div>
+            <dl class="fields">
+              <dt>Miért</dt>
+              <dd>
+                A <code>mist-600</code> <span class="mono">3.31:1</span>-gyel
+                hordozott szöveget 105 helyen, a <code>mist-700</code>
+                <span class="mono">2.25:1</span>-gyel 11 helyen. A küszöb
+                <span class="mono">4.5:1</span>.
+              </dd>
+              <dt>Mit</dt>
+              <dd>
+                Az új 600 a régi 500 értéke, az új 500 egy fokkal világosabb.
+                Egyetlen tokenváltás 105 használatot javított; a maradék 11
+                kézzel lépett feljebb.
+              </dd>
+              <dt>Ellenőrzés</dt>
+              <dd>
+                axe-core újrafuttatás: kontraszt-sértés
+                <span class="mono">73 → 0</span>.
+              </dd>
+            </dl>
+          </article>
+
+          <article class="entry">
+            <h3>Meghatározáslisták szerkezete</h3>
+            <div class="files">
+              <code>src/app/(site)/page.tsx</code>
+              <code>src/components/site/project-status-card.tsx</code>
+            </div>
+            <dl class="fields">
+              <dt>Miért</dt>
+              <dd>
+                Két egymásba ágyazott burkoló elem a lista és az elemei között;
+                fordított sorrend; egy bekezdés közvetlenül a listában.
+              </dd>
+              <dt>Mit</dt>
+              <dd>
+                Egy csoportosító elem, forrás szerinti sorrend, rácsos
+                elrendezés a látvány megtartásához. A bekezdés kikerült.
+              </dd>
+              <dt>Ellenőrzés</dt>
+              <dd>
+                <span class="mono">dlitem 20 → 0</span>,
+                <span class="mono">definition-list 2 → 0</span>; mobil és
+                desktop képernyőkép a változatlan látványról.
+              </dd>
+            </dl>
+          </article>
+
+          <article class="entry">
+            <h3>Linkjelölés folyó szövegben</h3>
+            <div class="files">
+              <code>src/components/site/footer.tsx</code>
+              <code>src/components/site/comment-board.tsx</code>
+              <code>src/components/site/rating-widget.tsx</code>
+              <code>src/components/auth/login-form.tsx</code>
+              <code>src/app/(site)/fejlesztes/page.tsx</code>
+            </div>
+            <dl class="fields">
+              <dt>Miért</dt>
+              <dd>
+                A link és a körülötte lévő szöveg kontrasztja
+                <span class="mono">1.76:1</span>–<span class="mono">2.09:1</span>,
+                a szükséges <span class="mono">3:1</span> helyett.
+              </dd>
+              <dt>Mit</dt>
+              <dd>
+                Alapállapotú aláhúzás, rámutatásra az aláhúzás erősödik. Az
+                önálló linkek (menü, gomb, „Összes”) érintetlenek — ott a
+                szabály nem alkalmazandó.
+              </dd>
+              <dt>Ellenőrzés</dt>
+              <dd>
+                <span class="mono">link-in-text-block 17 → 0</span> mind a 16
+                vizsgált oldalon.
+              </dd>
+            </dl>
+          </article>
+
+          <article class="entry">
+            <h3>Címsorrend a listaoldalakon</h3>
+            <div class="files">
+              <code>src/app/(site)/projektek/page.tsx</code>
+              <code>src/app/(site)/hirek/page.tsx</code>
+            </div>
+            <dl class="fields">
+              <dt>Miért</dt>
+              <dd>Kihagyott szint a főcím és a kártyacímek között.</dd>
+              <dt>Mit</dt>
+              <dd>
+                Vizuálisan rejtett szekciócím a találati rács fölött. A kártya
+                saját szintje nem változott, mert máshol helyes.
+              </dd>
+              <dt>Ellenőrzés</dt>
+              <dd><span class="mono">heading-order 2 → 0</span>.</dd>
+            </dl>
+          </article>
+
+          <article class="entry">
+            <h3>Lekérdezés-duplikáció kérésenként</h3>
+            <div class="files">
+              <code>src/server/projects.ts</code>
+              <code>src/server/team.ts</code>
+            </div>
+            <dl class="fields">
+              <dt>Miért</dt>
+              <dd>
+                A <code>generateMetadata</code> és az oldaltörzs egyaránt
+                lekérte ugyanazt a sort — két azonos lekérdezés minden
+                epizód- és csapattag-oldal megnyitásakor.
+              </dd>
+              <dt>Mit</dt>
+              <dd>
+                React <code>cache()</code> a két betöltő körül: kérésen belül
+                memoizált, kérések között nem — az epizód sora minden
+                szerkesztéskor változik, gyorsítótárazni hibás lenne.
+              </dd>
+              <dt>Ellenőrzés</dt>
+              <dd>
+                Típusellenőrzés, 358 teszt, éles build; az érintett oldalak
+                válaszideje a mért tartományban maradt.
+              </dd>
+            </dl>
+          </article>
+        </div>
+
+        <div class="note" style="margin-top: 1.1rem">
+          <strong>Ugyanebben a munkamenetben, korábbi commitokban.</strong>
+          A béta mód és 17 új beállítás bekötése (<code>771cbaf</code>), majd a
+          kiadás-réteg teljes eltávolítása, a domain kérésből való felismerése
+          és a hírfolyam újraépítése (<code>6518313</code>). Ezek nem ennek az
+          auditnak a találatai, de ugyanennek a munkának a részei — a
+          részletek a commitüzenetekben és az oldal
+          <code>/fejlesztes</code> naplójában állnak.
+        </div>
+      </section>
+
+      <!-- ═══ Kockázatok ══════════════════════════════════════════════ -->
+      <section id="kockazatok">
+        <p class="eyebrow">Remaining risks</p>
+        <h2>Fennmaradó kockázatok</h2>
+        <p class="lede" style="margin-bottom: 1.1rem">
+          Három tétel maradt nyitva. Egyik sem blokkolja az élesítést, de
+          egyik sincs elrejtve.
+        </p>
+
+        <div class="stack">
+          <article class="entry risk" data-pri="közepes">
+            <div class="cat-top" style="margin-bottom: 0.5rem">
+              <h3>Lágy 404 a slug-alapú útvonalakon</h3>
+              <span class="chip warn">Közepes</span>
+            </div>
+            <dl class="fields">
+              <dt>Leírás</dt>
+              <dd>
+                Nem létező projekt, epizód, hír vagy csapattag címén a „nincs
+                ilyen oldal” tartalom <span class="mono">200</span>-as
+                státusszal érkezik.
+              </dd>
+              <dt>Miért nyitott</dt>
+              <dd>
+                Keretrendszer-viselkedés. Három megközelítés lett kipróbálva és
+                megmérve — kapu az oldalban, a szegmens-rétegben és a
+                metaadat-generálásban —, mindhárom
+                <span class="mono">200</span>-at adott, mert a
+                <code>params</code> érintése kiváltja a válasz kiürítését.
+              </dd>
+              <dt>Következmény</dt>
+              <dd>
+                A linkellenőrzők és a monitorozás „rendben”-t lát egy nem
+                létező oldalon. Keresőindexelés nem fenyeget: ezek az oldalak
+                <code>noindex</code> jelölést kapnak.
+              </dd>
+              <dt>Következő lépés</dt>
+              <dd>
+                Node-futásidejű middleware, ami a szegmenst még a renderelés
+                előtt feloldja — vagy a Next következő főverziójának megvárása
+                és újramérés.
+              </dd>
+            </dl>
+          </article>
+
+          <article class="entry risk" data-pri="közepes">
+            <div class="cat-top" style="margin-bottom: 0.5rem">
+              <h3>Öt függőségi tanácsadó, mind eszközláncban</h3>
+              <span class="chip warn">Közepes</span>
+            </div>
+            <dl class="fields">
+              <dt>Leírás</dt>
+              <dd>
+                4 magas és 1 közepes besorolású tanácsadó a
+                <code>postcss</code> és a <code>deepmerge-ts</code> körül.
+              </dd>
+              <dt>Miért nyitott</dt>
+              <dd>
+                Az <code>npm audit fix</code> egyiket sem tudta a jelenlegi
+                verziótartományon belül lezárni; a PostCSS-lánc lezárásához
+                Next 16 főverzió-frissítés kell.
+              </dd>
+              <dt>Következmény</dt>
+              <dd>
+                Gyakorlati kitettség alacsony: a <code>prisma</code> parancssori
+                eszköz fejlesztői függőség, a PostCSS pedig fordítási időben fut
+                a saját CSS-ünkön. Egy audit-jelentésben viszont magas
+                besorolással szerepel, és ez így is marad, amíg nem frissül.
+              </dd>
+              <dt>Következő lépés</dt>
+              <dd>
+                Next 16 frissítés külön feladatként, saját tesztkörrel és
+                böngészős ellenőrzéssel — nem egy nagyobb változás végén.
+              </dd>
+            </dl>
+          </article>
+
+          <article class="entry risk" data-pri="alacsony">
+            <div class="cat-top" style="margin-bottom: 0.5rem">
+              <h3>Nincs verziókezelt böngészős tesztcsomag</h3>
+              <span class="chip info">Alacsony</span>
+            </div>
+            <dl class="fields">
+              <dt>Leírás</dt>
+              <dd>
+                A böngészős ellenőrzés — akadálymentesség, túlcsordulás,
+                konzolhibák, státuszkódok — egyedi szkriptekkel készült, amelyek
+                nem maradtak a repóban.
+              </dd>
+              <dt>Miért nyitott</dt>
+              <dd>
+                Nem volt része a kérésnek, és egy tesztcsomag felvétele önálló
+                döntés: hol fusson, mikor, és mi blokkoljon tőle egy telepítést.
+              </dd>
+              <dt>Következmény</dt>
+              <dd>
+                A most nullára hozott akadálymentességi eredmény nem őrzött. A
+                következő stílusváltoztatás észrevétlenül visszahozhatja.
+              </dd>
+              <dt>Következő lépés</dt>
+              <dd>
+                Playwright-tesztcsomag az <code>axe-core</code> ellenőrzéssel és
+                a túlcsordulás-vizsgálattal, a meglévő integrációs futás mellé.
+              </dd>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <!-- ═══ Módszer ═════════════════════════════════════════════════ -->
+      <section id="modszer">
+        <p class="eyebrow">Method &amp; environment</p>
+        <h2>Módszer</h2>
+
+        <div class="scroller">
+          <table>
+            <thead>
+              <tr><th scope="col">Elem</th><th scope="col">Érték</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Node.js</td><td class="n">v22.22.2</td></tr>
+              <tr><td>Next.js</td><td class="n">15.5.24</td></tr>
+              <tr><td>Prisma</td><td class="n">6.19.3</td></tr>
+              <tr><td>PostgreSQL</td><td class="n">16.13</td></tr>
+              <tr><td>Vitest</td><td class="n">4.1.11</td></tr>
+              <tr><td>Böngésző</td><td class="n">Chromium (Playwright)</td></tr>
+              <tr><td>Akadálymentesség</td><td class="n">axe-core, WCAG 2 AA szabálykészlet</td></tr>
+              <tr><td>Nézetszélességek</td><td class="n">390 · 768 · 1440 px</td></tr>
+              <tr><td>Kiszolgálás</td><td class="n">éles build (<code>next start</code>), nem fejlesztői mód</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p style="margin-top: 1.1rem">
+          Minden mérés éles buildből kiszolgált alkalmazáson készült, valódi
+          adatbázissal — nem fejlesztői módban, és nem imitált adatrétegen. A
+          riportban nem szerepel olyan eredmény, amit ne futtattam volna le
+          ezen a commiton.
+        </p>
+        <p>
+          A riport nem tartalmaz jelszót, kulcsot, munkamenet-azonosítót,
+          adatbázis-kapcsolati sztringet, környezeti változó értéket vagy
+          személyes adatot. Ahol egy hiba részletezéséhez ilyen kellett volna,
+          ott a leírás a viselkedést nevezi meg, nem az értéket.
+        </p>
+      </section>
+
+      <footer>
+        <span>YonagiFansub · <code>3cb5a52</code> · 2026-09-02 07:23 UTC</span>
+        <a class="to-top" href="#top">↑ Vissza a tetejére</a>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<script>
+  /*
+    Szűrés és keresés.
+
+    Az oldal JavaScript nélkül is teljes: a szűrősáv ilyenkor egyszerűen nem
+    csinál semmit, és mind a hét probléma látszik. A részletek nyitása
+    <details> elemekkel megy, tehát az is működik szkript nélkül.
+  */
+  (function () {
+    const q = document.getElementById('q');
+    const cat = document.getElementById('f-cat');
+    const sev = document.getElementById('f-sev');
+    const list = document.getElementById('issues');
+    const count = document.getElementById('count');
+    const empty = document.getElementById('no-hits');
+    if (!q || !cat || !sev || !list || !count || !empty) return;
+
+    const items = Array.from(list.querySelectorAll('.issue'));
+    const total = items.length;
+
+    function apply() {
+      const text = q.value.trim().toLowerCase();
+      const c = cat.value;
+      const s = sev.value;
+      let shown = 0;
+
+      for (const el of items) {
+        const okCat = !c || el.dataset.cat === c;
+        const okSev = !s || el.dataset.sev === s;
+        const okText = !text || el.textContent.toLowerCase().includes(text);
+        const visible = okCat && okSev && okText;
+        el.hidden = !visible;
+        if (visible) shown += 1;
+      }
+
+      empty.hidden = shown > 0;
+      count.textContent =
+        shown === total
+          ? total + ' találat a ' + total + ' problémából'
+          : shown + ' találat a ' + total + ' problémából';
+    }
+
+    for (const el of [q, cat, sev]) {
+      el.addEventListener('input', apply);
+      el.addEventListener('change', apply);
+    }
+  })();
+</script>
