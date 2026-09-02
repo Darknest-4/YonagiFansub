@@ -15,6 +15,15 @@
 #     image builder that cannot reach the database — the same constraint that
 #     makes every page `force-dynamic`. Schema changes belong in `preDeployCommand`,
 #     which runs after the image is built and before traffic is switched over.
+#
+# One thing to know before shipping a destructive migration (a dropped table, a
+# dropped column): during a rolling deploy the OLD instance is still serving, so
+# it still holds read locks on the tables the migration wants to rewrite. A
+# `DROP TABLE` cannot get its lock, and the deploy deadlocks — the old instance
+# will not stop until the new one is healthy, and the new one cannot become
+# healthy until the old one stops. Such a migration needs the service suspended
+# for the length of the deploy. `scripts/db-migrate.mjs` detects the situation
+# and says so instead of hanging; docs/runbook.md has the procedure.
 
 databases:
   - name: yonagi-db
@@ -27,22 +36,32 @@ databases:
 services:
   - type: web
     name: yonagi-fansub
-    runtime: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: starter
     region: frankfurt # Closest to a Hungarian audience.
     branch: main
     autoDeployTrigger: commit
 
-    buildCommand: npm ci && npm run build
-
-    # Runs after the build, with the database reachable and before traffic
-    # switches over. `db:sql` carries the trigram and full-text indexes, the
-    # search functions, and the CHECK constraints
-    # Prisma's schema language cannot express; the seed syncs permissions,
-    # roles and reference data. Both are idempotent, so a redeploy is safe.
-    preDeployCommand: npx prisma migrate deploy && npm run db:sql && npx tsx prisma/seed.ts
-
-    startCommand: npm start
+    # Runs after the image is built, with the database reachable, and BEFORE the
+    # new container is started. That placement is the whole point: the same three
+    # steps also run in `scripts/start.sh`, but there they happen inside the
+    # container's startup, racing the platform's port-scan window — a slow or
+    # blocked step there shows up as an unexplained deploy timeout rather than as
+    # an error. Here it fails as a failed pre-deploy, with the output visible.
+    #
+    # Every step is idempotent, so having run them here makes the copies in
+    # `start.sh` fast no-ops, and a redeploy is always safe.
+    #
+    # `db-migrate.mjs` rather than `prisma migrate deploy`: it sets a lock_timeout
+    # so a blocked DDL fails in seconds instead of hanging forever, reports which
+    # session holds the lock, and clears a half-finished migration so the retry
+    # can proceed. See docs/runbook.md → „A deploy elakadt a migrációnál".
+    preDeployCommand: >-
+      node scripts/db-migrate.mjs
+      && node_modules/.bin/tsx scripts/apply-sql.ts
+      && node_modules/.bin/tsx prisma/seed.ts
 
     healthCheckPath: /api/health
 

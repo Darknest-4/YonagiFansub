@@ -322,6 +322,63 @@ migrációnak additívnak kell lennie (oszlop hozzáadása, nem átnevezése): �
 előző kódverzió is együtt tud élni az új sémával. Törlő migrációt csak akkor,
 ha az előző verzió már nincs sehol futásban.
 
+### „A deploy elakadt a migrációnál"
+
+Ez a leggyakoribb deploy-hiba, és az alakja megtévesztő: a napló annyit ír, hogy
+`→ [1/3] Séma migrálása…`, aztán semmit, végül a platform időtúllépéssel megöli
+a deployt. Nem lassú a migráció — **zárra vár**.
+
+**Miért.** Gördülő deploynál a régi példány addig szolgál ki, amíg az új fel nem
+áll. Ha az új első dolga egy `ALTER TABLE` vagy `DROP TABLE`, ahhoz ACCESS
+EXCLUSIVE zár kell, azt viszont a régi példány olvasásai fogják. Holtpont: a
+régi nem áll le, amíg az új nem egészséges, az új pedig nem lesz egészséges,
+amíg a régi le nem áll. Ráadásul a beragadt folyamat kimenete pufferelt marad,
+tehát **egyetlen sort sem ír ki** — innen a néma tizenöt perc.
+
+**Amit a rendszer magától megtesz.** A `scripts/db-migrate.mjs` `lock_timeout`-tal
+kapcsolódik, tehát a várakozás másodpercek alatt hibába fut, nem örökre. Kiírja,
+melyik folyamat fogja a zárat és mióta, majd növekvő várakozással újrapróbál. A
+félbeszakadt migrációt (`P3009`) visszavontnak jelöli, hogy a következő
+próbálkozás újra lefuthasson — ez azért biztonságos, mert a Prisma minden
+migrációt tranzakcióban futtat, tehát a félbeszakadt futás nem hagy félkész
+sémát maga után.
+
+**Ha ez sem elég**, akkor tartósan fogja valaki a zárat. Nézd meg, ki:
+
+```sql
+SELECT pid, state, now() - xact_start AS tranzakcio_kora,
+       left(regexp_replace(query, '\s+', ' ', 'g'), 120) AS lekerdezes
+FROM pg_stat_activity
+WHERE datname = current_database() AND pid <> pg_backend_pid()
+ORDER BY xact_start NULLS LAST;
+```
+
+Ha `idle in transaction` állapotút látsz, az a hibás — egy nyitva felejtett
+tranzakció minden sémamódosítást megállít. Célzottan lezárható:
+
+```sql
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+WHERE datname = current_database() AND state = 'idle in transaction'
+  AND now() - state_change > interval '1 minute';
+```
+
+Ha viszont a régi *alkalmazáspéldány* a blokkoló — mert a migráció épp azt a
+táblát bontja le, amit az még olvas —, akkor ez a migráció **nem fér el a
+gördülő deploy alá**. Ilyenkor: a szolgáltatás felfüggesztése (Render → Suspend),
+deploy, majd visszakapcsolás. Egy rövid leállás az ára; a másik lehetőség egy
+tizennyolc perces néma időtúllépés.
+
+**Kézi helyreállítás**, ha valamiért nem a szkript futott:
+
+```bash
+npx prisma migrate resolve --rolled-back <migráció_neve>
+npx prisma migrate deploy
+```
+
+A `--rolled-back` csak akkor helyes, ha a migráció tranzakcióban futott (nálunk
+mindegyik: egyik migrációs fájl sem használ `CONCURRENTLY`-t). Ha valaha lesz
+ilyen fájl, azt előbb kézzel kell befejezni vagy visszabontani.
+
 ---
 
 ## Ütemezett feladatok
