@@ -162,12 +162,18 @@ describe('lookupAnime resilience', () => {
     await expect(lookupAnime({ malId: 9253 })).rejects.toThrow(/nem elérhet/i);
   });
 
-  it('reports a missing id as not-found rather than as an outage', async () => {
+  it('reports a missing id as a bad id rather than as an outage', async () => {
     // Nothing failed — the id simply does not exist. Different problem, and the
     // person typing the id needs to be told which one it is.
     anilistMock.mockResolvedValue(null);
     jikanMock.mockResolvedValue(null);
 
-    await expect(lookupAnime({ malId: 999_999_999 })).rejects.toThrow(/nem található/i);
+    // Asserted on the distinction, not on the wording: the message names the id
+    // and where to check it, and must not blame the upstream for being down.
+    const failure = lookupAnime({ malId: 999_999_999 });
+
+    await expect(failure).rejects.toThrow(/999999999/);
+    await expect(failure).rejects.toThrow(/myanimelist\.net/i);
+    await expect(failure).rejects.not.toThrow(/nem elérhet/i);
   });
 });
