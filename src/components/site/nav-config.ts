@@ -20,10 +20,20 @@ export interface NavItem {
    */
   icon?: 'Home' | 'Clapperboard' | 'Package' | 'Newspaper' | 'Users' | 'HelpCircle' | 'Mail' | 'Sparkles' | 'CalendarDays';
   /**
+   * Hue for the icon tile in the "Több" sheet.
+   *
+   * A row of identical grey squares is a list you scan word by word; giving each
+   * destination a fixed colour makes it findable by shape before the label is
+   * read, which is the whole point of putting icons there at all. Fixed per
+   * entry rather than derived, so a menu item does not change colour when
+   * another one is inserted above it.
+   */
+  tint?: 'bloom' | 'orchid' | 'info' | 'success' | 'warm' | 'sakura';
+  /**
    * Whether this item earns a slot in the mobile tab bar. Six is the measured
-   * ceiling: at 360px that is 60px per target, at 320px 56px, with no label
-   * truncated — a seventh would drop under what a thumb reliably hits. The rest
-   * are one tap away behind "Több".
+   * ceiling: 49px per target at 320px and 57px at 390px, with no label
+   * truncated — a seventh would drop under the 44px a thumb reliably hits. The
+   * rest are one tap away behind "Több".
    */
   tab?: boolean;
 }
@@ -77,11 +87,18 @@ export const PRIMARY_NAV: NavItem[] = [
     href: '/csapat',
     label: 'Csapat',
     icon: 'Users',
+    tint: 'orchid',
     description: 'Akik a feliratok mögött állnak',
     matchPrefix: true,
   },
-  { href: '/gyik', label: 'GYIK', description: 'Gyakori kérdések', icon: 'HelpCircle' },
-  { href: '/kapcsolat', label: 'Kapcsolat', description: 'Írj nekünk', icon: 'Mail' },
+  {
+    href: '/gyik',
+    label: 'GYIK',
+    description: 'Gyakori kérdések',
+    icon: 'HelpCircle',
+    tint: 'warm',
+  },
+  { href: '/kapcsolat', label: 'Kapcsolat', description: 'Írj nekünk', icon: 'Mail', tint: 'info' },
 ];
 
 /**
@@ -94,6 +111,7 @@ export const SECONDARY_NAV: NavItem[] = [
     label: 'Csatlakozz',
     description: 'Keresünk fordítót, lektort, formázót',
     icon: 'Sparkles',
+    tint: 'sakura',
   },
 ];
 

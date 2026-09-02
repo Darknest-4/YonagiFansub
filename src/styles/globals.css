@@ -763,10 +763,14 @@
   lifted above it there and left at the screen edge in the admin, which has no
   bar. `:has()` keeps that conditional in CSS rather than threading an offset
   prop through a component both shells share.
+
+  The offset covers the whole floating island — the collapse handle above the
+  bar as well as the bar itself — because a toast tucked under the handle is a
+  toast with its first line cut off.
 */
 @media (width < 64rem) {
   body:has([data-mobile-tabbar]) .toast-viewport {
-    padding-bottom: calc(1rem + 3.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(1rem + 7rem + env(safe-area-inset-bottom));
   }
 }
 

@@ -6,17 +6,29 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   Bell,
+  CalendarDays,
+  ChevronRight,
+  Clapperboard,
+  HelpCircle,
+  Home,
   LayoutDashboard,
+  LogIn,
   LogOut,
+  Mail,
+  Newspaper,
+  Package,
   Search,
   Settings,
+  Sparkles,
   Star,
   User as UserIcon,
+  Users,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/site/logo';
-import { OVERFLOW_NAV, PRIMARY_NAV, isActive } from '@/components/site/nav-config';
+import { OVERFLOW_NAV, PRIMARY_NAV, isActive, type NavItem } from '@/components/site/nav-config';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, ButtonLink } from '@/components/ui/button';
@@ -44,6 +56,35 @@ export interface HeaderUser {
  *   • The mobile sheet is a full-height panel with real focus management and a
  *     body scroll lock; it closes on navigation.
  */
+/**
+ * Icon and colour for a row in the "Több" sheet.
+ *
+ * A list of identical grey rows is read word by word. A fixed colour and shape
+ * per destination makes it findable before the label is parsed, which is the
+ * only reason to put icons in a menu at all — decoration would not be worth the
+ * vertical space each row then costs.
+ */
+const SHEET_ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
+  Home,
+  CalendarDays,
+  Clapperboard,
+  Package,
+  Newspaper,
+  Users,
+  HelpCircle,
+  Mail,
+  Sparkles,
+};
+
+const SHEET_TINTS: Record<NonNullable<NavItem['tint']>, string> = {
+  bloom: 'bg-bloom-500/12 text-bloom-300',
+  orchid: 'bg-orchid-500/12 text-orchid-300',
+  info: 'bg-info-500/12 text-info-400',
+  success: 'bg-success-500/12 text-success-400',
+  warm: 'bg-ember-500/12 text-ember-300',
+  sakura: 'bg-sakura-500/12 text-sakura-300',
+};
+
 export function SiteHeader({
   user,
   announcement,
@@ -328,52 +369,120 @@ function MobileNav({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-ink-800 bg-ink-925 pb-[env(safe-area-inset-bottom)]"
+            className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-[1.75rem] border-t border-ink-800 bg-ink-925 pb-[env(safe-area-inset-bottom)]"
           >
-            <div className="flex items-center justify-between border-b border-ink-800 px-5 py-4">
-              <Logo size="sm" />
-              <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Menü bezárása">
+            {/*
+              A grab handle. It does not drag — the sheet closes by tapping the
+              backdrop or the X — but it is the near-universal sign that a panel
+              came up from the bottom edge and can be sent back, and people reach
+              for the backdrop once they read it as one.
+            */}
+            <div aria-hidden className="flex justify-center pt-3 pb-1">
+              <span className="h-1 w-10 rounded-full bg-ink-700" />
+            </div>
+
+            <div className="flex items-center justify-between px-5 pt-2 pb-4">
+              <h2 className="text-2xl font-bold text-mist-50">Menü</h2>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Menü bezárása"
+                className="grid size-9 place-items-center rounded-full bg-ink-850 text-mist-300 transition-colors hover:bg-ink-800 active:bg-ink-750 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
+              >
                 <X className="size-5" aria-hidden />
-              </Button>
+              </button>
             </div>
 
             <nav
-              className="flex-1 overflow-y-auto overscroll-contain p-4"
+              className="flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 pb-4"
               aria-label="További menüpontok"
             >
               {/*
-                Only what the tab bar could not fit. Repeating the four tabs
-                two centimetres above themselves would pad the sheet without
-                adding a single destination.
+                The account card sits above the destinations rather than at the
+                bottom of the sheet, because for a signed-out visitor it is the
+                most consequential thing here — half the site's features are
+                behind it — and a call to action below the fold of a scrolling
+                panel is one nobody sees.
               */}
-              <ul className="space-y-1">
+              {user ? (
+                <Link
+                  href="/profil"
+                  className="flex items-center gap-3 rounded-2xl bg-ink-900 p-3.5 transition-colors hover:bg-ink-850 active:bg-ink-800"
+                >
+                  <Avatar name={user.displayName} src={user.avatarUrl} size="md" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-base font-bold text-mist-50">
+                      {user.displayName}
+                    </span>
+                    <span className="block truncate text-xs text-mist-500">@{user.username}</span>
+                  </span>
+                  <ChevronRight className="size-5 shrink-0 text-mist-600" aria-hidden />
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 rounded-2xl bg-ink-900 p-3.5">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-bold text-mist-50">Üdvözöllek!</span>
+                    <span className="block text-xs text-mist-500">
+                      Jelentkezz be a teljes élményért
+                    </span>
+                  </span>
+                  <Link
+                    href="/belepes"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-mist-50 px-4 py-2.5 text-sm font-bold text-ink-950 transition-colors hover:bg-white active:bg-mist-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400"
+                  >
+                    <LogIn className="size-4" aria-hidden />
+                    Belépés
+                  </Link>
+                </div>
+              )}
+
+              {/*
+                Only what the tab bar could not fit. Repeating the six tabs two
+                centimetres above themselves would pad the sheet without adding a
+                single destination.
+              */}
+              <ul className="space-y-2 pt-1">
                 {OVERFLOW_NAV.map((item) => {
                   const active = isActive(pathname, item);
+                  const Icon = item.icon ? SHEET_ICONS[item.icon] : Sparkles;
+                  const tint = SHEET_TINTS[item.tint ?? 'bloom'];
+
                   return (
                     <li key={item.href}>
                       <Link
                         href={item.href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                          'block rounded-xl px-4 py-3.5 transition-colors duration-fast',
+                          'flex items-center gap-3.5 rounded-2xl px-3.5 py-3 transition-colors duration-fast',
                           active
                             ? 'bg-bloom-400/10 ring-1 ring-bloom-400/25'
-                            : 'hover:bg-ink-850 active:bg-ink-800',
+                            : 'bg-ink-900/70 hover:bg-ink-850 active:bg-ink-800',
                         )}
                       >
                         <span
-                          className={cn(
-                            'block text-base font-semibold',
-                            active ? 'text-bloom-200' : 'text-mist-100',
-                          )}
+                          aria-hidden
+                          className={cn('grid size-11 shrink-0 place-items-center rounded-xl', tint)}
                         >
-                          {item.label}
+                          <Icon className="size-5" />
                         </span>
-                        {item.description && (
-                          <span className="mt-0.5 block text-xs text-mist-500">
-                            {item.description}
+
+                        <span className="min-w-0 flex-1">
+                          <span
+                            className={cn(
+                              'block truncate text-base font-bold',
+                              active ? 'text-bloom-200' : 'text-mist-50',
+                            )}
+                          >
+                            {item.label}
                           </span>
-                        )}
+                          {item.description && (
+                            <span className="mt-0.5 block truncate text-xs text-mist-500">
+                              {item.description}
+                            </span>
+                          )}
+                        </span>
+
+                        <ChevronRight className="size-5 shrink-0 text-mist-600" aria-hidden />
                       </Link>
                     </li>
                   );
@@ -381,43 +490,33 @@ function MobileNav({
               </ul>
             </nav>
 
-            <div className="border-t border-ink-800 p-4">
-              {user ? (
-                <div className="space-y-3">
-                  <Link
-                    href="/profil"
-                    className="flex items-center gap-3 rounded-xl bg-ink-900 p-3 transition-colors hover:bg-ink-850"
-                  >
-                    <Avatar name={user.displayName} src={user.avatarUrl} size="md" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-mist-100">
-                        {user.displayName}
-                      </span>
-                      <span className="block truncate text-xs text-mist-500">@{user.username}</span>
-                    </span>
-                  </Link>
-
-                  {user.canAccessAdmin && (
-                    <ButtonLink href="/admin" variant="secondary" size="sm" fullWidth>
-                      Admin felület
-                    </ButtonLink>
-                  )}
-
-                  <Button variant="ghost" size="sm" fullWidth onClick={onLogout}>
-                    Kijelentkezés
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <ButtonLink href="/belepes" variant="secondary" size="md">
-                    Belépés
+            {/*
+              Actions, not destinations. The account itself moved to the card at
+              the top of the sheet; what is left down here is the pair of things
+              you do *to* a session rather than places you go, which is why they
+              are buttons and why they sit apart from the list.
+            */}
+            {user && (
+              <div className="flex gap-2 border-t border-ink-800 p-4">
+                {user.canAccessAdmin && (
+                  <ButtonLink href="/admin" variant="secondary" size="sm" fullWidth>
+                    Admin felület
                   </ButtonLink>
-                  <ButtonLink href="/regisztracio" variant="primary" size="md">
-                    Regisztráció
-                  </ButtonLink>
-                </div>
-              )}
-            </div>
+                )}
+                <Button variant="ghost" size="sm" fullWidth onClick={onLogout}>
+                  Kijelentkezés
+                </Button>
+              </div>
+            )}
+
+            {!user && (
+              <div className="border-t border-ink-800 p-4">
+                <ButtonLink href="/regisztracio" variant="primary" size="md" fullWidth>
+                  Regisztráció
+                </ButtonLink>
+              </div>
+            )}
+
           </motion.div>
         </motion.div>
       )}

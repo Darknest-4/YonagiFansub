@@ -30,7 +30,7 @@ export async function SiteFooter() {
       floating bar, which reads as content that got cut off rather than content
       that ended. It falls away at `lg`, where the bar is not rendered.
     */
-    <footer className="relative mt-24 border-t border-ink-800 bg-ink-925 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+    <footer className="relative mt-24 border-t border-ink-800 bg-ink-925 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-0">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-bloom-400/40 to-transparent"
