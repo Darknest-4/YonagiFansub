@@ -29,11 +29,21 @@ ALTER TABLE episodes
     "progressQc"          BETWEEN 0 AND 100
   );
 
--- A file size is never negative.
-ALTER TABLE releases
-  DROP CONSTRAINT IF EXISTS releases_size_non_negative;
+-- Megjelenési dátuma csak megjelent epizódnak van.
+--
+-- A `releases` táblán élő fájlméret-megkötés helyére lép: az a tábla megszűnt.
+-- Ez a kettő közti egyetlen lehetséges ellentmondást zárja ki: egy dátum egy
+-- olyan epizódon, ami a saját állapota szerint még nem jelent meg. Az ilyen sor
+-- bekerülne a hírfolyamba és a kezdőlapra, miközben a projektoldal azt írná
+-- róla, hogy készül.
+--
+-- Nem `now()`-ra vagy bármi másra hivatkozik: a CHECK csak immutábilis
+-- kifejezést fogad el, egy „nem lehet a jövőben” megkötést a Postgres
+-- visszautasítana.
+ALTER TABLE episodes
+  DROP CONSTRAINT IF EXISTS episodes_released_requires_status;
 
-ALTER TABLE releases
-  ADD CONSTRAINT releases_size_non_negative CHECK (
-    "fileSizeBytes" IS NULL OR "fileSizeBytes" >= 0
+ALTER TABLE episodes
+  ADD CONSTRAINT episodes_released_requires_status CHECK (
+    "releasedAt" IS NULL OR status = 'RELEASED'
   );

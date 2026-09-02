@@ -1,14 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarDays, Check, ChevronRight, Download } from 'lucide-react';
-import {
-  cn,
-  formatBytes,
-  formatDate,
-  formatDuration,
-  formatEpisodeNumber,
-} from '@/lib/utils';
-import { Badge, EpisodeStatusBadge, RESOLUTION_LABEL } from '@/components/ui/badge';
+import { CalendarDays, Check, ChevronRight, Play } from 'lucide-react';
+import { cn, formatDate, formatDuration, formatEpisodeNumber } from '@/lib/utils';
+import { Badge, EpisodeStatusBadge } from '@/components/ui/badge';
 import { WorkflowProgress, buildWorkflowStages, overallProgress } from '@/components/ui/progress';
 import { EmptyState } from '@/components/ui/feedback';
 import type { EpisodeListItem } from '@/server/projects';
@@ -18,7 +12,8 @@ import type { EpisodeListItem } from '@/server/projects';
  *
  * The list is the project page's centre of gravity, so it carries three
  * different stories at once and has to keep them legible:
- *   • Released episodes → what you can download, at which resolution and size.
+ *   • Released episodes → that there is something to play, and whether it needs
+ *     an account.
  *   • In-progress episodes → how far along the pipeline is, per stage.
  *   • Planned episodes → that they exist at all, without pretending otherwise.
  *
@@ -82,7 +77,15 @@ function EpisodeRow({
   watch?: WatchState;
 }) {
   const number = formatEpisodeNumber(episode.number.toString());
-  const released = episode.status === 'RELEASED' && episode.releases.length > 0;
+  /*
+    Released *and* playable.
+
+    Two conditions, because they can disagree: an episode can be marked
+    RELEASED while every source behind it is unpublished or has been pulled.
+    The row is a link, and a link to a page with nothing on it is worse than a
+    row that stays quiet — so the count of published sources decides.
+  */
+  const released = episode.status === 'RELEASED' && episode._count.videos > 0;
   const stages = buildWorkflowStages(episode);
   const progress = overallProgress(stages);
 
@@ -174,23 +177,22 @@ function EpisodeRow({
             )}
           </div>
 
-          {/* Released: the download offer. Otherwise: the pipeline. */}
+          {/* Released: what there is to watch. Otherwise: the pipeline. */}
           {released ? (
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
-              {episode.releases.map((release) => (
-                <li key={release.id}>
-                  <Badge tone={release.version > 1 ? 'orchid' : 'accent'}>
-                    <span className="font-mono">
-                      {RESOLUTION_LABEL[release.resolution]}
-                      {release.format ? ` ${release.format.container.toUpperCase()}` : ''}
-                      {release.version > 1 ? ` v${release.version}` : ''}
-                    </span>
-                    {release.fileSizeBytes !== null && (
-                      <span className="text-mist-500">· {formatBytes(release.fileSizeBytes)}</span>
-                    )}
-                  </Badge>
+              <li>
+                <Badge tone="accent">
+                  <Play className="size-3" aria-hidden />
+                  Megnézhető
+                </Badge>
+              </li>
+              {episode._count.videos > 1 && (
+                <li>
+                  {/* Több forrás azt jelenti, hogy egy halott tárhely nem
+                      állítja meg a lejátszást — ez a nézőnek is információ. */}
+                  <Badge tone="neutral">{episode._count.videos} forrás</Badge>
                 </li>
-              ))}
+              )}
             </ul>
           ) : (
             episode.status !== 'PLANNED' &&
@@ -204,8 +206,8 @@ function EpisodeRow({
 
         {released && (
           <span className="hidden shrink-0 items-center gap-1.5 self-center rounded-lg bg-ink-850 px-3 py-2 text-2xs font-medium text-bloom-200 transition-colors group-hover:bg-bloom-400/15 sm:inline-flex">
-            <Download className="size-3.5" aria-hidden />
-            Letöltés
+            <Play className="size-3.5" aria-hidden />
+            Megnézem
             <ChevronRight className="size-3.5" aria-hidden />
           </span>
         )}

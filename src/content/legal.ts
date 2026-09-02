@@ -25,7 +25,7 @@ A Yonagi Fansub csapata. Kapcsolatfelvétel: a [kapcsolati űrlapon](/kapcsolat)
 
 - **Álnevesített IP-cím.** Nem tároljuk a nyers IP-címedet: a szerver egy titkos kulccsal
   képzett, visszafejthetetlen lenyomatot ment belőle. Ezt kizárólag visszaélés-szűrésre
-  (rate limiting) és letöltési statisztikára használjuk.
+  (rate limiting) használjuk.
 - **Böngésző-azonosító (user agent).** Hibakereséshez és statisztikához.
 - **Munkamenet-süti.** A bejelentkezéshez és a CSRF-védelemhez szükséges. Nincs
   harmadik féltől származó süti, és nincs hirdetési vagy követő szkript az oldalon.
@@ -44,14 +44,15 @@ A Yonagi Fansub csapata. Kapcsolatfelvétel: a [kapcsolati űrlapon](/kapcsolat)
 | --- | --- |
 | Fiók működtetése, bejelentkezés | Szerződés teljesítése |
 | Visszaélés és túlterhelés elleni védelem | Jogos érdek |
-| Értesítés új kiadásról | Hozzájárulás (bármikor visszavonható) |
+| Értesítés új részről | Hozzájárulás (bármikor visszavonható) |
 | Kapcsolatfelvételre válasz | Jogos érdek |
 | Biztonsági naplózás (audit log) | Jogos érdek |
 
 ## Meddig őrizzük?
 
 - **Munkamenetek:** legfeljebb 90 nap, kijelentkezés után azonnal érvénytelenné válnak.
-- **Letöltési események:** 12 hónap, utána automatikusan törlődnek.
+- **Nézési előrehaladás:** a fiók törléséig, vagy amíg a beállításokban ki nem
+  kapcsolod a mentését.
 - **Kapcsolatfelvételi üzenetek:** legfeljebb 24 hónap.
 - **Audit napló:** 12 hónap; a biztonsági szempontból lényeges bejegyzések tovább.
 - **Fiókadatok:** a fiók törléséig. Törlés után a felhasználóneved és e-mail-címed
@@ -101,7 +102,7 @@ hivatalosak**, díjmentesek, és nem állnak kapcsolatban a művek jogtulajdonos
 
 ## Használati feltételek
 
-- A feliratokat és kiadásokat **kizárólag magáncélra** töltheted le.
+- A feliratokat és a részeket **kizárólag magáncélra** használhatod.
 - Ha egy mű hivatalosan megjelenik Magyarországon, **támogasd a hivatalos kiadást**.
   Ilyenkor a saját kiadásunkat jellemzően visszavonjuk.
 - Tilos a kiadásainkat **továbbértékesíteni**, fizetős oldalra feltölteni, vagy

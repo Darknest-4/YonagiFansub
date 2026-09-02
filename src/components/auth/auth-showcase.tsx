@@ -32,14 +32,14 @@ export async function AuthShowcase() {
           </p>
 
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-mist-400">
-            Fiókkal követheted a projektjeidet, értesítést kapsz az új kiadásokról, és
+            Fiókkal követheted a projektjeidet, értesítést kapsz az új részekről, és
             ott folytathatod, ahol abbahagytad — bármelyik eszközön.
           </p>
 
           <dl className="mt-10 grid max-w-sm grid-cols-3 gap-6 border-t border-ink-800 pt-7">
             <Stat label="Projekt" value={stats.projects} />
             <Stat label="Rész" value={stats.episodes} />
-            <Stat label="Letöltés" value={stats.downloads} />
+            <Stat label="Lejátszás" value={stats.views} />
           </dl>
         </div>
 

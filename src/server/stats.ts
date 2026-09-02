@@ -13,10 +13,18 @@ import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
 
 export interface DashboardStats {
   projects: { total: number; ongoing: number; completed: number; draft: number };
-  episodes: { total: number; released: number; inProgress: number };
-  releases: { total: number; published: number; scheduled: number; thisMonth: number };
+  episodes: { total: number; released: number; inProgress: number; releasedThisMonth: number };
   users: { total: number; active: number; newThisMonth: number };
-  downloads: { total: number; last7Days: number; last30Days: number };
+  /**
+   * Watches *started*, not downloads.
+   *
+   * With the download layer gone, the honest measure of reach is how many
+   * people pressed play. One `watch_progress` row is created the first time a
+   * viewer opens an episode, so counting rows by `createdAt` counts distinct
+   * viewer–episode pairs — a rewatch does not inflate it, which is exactly what
+   * a download count could never say.
+   */
+  watches: { total: number; last7Days: number; last30Days: number };
   contact: { new: number; inProgress: number };
   comments: { pending: number };
 }
@@ -41,16 +49,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     episodesTotal,
     episodesReleased,
     episodesInProgress,
-    releasesTotal,
-    releasesPublished,
-    releasesScheduled,
-    releasesThisMonth,
+    episodesReleasedThisMonth,
     usersTotal,
     usersActive,
     usersNew,
-    downloadsTotal,
-    downloads7,
-    downloads30,
+    watchesTotal,
+    watches7,
+    watches30,
     contactNew,
     contactInProgress,
     commentsPending,
@@ -63,21 +68,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     db.episode.count({ where: { deletedAt: null } }),
     db.episode.count({ where: { deletedAt: null, status: 'RELEASED' } }),
     db.episode.count({ where: { deletedAt: null, status: { in: ['IN_PROGRESS', 'QC'] } } }),
-
-    db.release.count({ where: { deletedAt: null } }),
-    db.release.count({ where: { deletedAt: null, status: 'PUBLISHED' } }),
-    db.release.count({ where: { deletedAt: null, status: 'SCHEDULED' } }),
-    db.release.count({
-      where: { deletedAt: null, status: 'PUBLISHED', releasedAt: { gte: monthStart } },
+    db.episode.count({
+      where: { deletedAt: null, status: 'RELEASED', releasedAt: { gte: monthStart } },
     }),
 
     db.user.count({ where: { deletedAt: null } }),
     db.user.count({ where: { deletedAt: null, status: 'ACTIVE' } }),
     db.user.count({ where: { deletedAt: null, createdAt: { gte: monthStart } } }),
 
-    db.downloadEvent.count(),
-    db.downloadEvent.count({ where: { createdAt: { gte: daysAgo(7) } } }),
-    db.downloadEvent.count({ where: { createdAt: { gte: daysAgo(30) } } }),
+    db.watchProgress.count(),
+    db.watchProgress.count({ where: { createdAt: { gte: daysAgo(7) } } }),
+    db.watchProgress.count({ where: { createdAt: { gte: daysAgo(30) } } }),
 
     db.contactMessage.count({ where: { status: 'NEW' } }),
     db.contactMessage.count({ where: { status: 'IN_PROGRESS' } }),
@@ -96,33 +97,28 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       total: episodesTotal,
       released: episodesReleased,
       inProgress: episodesInProgress,
-    },
-    releases: {
-      total: releasesTotal,
-      published: releasesPublished,
-      scheduled: releasesScheduled,
-      thisMonth: releasesThisMonth,
+      releasedThisMonth: episodesReleasedThisMonth,
     },
     users: { total: usersTotal, active: usersActive, newThisMonth: usersNew },
-    downloads: { total: downloadsTotal, last7Days: downloads7, last30Days: downloads30 },
+    watches: { total: watchesTotal, last7Days: watches7, last30Days: watches30 },
     contact: { new: contactNew, inProgress: contactInProgress },
     comments: { pending: commentsPending },
   };
 }
 
-/** Daily download counts for the dashboard sparkline. */
-export async function getDownloadTrend(days = 30): Promise<Array<{ date: string; count: number }>> {
+/** Daily watch starts for the dashboard sparkline. */
+export async function getWatchTrend(days = 30): Promise<Array<{ date: string; count: number }>> {
   const since = daysAgo(days);
 
   const rows = await db.$queryRaw<Array<{ day: Date; count: bigint }>>`
     SELECT date_trunc('day', "createdAt") AS day, COUNT(*)::bigint AS count
-    FROM download_events
+    FROM watch_progress
     WHERE "createdAt" >= ${since}
     GROUP BY day
     ORDER BY day ASC
   `;
 
-  // Fill the gaps: a missing day is zero downloads, not a missing data point.
+  // Fill the gaps: a missing day is zero watches, not a missing data point.
   const byDay = new Map(
     rows.map((row) => [row.day.toISOString().slice(0, 10), Number(row.count)]),
   );
@@ -163,16 +159,14 @@ async function dailyCounts(table: string, days: number): Promise<number[]> {
 
 /** The only table names `dailyCounts` is ever called with. */
 const DASHBOARD_SERIES = {
-  downloads: 'download_events',
-  releases: 'releases',
+  watches: 'watch_progress',
   users: 'users',
   episodes: 'episodes',
   projects: 'projects',
 } as const;
 
 export interface DashboardTrends {
-  downloads: number[];
-  releases: number[];
+  watches: number[];
   users: number[];
   episodes: number[];
   projects: number[];
@@ -186,15 +180,14 @@ export interface DashboardTrends {
  * starts reading as noise. Two weeks also gives an honest week-over-week delta.
  */
 export async function getDashboardTrends(days = 14): Promise<DashboardTrends> {
-  const [downloads, releases, users, episodes, projects] = await Promise.all([
-    dailyCounts(DASHBOARD_SERIES.downloads, days),
-    dailyCounts(DASHBOARD_SERIES.releases, days),
+  const [watches, users, episodes, projects] = await Promise.all([
+    dailyCounts(DASHBOARD_SERIES.watches, days),
     dailyCounts(DASHBOARD_SERIES.users, days),
     dailyCounts(DASHBOARD_SERIES.episodes, days),
     dailyCounts(DASHBOARD_SERIES.projects, days),
   ]);
 
-  return { downloads, releases, users, episodes, projects };
+  return { watches, users, episodes, projects };
 }
 
 /**
@@ -300,21 +293,59 @@ export async function getProjectProgressBoard(limit = 6): Promise<ProjectProgres
   });
 }
 
-export async function getTopReleases(limit = 8) {
-  return db.release.findMany({
-    where: { deletedAt: null, status: 'PUBLISHED' },
+export interface TopEpisodeRow {
+  id: string;
+  number: string;
+  title: string | null;
+  releasedAt: Date | null;
+  /** Summed across the episode's sources — the same viewer may count once per source. */
+  views: number;
+  project: { slug: string; title: string; coverImageUrl: string | null };
+}
+
+/**
+ * The most-watched episodes.
+ *
+ * Replaces the old "top releases by download count". The count is the sum of
+ * the play counts on the episode's video sources, which is the closest thing
+ * left to the number the download column used to hold — and unlike that one it
+ * cannot be inflated by a mirror being added.
+ *
+ * Ordering happens in JavaScript rather than in the query: Prisma cannot sort a
+ * parent by the sum of a child's column without a raw query, and the candidate
+ * set here is the released episodes of a fansub's catalogue — hundreds, not
+ * millions. A raw query would buy nothing and cost the type safety.
+ */
+export async function getTopEpisodes(limit = 8): Promise<TopEpisodeRow[]> {
+  const episodes = await db.episode.findMany({
+    where: {
+      deletedAt: null,
+      status: 'RELEASED',
+      project: { deletedAt: null, publishStatus: 'PUBLISHED' },
+    },
     select: {
       id: true,
-      version: true,
-      resolution: true,
-      downloadCount: true,
+      number: true,
+      title: true,
       releasedAt: true,
-      episode: { select: { number: true } },
+      videos: { where: { deletedAt: null }, select: { viewCount: true } },
       project: { select: { slug: true, title: true, coverImageUrl: true } },
     },
-    orderBy: { downloadCount: 'desc' },
-    take: limit,
+    orderBy: { releasedAt: 'desc' },
+    take: 500,
   });
+
+  return episodes
+    .map((episode) => ({
+      id: episode.id,
+      number: episode.number.toString(),
+      title: episode.title,
+      releasedAt: episode.releasedAt,
+      views: episode.videos.reduce((total, video) => total + video.viewCount, 0),
+      project: episode.project,
+    }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, limit);
 }
 
 export async function getRecentActivity(limit = 12) {
@@ -337,7 +368,7 @@ export async function getRecentActivity(limit = 12) {
 /** Public "in numbers" strip on the home page. */
 export const getPublicStats = cached(
   async () => {
-    const [projects, episodes, releases, members, downloads] = await Promise.all([
+    const [projects, episodes, members, views] = await Promise.all([
       db.project.count({ where: { deletedAt: null, publishStatus: 'PUBLISHED' } }),
       db.episode.count({
         where: {
@@ -346,20 +377,21 @@ export const getPublicStats = cached(
           project: { deletedAt: null, publishStatus: 'PUBLISHED' },
         },
       }),
-      db.release.count({ where: { deletedAt: null, status: 'PUBLISHED' } }),
       db.teamMember.count({ where: { deletedAt: null, isActive: true } }),
-      db.release.aggregate({
+      db.videoSource.aggregate({
         where: { deletedAt: null, status: 'PUBLISHED' },
-        _sum: { downloadCount: true },
+        _sum: { viewCount: true },
       }),
     ]);
 
     return {
       projects,
       episodes,
-      releases,
       members,
-      downloads: downloads._sum.downloadCount ?? 0,
+      // "Lejátszás" replaces the old download total. It is the honest number
+      // now: nothing is downloaded any more, and a counter that stopped moving
+      // would read as a dead site rather than a changed one.
+      views: views._sum.viewCount ?? 0,
     };
   },
   ['public-stats'],

@@ -86,7 +86,7 @@ export function parseList(value: string | null | undefined, max = 20): string[] 
   ].slice(0, max);
 }
 
-/** Cursor helpers for the infinite-scroll endpoints (releases feed, comments). */
+/** Cursor helpers for the infinite-scroll endpoints (comments). */
 export const cursorSchema = z.object({
   cursor: z.string().cuid().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),

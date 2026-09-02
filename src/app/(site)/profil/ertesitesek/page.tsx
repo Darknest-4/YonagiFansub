@@ -21,7 +21,7 @@ export default async function NotificationsPage() {
       <EmptyState
         icon={<BellOff className="size-6" aria-hidden />}
         title="Nincs értesítésed"
-        description="Ha követsz projekteket, itt jelennek meg az új kiadások és a válaszok a hozzászólásaidra."
+        description="Ha követsz projekteket, itt jelennek meg az új részek és a válaszok a hozzászólásaidra."
         action={{ label: 'Projektek böngészése', href: '/projektek' }}
       />
     );

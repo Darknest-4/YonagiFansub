@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     'Bejelentések, projektindítások és csapathírek a Yonagi Fansubtól.',
   alternates: {
     canonical: '/hirek',
-    types: { 'application/rss+xml': '/rss.xml' },
+    types: { 'application/rss+xml': '/rss' },
   },
 };
 
@@ -40,7 +40,7 @@ export default async function NewsPage({ searchParams }: { searchParams: SearchP
       <PageHeader
         eyebrow="Hírek"
         title="Bejelentések és csapathírek"
-        description="Új projektek, kiadási tervek, technikai bejegyzések és minden más, amit érdemes tudni rólunk."
+        description="Új projektek, tervek, technikai bejegyzések és minden más, amit érdemes tudni rólunk."
       />
 
       {categories.length > 0 && (

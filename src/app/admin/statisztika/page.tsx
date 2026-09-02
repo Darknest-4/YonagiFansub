@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { Clapperboard, Download, MessageSquare, Package, Users } from 'lucide-react';
+import { Clapperboard, MessageSquare, Package, Play, Users } from 'lucide-react';
 import { ensurePermission } from '@/lib/auth/guards';
-import { getDashboardStats, getDownloadTrend, getTopReleases } from '@/server/stats';
+import { getDashboardStats, getTopEpisodes, getWatchTrend } from '@/server/stats';
 import { formatCount, formatDate } from '@/lib/utils';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Sparkline } from '@/components/admin/sparkline';
@@ -15,8 +15,8 @@ export default async function AdminStatsPage() {
 
   const [stats, trend, top] = await Promise.all([
     getDashboardStats(),
-    getDownloadTrend(90),
-    getTopReleases(15),
+    getWatchTrend(90),
+    getTopEpisodes(15),
   ]);
 
   const total90 = trend.reduce((sum, point) => sum + point.count, 0);
@@ -47,10 +47,10 @@ export default async function AdminStatsPage() {
           tone="orchid"
         />
         <StatTile
-          label="Letöltés összesen"
-          value={stats.downloads.total}
+          label="Megkezdett nézés"
+          value={stats.watches.total}
           detail={`napi átlag ${formatCount(average)} (90 nap)`}
-          icon={<Download className="size-4" aria-hidden />}
+          icon={<Play className="size-4" aria-hidden />}
           tone="warm"
         />
         <StatTile
@@ -64,8 +64,8 @@ export default async function AdminStatsPage() {
 
       <Card>
         <CardHeader
-          title="Letöltési trend – 90 nap"
-          description={`${formatCount(total90)} letöltés, napi átlag ${formatCount(average)}`}
+          title="Nézési trend – 90 nap"
+          description={`${formatCount(total90)} megkezdett nézés, napi átlag ${formatCount(average)}`}
         />
         <CardBody>
           <Sparkline data={trend} height={220} />
@@ -74,28 +74,26 @@ export default async function AdminStatsPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Legnépszerűbb kiadások" />
+          <CardHeader title="Legnépszerűbb részek" />
           <CardBody>
             <ol className="space-y-1">
-              {top.map((release, index) => (
+              {top.map((episode, index) => (
                 <li
-                  key={release.id}
+                  key={episode.id}
                   className="flex items-center gap-3 rounded-lg px-2.5 py-2 odd:bg-ink-900/40"
                 >
                   <span className="nums w-6 shrink-0 text-2xs text-mist-600">{index + 1}.</span>
                   <span className="min-w-0 flex-1 truncate text-sm text-mist-200">
-                    {release.project.title}
-                    {release.episode && (
-                      <span className="nums ml-1.5 text-mist-500">
-                        {release.episode.number.toString().replace(/\.00$/, '')}. rész
-                      </span>
-                    )}
+                    {episode.project.title}
+                    <span className="nums ml-1.5 text-mist-500">
+                      {episode.number.replace(/\.00$/, '')}. rész
+                    </span>
                   </span>
                   <span className="nums shrink-0 text-xs text-mist-400">
-                    {formatCount(release.downloadCount)}
+                    {formatCount(episode.views)}
                   </span>
                   <span className="hidden w-24 shrink-0 text-right text-2xs text-mist-600 sm:block">
-                    {formatDate(release.releasedAt)}
+                    {formatDate(episode.releasedAt)}
                   </span>
                 </li>
               ))}
@@ -128,9 +126,9 @@ export default async function AdminStatsPage() {
                 value={stats.users.newThisMonth}
               />
               <StatRow
-                icon={<Download className="size-4" aria-hidden />}
-                label="Letöltés (7 nap)"
-                value={stats.downloads.last7Days}
+                icon={<Play className="size-4" aria-hidden />}
+                label="Nézés (7 nap)"
+                value={stats.watches.last7Days}
               />
             </dl>
           </CardBody>

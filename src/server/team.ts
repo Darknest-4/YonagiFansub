@@ -164,7 +164,7 @@ export const listFaq = cached(
 
 export const FAQ_CATEGORY_LABELS: Record<string, string> = {
   general: 'Általános',
-  download: 'Letöltés',
+  download: 'Nézés',
   projects: 'Projektek',
   team: 'Csapat',
   technical: 'Technikai',

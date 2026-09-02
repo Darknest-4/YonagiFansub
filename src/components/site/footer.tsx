@@ -63,7 +63,7 @@ export async function SiteFooter() {
             <dl className="mt-7 grid max-w-sm grid-cols-3 gap-4">
               <Stat label="Projekt" value={stats.projects} />
               <Stat label="Epizód" value={stats.episodes} />
-              <Stat label="Letöltés" value={stats.downloads} />
+              <Stat label="Lejátszás" value={stats.views} />
             </dl>
 
             {socials.length > 0 && (

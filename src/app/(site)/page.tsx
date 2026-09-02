@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Clapperboard,
-  Download,
   FolderOpen,
   Newspaper,
   PlayCircle,
@@ -16,16 +15,17 @@ import { SectionHeading } from '@/components/ui/card';
 import { EmptyState, ProjectGridSkeleton, ReleaseListSkeleton } from '@/components/ui/feedback';
 import { Hero } from '@/components/site/hero';
 import { ProjectCard } from '@/components/site/project-card';
-import { ReleaseTile } from '@/components/site/release-tile';
+import { EpisodeTile } from '@/components/site/episode-tile';
 import { NewsItem } from '@/components/site/news-item';
 import { NewsCard } from '@/components/site/news-card';
 import { formatCount } from '@/lib/utils';
 import { getFeaturedProjects, getOngoingProjects } from '@/server/projects';
-import { getLatestReleases } from '@/server/releases';
+import { getLatestEpisodes } from '@/server/episodes';
 import { listPublicNews } from '@/server/news';
 import { getPublicStats } from '@/server/stats';
 import { getPublicSettings } from '@/server/settings';
 import { siteJsonLd } from '@/lib/seo';
+import { siteUrl } from '@/lib/site-url';
 
 /**
  * Home page.
@@ -42,10 +42,11 @@ export default async function HomePage() {
   // Három kiemelt projekt: a hero ennyi közt vált. Nem több — a negyedik diát
   // már mérhetően senki nem nézi meg, viszont minden dia egy teljes borítókép,
   // amit be kell tölteni.
-  const [featured, stats, settings] = await Promise.all([
+  const [featured, stats, settings, base] = await Promise.all([
     getFeaturedProjects(3),
     getPublicStats(),
     getPublicSettings(),
+    siteUrl(),
   ]);
 
   return (
@@ -68,6 +69,7 @@ export default async function HomePage() {
           __html: siteJsonLd(
             settings.siteName ?? 'Yonagi Fansub',
             settings.siteDescription ?? 'Magyar anime feliratok.',
+            base,
           ),
         }}
       />
@@ -91,7 +93,7 @@ export default async function HomePage() {
       />
 
       {/*
-        A kiadások és a hírek egymás mellett, nem egymás alatt: mindkettő
+        A friss részek és a hírek egymás mellett, nem egymás alatt: mindkettő
         „mi történt mostanában" kérdésre válaszol, és külön szekcióként a
         látogatónak kétszer kellene ugyanazt a kérdést feltennie. A hírsáv
         keskenyebb, mert három sor szöveg nem igényel több helyet.
@@ -99,7 +101,7 @@ export default async function HomePage() {
       <div className="container-content pt-14">
         <div className="grid gap-10 lg:grid-cols-[1fr_20rem] lg:gap-8">
           <Suspense fallback={<ReleaseListSkeleton count={4} />}>
-            <LatestReleasesSection />
+            <LatestEpisodesSection />
           </Suspense>
 
           <Suspense fallback={null}>
@@ -127,30 +129,30 @@ export default async function HomePage() {
   );
 }
 
-async function LatestReleasesSection() {
-  const releases = await getLatestReleases(8);
+async function LatestEpisodesSection() {
+  const episodes = await getLatestEpisodes(8);
 
   return (
-    <section aria-labelledby="latest-releases">
+    <section aria-labelledby="latest-episodes">
       <RailHeading
         icon={<Clapperboard className="size-4" aria-hidden />}
-        title={<span id="latest-releases">Legújabb kiadások</span>}
-        href="/kiadasok"
-        linkLabel="Összes megtekintése"
+        title={<span id="latest-episodes">Legújabb részek</span>}
+        href="/projektek"
+        linkLabel="Összes projekt"
       />
 
-      {releases.length === 0 ? (
+      {episodes.length === 0 ? (
         <EmptyState
           icon={<Clapperboard className="size-6" aria-hidden />}
-          title="Még nincs publikált kiadás"
+          title="Még nincs megjelent rész"
           description="Amint az első epizód elkészül, itt fog megjelenni. Addig is nézd meg, min dolgozunk."
           action={{ label: 'Projektek', href: '/projektek' }}
           compact
         />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-          {releases.slice(0, 8).map((release, index) => (
-            <ReleaseTile key={release.id} release={release} priority={index < 4} />
+          {episodes.map((episode, index) => (
+            <EpisodeTile key={episode.id} episode={episode} priority={index < 4} />
           ))}
         </div>
       )}
@@ -159,9 +161,9 @@ async function LatestReleasesSection() {
 }
 
 /**
- * Hírsáv a kiadások mellett.
+ * Hírsáv a friss részek mellett.
  *
- * Három bejegyzés, nem több: a sáv magassága a mellette lévő kiadás-rácshoz
+ * Három bejegyzés, nem több: a sáv magassága a mellette lévő rácshoz
  * igazodik, és egy negyedik hír csak lelógna alóla.
  */
 async function NewsRail() {
@@ -245,7 +247,7 @@ async function StatsStrip() {
   const items = [
     { icon: <FolderOpen className="size-5" aria-hidden />, value: stats.projects, label: 'Aktív projekt' },
     { icon: <PlayCircle className="size-5" aria-hidden />, value: stats.episodes, label: 'Kiadott rész' },
-    { icon: <Download className="size-5" aria-hidden />, value: stats.downloads, label: 'Letöltés' },
+    { icon: <PlayCircle className="size-5" aria-hidden />, value: stats.views, label: 'Lejátszás' },
     { icon: <Users className="size-5" aria-hidden />, value: stats.members, label: 'Csapattag' },
   ];
 

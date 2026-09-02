@@ -41,7 +41,10 @@ describe('megosztási kép', () => {
     for (const empty of [null, undefined, '']) {
       const result = seo.ogImages(empty);
       expect(result.images).toHaveLength(1);
-      expect(result.images[0]!.url).toBe('https://yonagi.example/opengraph-image');
+      // Relatív, nem abszolút: a Next a `metadataBase`-hez oldja fel, amit a
+      // gyökér-elrendezés a kérésből származtat. Egy itt beégetett origó pont
+      // az a hiba volt, amitől a megosztási kártyák a localhostra mutattak.
+      expect(result.images[0]!.url).toBe('/opengraph-image');
     }
   });
 
@@ -49,20 +52,21 @@ describe('megosztási kép', () => {
     expect(seo.twitterImages('https://cdn.example.org/x.jpg')).toEqual({
       images: ['https://cdn.example.org/x.jpg'],
     });
-    expect(seo.twitterImages(null)).toEqual({
-      images: ['https://yonagi.example/opengraph-image'],
-    });
+    expect(seo.twitterImages(null)).toEqual({ images: ['/opengraph-image'] });
   });
 });
 
 describe('morzsamenü strukturált adat', () => {
   it('sorszámozva, abszolút címekkel írja le az utat', () => {
     const parsed = JSON.parse(
-      seo.breadcrumbJsonLd([
-        { name: 'Kezdőlap', path: '/' },
-        { name: 'Projektek', path: '/projektek' },
-        { name: 'Yoru no Shizuku' },
-      ]),
+      seo.breadcrumbJsonLd(
+        [
+          { name: 'Kezdőlap', path: '/' },
+          { name: 'Projektek', path: '/projektek' },
+          { name: 'Yoru no Shizuku' },
+        ],
+        'https://yonagi.example',
+      ),
     ) as { '@type': string; itemListElement: Array<Record<string, unknown>> };
 
     expect(parsed['@type']).toBe('BreadcrumbList');
@@ -77,7 +81,10 @@ describe('morzsamenü strukturált adat', () => {
   */
   it('az utolsó elem cím nélkül marad', () => {
     const parsed = JSON.parse(
-      seo.breadcrumbJsonLd([{ name: 'Kezdőlap', path: '/' }, { name: 'Aktuális oldal' }]),
+      seo.breadcrumbJsonLd(
+        [{ name: 'Kezdőlap', path: '/' }, { name: 'Aktuális oldal' }],
+        'https://yonagi.example',
+      ),
     ) as { itemListElement: Array<Record<string, unknown>> };
 
     expect(parsed.itemListElement[1]).not.toHaveProperty('item');
@@ -87,7 +94,9 @@ describe('morzsamenü strukturált adat', () => {
 
 describe('oldal-szintű azonosság', () => {
   it('a keresődobozt a valódi keresési útvonalra mutatja', () => {
-    const parsed = JSON.parse(seo.siteJsonLd('Yonagi Fansub', 'Magyar anime feliratok.')) as {
+    const parsed = JSON.parse(
+      seo.siteJsonLd('Yonagi Fansub', 'Magyar anime feliratok.', 'https://yonagi.example'),
+    ) as {
       '@graph': Array<Record<string, never>>;
     };
 

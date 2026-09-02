@@ -73,7 +73,7 @@ export const PRIMARY_NAV: NavItem[] = [
     label: 'Kezdőlap',
     icon: 'Home',
     tab: true,
-    description: 'Friss kiadások és hírek',
+    description: 'Friss részek és hírek',
   },
   {
     href: '/projektek',
@@ -81,14 +81,6 @@ export const PRIMARY_NAV: NavItem[] = [
     icon: 'Clapperboard',
     tab: true,
     description: 'Minden sorozat és film, amin dolgozunk',
-    matchPrefix: true,
-  },
-  {
-    href: '/kiadasok',
-    label: 'Kiadások',
-    icon: 'Package',
-    tab: true,
-    description: 'A legfrissebb epizódok és batch-ek',
     matchPrefix: true,
   },
   {
@@ -111,6 +103,9 @@ export const PRIMARY_NAV: NavItem[] = [
     href: '/csapat',
     label: 'Csapat',
     icon: 'Users',
+    // Feljebb lépett a tab sávba, amikor a „Kiadások” megszűnt: a mért plafon
+    // hat célpont, és öt helyet hagyni üresen nem takarít meg semmit.
+    tab: true,
     tint: 'orchid',
     description: 'Akik a feliratok mögött állnak',
     matchPrefix: true,
@@ -152,7 +147,6 @@ export const FOOTER_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: 'Tartalom',
     items: [
       { href: '/projektek', label: 'Projektek' },
-      { href: '/kiadasok', label: 'Legújabb kiadások' },
       { href: '/naptar', label: 'Adásnaptár', feature: 'schedule' },
       { href: '/hirek', label: 'Hírek' },
       { href: '/kereses', label: 'Keresés' },

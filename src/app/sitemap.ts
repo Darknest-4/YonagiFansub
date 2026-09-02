@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
-import { env } from '@/lib/env';
 import { getSettings } from '@/server/settings';
+import { siteUrl } from '@/lib/site-url';
 
 /*
  * Generated per request, not at build time — the URLs come from the database,
@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
  * use, so an unpublished project can never be discovered through the sitemap.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = env.NEXT_PUBLIC_SITE_URL;
+  const base = await siteUrl();
   const settings = await getSettings();
 
   // With indexing disabled we still serve a valid sitemap, but an empty one.
@@ -59,7 +59,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${base}/projektek`, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${base}/kiadasok`, changeFrequency: 'hourly', priority: 0.9 },
     /*
       Daily, because that is how often a broadcast row moves from "várható" to
       "készül" — the page changes on its own without anybody editing anything.

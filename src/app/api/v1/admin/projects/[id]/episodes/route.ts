@@ -5,14 +5,14 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Episodes of one project, for the release editor's episode picker.
+ * Episodes of one project, for the pickers that need to name one.
  *
  * Exists as its own endpoint so the editor can load episodes on demand rather
- * than the release form shipping every episode of every project up front — that
+ * than a form shipping every episode of every project up front — that
  * payload grows without bound as the catalogue does.
  */
 export const GET = defineRoute({
-  auth: 'release:write',
+  auth: 'episode:write',
   rateLimit: 'api:read',
   params: idParams,
   async handler({ params }) {

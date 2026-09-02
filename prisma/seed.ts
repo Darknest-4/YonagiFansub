@@ -58,9 +58,6 @@ const PERMISSIONS: Array<{ key: string; group: string; description: string }> = 
   { key: 'project:delete', group: 'Projektek', description: 'Projektek törlése' },
   { key: 'episode:write', group: 'Epizódok', description: 'Epizódok és munkafolyamat kezelése' },
   { key: 'episode:delete', group: 'Epizódok', description: 'Epizódok törlése' },
-  { key: 'release:write', group: 'Kiadások', description: 'Kiadások és letöltési linkek kezelése' },
-  { key: 'release:publish', group: 'Kiadások', description: 'Kiadások publikálása' },
-  { key: 'release:delete', group: 'Kiadások', description: 'Kiadások törlése' },
   { key: 'news:write', group: 'Hírek', description: 'Hírek írása és szerkesztése' },
   { key: 'news:publish', group: 'Hírek', description: 'Hírek publikálása' },
   { key: 'news:delete', group: 'Hírek', description: 'Hírek törlése' },
@@ -88,7 +85,6 @@ const STAFF = [
   'project:read',
   'project:write',
   'episode:write',
-  'release:write',
   'media:write',
   'stats:read',
 ];
@@ -96,7 +92,6 @@ const STAFF = [
 const EDITOR = [
   ...STAFF,
   'project:publish',
-  'release:publish',
   'news:write',
   'news:publish',
   'faq:write',
@@ -119,7 +114,6 @@ const ADMIN = [
     ...MODERATOR,
     'project:delete',
     'episode:delete',
-    'release:delete',
     'news:delete',
     'media:delete',
     'team:delete',
@@ -381,40 +375,6 @@ const VIDEO_PROVIDERS = [
   },
 ];
 
-const RELEASE_FORMATS = [
-  {
-    key: 'mkv-softsub',
-    label: 'MKV (soft felirat)',
-    container: 'mkv',
-    isSoftsub: true,
-    description: 'Külön feliratsáv, kikapcsolható. Ez az alapértelmezett kiadásunk.',
-    sortOrder: 10,
-  },
-  {
-    key: 'mp4-hardsub',
-    label: 'MP4 (beégetett)',
-    container: 'mp4',
-    isSoftsub: false,
-    description: 'Régebbi eszközökhöz és telefonokhoz.',
-    sortOrder: 20,
-  },
-  {
-    key: 'mkv-remux',
-    label: 'MKV Remux',
-    container: 'mkv',
-    isSoftsub: true,
-    description: 'Vágatlan forrás, maximális minőség, nagy fájlméret.',
-    sortOrder: 30,
-  },
-];
-
-const STORAGE_HOSTS = [
-  { key: 'nyaa', name: 'Nyaa', sortOrder: 10 },
-  { key: 'gdrive', name: 'Google Drive', sortOrder: 20 },
-  { key: 'mega', name: 'MEGA', sortOrder: 30 },
-  { key: 'cdn', name: 'Yonagi CDN', sortOrder: 5 },
-];
-
 const SETTINGS: Array<{
   key: string;
   value: Prisma.InputJsonValue;
@@ -434,7 +394,7 @@ const SETTINGS: Array<{
   {
     key: 'siteDescription',
     value:
-      'A Yonagi Fansub magyar feliratokat készít anime sorozatokhoz és filmekhez. Friss kiadások, projektállapotok és letöltések egy helyen.',
+      'A Yonagi Fansub magyar feliratokat készít anime sorozatokhoz és filmekhez. Friss részek, projektállapotok és adásnaptár egy helyen.',
     group: 'seo',
     label: 'Alapértelmezett meta leírás',
     isPublic: true,
@@ -618,21 +578,7 @@ async function seedReferenceData() {
     });
   }
 
-  for (const format of RELEASE_FORMATS) {
-    await db.releaseFormat.upsert({
-      where: { key: format.key },
-      create: format,
-      update: format,
-    });
-  }
 
-  for (const host of STORAGE_HOSTS) {
-    await db.storageHost.upsert({
-      where: { key: host.key },
-      create: host,
-      update: { name: host.name, sortOrder: host.sortOrder },
-    });
-  }
 
   for (const setting of SETTINGS) {
     await db.siteSetting.upsert({
@@ -659,7 +605,7 @@ async function seedReferenceData() {
   }
 
   console.log(
-    `  ${POSITIONS.length} pozíció, ${GENRES.length} műfaj, ${RELEASE_FORMATS.length} formátum, ${VIDEO_PROVIDERS.length} videó-szolgáltató, ${FAQ.length} GYIK`,
+    `  ${POSITIONS.length} pozíció, ${GENRES.length} műfaj, ${VIDEO_PROVIDERS.length} videó-szolgáltató, ${FAQ.length} GYIK`,
   );
 }
 
@@ -1038,12 +984,7 @@ async function seedDemoContent(ownerEmail: string) {
     });
   }
 
-  const formats = await db.releaseFormat.findMany();
-  const hosts = await db.storageHost.findMany();
-  const softsub = formats.find((format) => format.key === 'mkv-softsub')!;
-  const hardsub = formats.find((format) => format.key === 'mp4-hardsub')!;
-
-  // Projects, episodes, releases
+  // Projects and episodes
   for (const [index, project] of DEMO_PROJECTS.entries()) {
     const record = await db.project.upsert({
       where: { slug: project.slug },
@@ -1100,9 +1041,8 @@ async function seedDemoContent(ownerEmail: string) {
 
     for (let number = 1; number <= project.episodes; number += 1) {
       const released = number <= project.episodes - (project.status === 'ONGOING' ? 1 : 0);
-      const inProgress = !released;
 
-      const episode = await db.episode.upsert({
+      await db.episode.upsert({
         where: { projectId_number: { projectId: record.id, number } },
         create: {
           projectId: record.id,
@@ -1111,6 +1051,8 @@ async function seedDemoContent(ownerEmail: string) {
           airedAt: daysAgo(90 - number * 7),
           durationSec: project.type === 'MOVIE' ? 6240 : 1420,
           status: released ? 'RELEASED' : 'IN_PROGRESS',
+          // A megjelenés dátuma az epizódon él, mióta nincs külön kiadás.
+          releasedAt: released ? daysAgo(88 - number * 7) : null,
           progressTranslation: released ? 100 : 100,
           progressTiming: released ? 100 : 100,
           progressTypesetting: released ? 100 : 60,
@@ -1121,51 +1063,6 @@ async function seedDemoContent(ownerEmail: string) {
         update: {},
       });
 
-      if (!released || inProgress) continue;
-
-      for (const [formatIndex, format] of [softsub, hardsub].entries()) {
-        await db.release.upsert({
-          where: {
-            episodeId_formatId_resolution_version: {
-              episodeId: episode.id,
-              formatId: format.id,
-              resolution: formatIndex === 0 ? 'FHD_1080P' : 'HD_720P',
-              version: 1,
-            },
-          },
-          create: {
-            projectId: record.id,
-            episodeId: episode.id,
-            kind: project.type === 'MOVIE' ? 'MOVIE' : 'EPISODE',
-            version: 1,
-            formatId: format.id,
-            resolution: formatIndex === 0 ? 'FHD_1080P' : 'HD_720P',
-            videoCodec: formatIndex === 0 ? 'H.264 10bit' : 'H.264',
-            audioCodec: formatIndex === 0 ? 'FLAC 2.0' : 'AAC 2.0',
-            subtitleFormat: format.isSoftsub ? 'ASS' : null,
-            fileSizeBytes: BigInt(formatIndex === 0 ? 1_395_864_371 : 428_867_584),
-            durationSec: project.type === 'MOVIE' ? 6240 : 1420,
-            crc32: randomBytes(4).toString('hex').toUpperCase(),
-            status: 'PUBLISHED',
-            releasedAt: daysAgo(88 - number * 7),
-            downloadCount: Math.round(800 / (number + 1)) + formatIndex * 40,
-            createdById: owner?.id ?? null,
-            links: {
-              create: hosts.slice(0, 3).map((host, hostIndex) => ({
-                hostId: host.id,
-                kind: host.key === 'nyaa' ? 'TORRENT' : 'DIRECT',
-                label: null,
-                // Placeholder targets: real URLs are configured per deployment.
-                url: `https://example.invalid/${project.slug}/${number}/${format.key}`,
-                isMirror: hostIndex > 0,
-                priority: hostIndex,
-                availability: 'ONLINE',
-              })),
-            },
-          },
-          update: {},
-        });
-      }
     }
   }
 
@@ -1197,14 +1094,13 @@ async function seedDemoContent(ownerEmail: string) {
 
   const commentCount = await seedDemoDiscussion();
 
-  const [projectCount, episodeCount, releaseCount] = await Promise.all([
+  const [projectCount, episodeCount] = await Promise.all([
     db.project.count(),
     db.episode.count(),
-    db.release.count(),
   ]);
 
   console.log(
-    `  ${projectCount} projekt, ${episodeCount} epizód, ${releaseCount} kiadás, ${DEMO_NEWS.length} hír, ${members.length} csapattag` +
+    `  ${projectCount} projekt, ${episodeCount} epizód, ${DEMO_NEWS.length} hír, ${members.length} csapattag` +
       (commentCount > 0 ? `, ${commentCount} hozzászólás` : ''),
   );
 }

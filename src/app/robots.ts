@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { env } from '@/lib/env';
 import { getSettings } from '@/server/settings';
+import { siteUrl } from '@/lib/site-url';
 
 /*
  * Generated per request rather than at build time: it reads site settings from
@@ -19,12 +19,13 @@ export const dynamic = 'force-dynamic';
  * the API, the admin panel, the account area and search result pages.
  */
 export default async function robots(): Promise<MetadataRoute.Robots> {
+  const base = await siteUrl();
   const settings = await getSettings();
 
   if (!settings.indexingEnabled) {
     return {
       rules: [{ userAgent: '*', disallow: '/' }],
-      host: env.NEXT_PUBLIC_SITE_URL,
+      host: base,
     };
   }
 
@@ -55,7 +56,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         disallow: ['/api/', '/admin', '/profil', '/kereses'],
       },
     ],
-    sitemap: `${env.NEXT_PUBLIC_SITE_URL}/sitemap.xml`,
-    host: env.NEXT_PUBLIC_SITE_URL,
+    sitemap: `${base}/sitemap.xml`,
+    host: base,
   };
 }

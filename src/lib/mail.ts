@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { escapeHtml } from '@/lib/markdown';
 import { optionalImport } from '@/lib/optional-module';
 import { memoizeWithTtl } from '@/lib/cache';
+import { mailSiteUrl } from '@/lib/site-url';
 
 /**
  * Transactional mail.
@@ -31,7 +32,7 @@ interface MailDriver {
 
 const BRAND = {
   name: 'Yonagi Fansub',
-  url: env.NEXT_PUBLIC_SITE_URL,
+  url: mailSiteUrl(),
   accent: '#f761a8',
   background: '#05070f',
   surface: '#111729',
@@ -401,7 +402,7 @@ export const mailTemplates = {
       subject: 'A jelszavad megváltozott',
       preheader: 'Biztonsági értesítés a fiókodról.',
       text: `Szia ${displayName}!\n\nA fiókod jelszava az imént megváltozott, és minden más eszközön kiléptettünk a biztonság kedvéért.\n\nHa nem te voltál, azonnal állíts vissza új jelszót, és jelezd nekünk a kapcsolati űrlapon.`,
-      action: { label: 'Fiókbeállítások', url: `${env.NEXT_PUBLIC_SITE_URL}/profil/beallitasok` },
+      action: { label: 'Fiókbeállítások', url: `${mailSiteUrl()}/profil/beallitasok` },
     };
   },
 

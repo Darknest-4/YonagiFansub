@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { breadcrumbJsonLd } from '@/lib/seo';
+import { siteUrl } from '@/lib/site-url';
 
 /**
  * Page header.
@@ -61,7 +62,7 @@ export function PageHeader({
   );
 }
 
-export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
   /*
     A strukturált adat ugyanabból a tömbből készül, amiből a látható nyomvonal.
 
@@ -73,13 +74,16 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
     A „Kezdőlap" itt is az első elem, ahogy a listában — a jelölésnek a teljes
     utat kell leírnia, nem csak a láthatóan linkelt részét.
   */
-  const jsonLd = breadcrumbJsonLd([
-    { name: 'Kezdőlap', path: '/' },
+  const jsonLd = breadcrumbJsonLd(
+    [
+      { name: 'Kezdőlap', path: '/' },
     // A `href` nélküli morzsa — jellemzően az utolsó, az aktuális oldal — cím
     // nélkül kerül a jelölésbe. Kitalálni neki egyet annyi lenne, mint rossz
     // helyre mutatni.
-    ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
-  ]);
+      ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
+    ],
+    await siteUrl(),
+  );
 
   return (
     <nav aria-label="Morzsamenü" className="mb-5">

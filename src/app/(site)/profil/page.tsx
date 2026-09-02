@@ -22,9 +22,11 @@ export const dynamic = 'force-dynamic';
 export default async function ProfilePage() {
   const user = await ensureAuthenticated('/profil');
 
-  const [favoriteCount, downloadCount, unread, recentFavorites, continueWatching] = await Promise.all([
+  const [favoriteCount, watchedCount, unread, recentFavorites, continueWatching] = await Promise.all([
     db.favorite.count({ where: { userId: user.id } }),
-    db.downloadEvent.count({ where: { userId: user.id } }),
+    // Végignézett részek. A letöltésszámláló helyére lép: letöltés nincs, ez
+    // viszont ugyanazt mondja el a saját aktivitásról.
+    db.watchProgress.count({ where: { userId: user.id, completed: true } }),
     countUnread(user.id),
     db.favorite.findMany({
       where: { userId: user.id, project: { deletedAt: null, publishStatus: 'PUBLISHED' } },
@@ -135,7 +137,7 @@ export default async function ProfilePage() {
 
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label="Követett projekt" value={favoriteCount} href="/profil/kedvencek" />
-        <StatCard label="Letöltés" value={downloadCount} />
+        <StatCard label="Megnézett rész" value={watchedCount} />
         <StatCard label="Olvasatlan értesítés" value={unread} href="/profil/ertesitesek" />
       </dl>
 

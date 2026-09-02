@@ -52,7 +52,7 @@ export async function exportAccount(userId: string) {
 
   if (!user) throw new NotFoundError('A fiók');
 
-  const [comments, favorites, ratings, progress, notifications, downloads, sessions] =
+  const [comments, favorites, ratings, progress, notifications, sessions] =
     await Promise.all([
       db.comment.findMany({
         where: { userId },
@@ -90,11 +90,6 @@ export async function exportAccount(userId: string) {
         orderBy: { createdAt: 'desc' },
         select: { type: true, title: true, body: true, readAt: true, createdAt: true },
       }),
-      db.downloadEvent.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
-      }),
       db.session.findMany({
         where: { userId },
         select: { userAgent: true, createdAt: true, lastUsedAt: true, expiresAt: true },
@@ -124,10 +119,6 @@ export async function exportAccount(userId: string) {
     ertekelesek: ratings,
     nezesiElorehaladas: progress,
     ertesitesek: notifications,
-    // Only the timestamps: a download event records that something was fetched,
-    // and the IP hash in that row is there for abuse handling, not for the
-    // account holder to receive back.
-    letoltesek: downloads,
     munkamenetek: sessions,
   };
 }
@@ -171,7 +162,6 @@ export async function deleteOwnAccount(userId: string): Promise<{ comments: numb
     await tx.favorite.deleteMany({ where: { userId } });
     await tx.rating.deleteMany({ where: { userId } });
     await tx.watchProgress.deleteMany({ where: { userId } });
-    await tx.downloadEvent.deleteMany({ where: { userId } });
 
     await tx.user.delete({ where: { id: userId } });
   });

@@ -1,9 +1,9 @@
 import 'server-only';
 import type { NotificationType, ProjectStatus } from '@prisma/client';
 import { db } from '@/lib/db';
-import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { mailTemplates, sendMail } from '@/lib/mail';
+import { mailSiteUrl } from '@/lib/site-url';
 
 /**
  * Notifications.
@@ -66,20 +66,24 @@ export async function notifyMany(inputs: NotifyInput[]): Promise<number> {
 }
 
 /**
- * Fan-out for a new release.
+ * Fan-out for a newly published episode.
  *
- * Targets the users who favourited the project *and* left release notifications
- * on. Both conditions are in the query, so an opted-out follower never costs a
- * row or an email.
+ * Targets the users who favourited the project *and* left release
+ * notifications on. Both conditions are in the query, so an opted-out follower
+ * never costs a row or an email.
+ *
+ * Used to hang off a release being published. With the release layer gone the
+ * trigger is the episode's own status reaching RELEASED, which is both the
+ * thing a follower actually cares about and the only remaining place the event
+ * exists.
  */
-export async function notifyNewRelease(releaseId: string): Promise<{ notified: number }> {
-  const release = await db.release.findUnique({
-    where: { id: releaseId },
+export async function notifyNewEpisode(episodeId: string): Promise<{ notified: number }> {
+  const episode = await db.episode.findUnique({
+    where: { id: episodeId },
     select: {
       id: true,
-      version: true,
-      resolution: true,
-      episode: { select: { number: true, title: true } },
+      number: true,
+      title: true,
       project: {
         select: {
           id: true,
@@ -91,11 +95,11 @@ export async function notifyNewRelease(releaseId: string): Promise<{ notified: n
     },
   });
 
-  if (!release) return { notified: 0 };
+  if (!episode) return { notified: 0 };
 
   const followers = await db.favorite.findMany({
     where: {
-      projectId: release.project.id,
+      projectId: episode.project.id,
       notify: true,
       user: { deletedAt: null, status: 'ACTIVE' },
     },
@@ -108,22 +112,23 @@ export async function notifyNewRelease(releaseId: string): Promise<{ notified: n
 
   if (followers.length === 0) return { notified: 0 };
 
-  const episodeLabel = release.episode
-    ? `${release.episode.number.toString().replace(/\.00$/, '')}. rész`
-    : 'új kiadás';
-  const versionLabel = release.version > 1 ? ` (v${release.version})` : '';
-  const label = `${episodeLabel}${versionLabel}`;
-  const href = `/projektek/${release.project.slug}`;
+  const number = episode.number.toString().replace(/\.00$/, '');
+  const label = episode.title ? `${number}. rész — ${episode.title}` : `${number}. rész`;
+
+  // Straight to the episode, not to the project. The notification is about one
+  // episode, and landing somebody on a project page to hunt for it is a step
+  // they should not have to take.
+  const href = `/projektek/${episode.project.slug}/${number}`;
 
   const notified = await notifyMany(
     followers.map(({ user }) => ({
       userId: user.id,
       type: 'NEW_RELEASE' as const,
-      title: `Új kiadás: ${release.project.title}`,
+      title: `Új rész: ${episode.project.title}`,
       body: label,
       href,
-      imageUrl: release.project.coverImageUrl ?? undefined,
-      meta: { projectId: release.project.id, releaseId: release.id },
+      imageUrl: episode.project.coverImageUrl ?? undefined,
+      meta: { projectId: episode.project.id, episodeId: episode.id },
     })),
   );
 
@@ -131,12 +136,25 @@ export async function notifyNewRelease(releaseId: string): Promise<{ notified: n
   const emailTargets = followers
     .map(({ user }) => user)
     .filter((user) => {
-      const preferences = (user.preferences ?? {}) as { notifyNewRelease?: boolean };
-      return preferences.notifyNewRelease !== false;
+      /*
+        Two keys, and the old one still counts.
+
+        The preference used to be called `notifyNewRelease` and lives in a JSON
+        blob, so renaming it outright would silently reset everybody's choice to
+        the default — which is *on*. Somebody who deliberately opted out would
+        start getting mail again, which is the one direction this must never
+        fail in. So the new key wins where it is set, and the old one is
+        honoured otherwise.
+      */
+      const preferences = (user.preferences ?? {}) as {
+        notifyNewEpisode?: boolean;
+        notifyNewRelease?: boolean;
+      };
+      return (preferences.notifyNewEpisode ?? preferences.notifyNewRelease) !== false;
     });
 
-  void dispatchReleaseEmails(emailTargets, release.project.title, label, href).catch((error) =>
-    logger.error('Release email fan-out failed', error, { releaseId }),
+  void dispatchReleaseEmails(emailTargets, episode.project.title, label, href).catch((error) =>
+    logger.error('Episode email fan-out failed', error, { episodeId }),
   );
 
   return { notified };
@@ -148,7 +166,7 @@ async function dispatchReleaseEmails(
   label: string,
   path: string,
 ): Promise<void> {
-  const url = `${env.NEXT_PUBLIC_SITE_URL}${path}`;
+  const url = `${mailSiteUrl()}${path}`;
 
   for (let index = 0; index < users.length; index += EMAIL_CHUNK_SIZE) {
     const chunk = users.slice(index, index + EMAIL_CHUNK_SIZE);
@@ -252,7 +270,7 @@ async function dispatchNewsEmails(
 ): Promise<void> {
   if (users.length === 0) return;
 
-  const url = `${env.NEXT_PUBLIC_SITE_URL}${path}`;
+  const url = `${mailSiteUrl()}${path}`;
 
   for (let index = 0; index < users.length; index += EMAIL_CHUNK_SIZE) {
     const chunk = users.slice(index, index + EMAIL_CHUNK_SIZE);

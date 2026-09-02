@@ -59,7 +59,7 @@ export default async function EditProjectPage({
         progressEditing: true,
         progressEncoding: true,
         progressQc: true,
-        _count: { select: { releases: true } },
+        _count: { select: { videos: { where: { deletedAt: null } } } },
       },
     }),
   ]);
@@ -98,7 +98,7 @@ export default async function EditProjectPage({
         <div className="min-w-0">
           <h1 className="truncate text-2xl">{project.title}</h1>
           <p className="nums mt-1 text-sm text-content-muted">
-            {project._count.episodes} epizód · {project._count.releases} kiadás
+            {project._count.episodes} epizód
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export default async function EditProjectPage({
           title: episode.title,
           status: episode.status,
           airedAt: episode.airedAt?.toISOString() ?? null,
-          releaseCount: episode._count.releases,
+          videoCount: episode._count.videos,
           progressTranslation: episode.progressTranslation,
           progressTiming: episode.progressTiming,
           progressTypesetting: episode.progressTypesetting,

@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { CACHE_TAGS, invalidate, invalidateProject } from '@/lib/cache';
 import { logger } from '@/lib/logger';
-import { notifyProjectStatusChange } from '@/server/notifications';
+import { notifyNewEpisode, notifyProjectStatusChange } from '@/server/notifications';
 import type { ProjectWriteInput, EpisodeWriteInput } from '@/lib/validation/schemas';
 import { assertPublishAllowed, nullable, type MutationContext } from '@/server/admin/context';
 
@@ -52,7 +52,7 @@ const adminProjectArgs = Prisma.validator<Prisma.ProjectDefaultArgs>()({
     updatedAt: true,
     deletedAt: true,
     genres: { select: { genreId: true, genre: { select: { name: true, slug: true } } } },
-    _count: { select: { episodes: true, releases: true } },
+    _count: { select: { episodes: true } },
   },
 });
 
@@ -356,10 +356,39 @@ export async function updateEpisode(
     }
   }
 
-  const episode = await db.episode.update({ where: { id }, data: toEpisodeData(input) });
+  /*
+    Publication is a moment, and it happens here now.
+
+    `releasedAt` used to come from the release row; with that gone, the episode
+    itself has to record when it went out. It is stamped on the transition into
+    RELEASED and never re-stamped: a later edit to a published episode — a typo
+    in the title, a corrected progress bar — must not move it to today and drag
+    the episode back to the top of the feed.
+
+    A move *out* of RELEASED clears it, so an episode pulled back for a fix does
+    not keep claiming a release date it no longer has.
+  */
+  const becamePublished = input.status === 'RELEASED' && current.status !== 'RELEASED';
+  const data = toEpisodeData(input);
+
+  const episode = await db.episode.update({
+    where: { id },
+    data: {
+      ...data,
+      ...(becamePublished ? { releasedAt: current.releasedAt ?? new Date() } : {}),
+      ...(input.status !== 'RELEASED' ? { releasedAt: null } : {}),
+    },
+  });
 
   invalidateProject(current.project.slug);
   invalidate(CACHE_TAGS.episodes(current.projectId));
+
+  // Fire-and-forget: a follower fan-out must never fail the edit that caused it.
+  if (becamePublished) {
+    void notifyNewEpisode(id).catch((error) =>
+      logger.error('Epizód-értesítés kiküldése nem sikerült', error, { episodeId: id }),
+    );
+  }
 
   await context.audit({
     action: 'UPDATE',

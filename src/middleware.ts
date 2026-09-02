@@ -50,6 +50,42 @@ import { NextResponse, type NextRequest } from 'next/server';
  */
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
+/**
+ * The policy for the feed and its stylesheet.
+ *
+ * Narrower than the site-wide one, and it exists because of a browser detail
+ * that is invisible until you look: **Chrome enforces an XSLT stylesheet under
+ * `script-src`**. The main policy uses `'strict-dynamic'`, which by
+ * specification disables host allowlisting — so `'self'` stops meaning
+ * anything, `/rss.xsl` is refused, and the feed renders as a wall of escaped
+ * angle brackets with one line in the console to say why.
+ *
+ * Measured, not assumed: the console said
+ * `Refused to load the script 'http://…/rss.xsl' … Note that 'strict-dynamic'
+ * is present, so host-based allowlisting is disabled.`
+ *
+ * These two responses run no JavaScript of their own — one is XML, the other an
+ * XSLT document — so the answer is not to loosen the main policy but to give
+ * them their own, which is *tighter* than it: no nonce, no `strict-dynamic`, no
+ * connections, no frames, nothing but a same-origin stylesheet and the inline
+ * CSS it carries.
+ */
+function feedContentSecurityPolicy(): string {
+  return [
+    "default-src 'none'",
+    // The stylesheet, and nothing else. Same-origin only.
+    "script-src 'self'",
+    "style-src 'unsafe-inline'",
+    "img-src 'self' data:",
+    // A böngésző a saját betűkészlet-előtöltéseit is ideküldi; enélkül minden
+    // ilyen kérés egy hibasort ír a konzolba egy oldalon, ami amúgy hibátlan.
+    "font-src 'self'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
+
 function contentSecurityPolicy(nonce: string): string {
   return [
     "default-src 'self'",
@@ -131,6 +167,17 @@ export async function middleware(request: NextRequest) {
     left alone here on purpose.
   */
   if (pathname.startsWith('/beagyazas/')) return NextResponse.next();
+
+  /*
+    The feed and its stylesheet get their own, narrower policy — see
+    `feedContentSecurityPolicy` for the browser behaviour that forces it.
+  */
+  if (pathname === '/rss' || pathname === '/rss.xsl') {
+    const feedResponse = NextResponse.next();
+    feedResponse.headers.set('Content-Security-Policy', feedContentSecurityPolicy());
+    feedResponse.headers.set('X-Request-Id', crypto.randomUUID());
+    return feedResponse;
+  }
 
   const nonce = btoa(crypto.randomUUID());
   const csp = contentSecurityPolicy(nonce);

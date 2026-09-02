@@ -86,18 +86,15 @@ describe('adásnaptár', () => {
   /**
    * The one piece of information on the page that is ours rather than the
    * broadcaster's: whether our subtitle exists yet.
+   *
+   * It used to be counted from published release rows hanging off the episode.
+   * That was a second record of the same fact, and the two could disagree; the
+   * episode's own status is the single answer now.
    */
-  it('a kiadott epizód feliratosnak számít, a nem publikált kiadás nem', async () => {
+  it('a megjelent epizód feliratosnak számít, a készülő nem', async () => {
     const project = await make.project({ status: 'ONGOING' });
-    const done = await make.episode(project.id, { number: 1, airedAt: days(-1) });
-    const pending = await make.episode(project.id, { number: 2, airedAt: days(1) });
-
-    await db.release.create({
-      data: { projectId: project.id, episodeId: done.id, status: 'PUBLISHED' },
-    });
-    await db.release.create({
-      data: { projectId: project.id, episodeId: pending.id, status: 'DRAFT' },
-    });
+    await make.episode(project.id, { number: 1, airedAt: days(-1), status: 'RELEASED' });
+    await make.episode(project.id, { number: 2, airedAt: days(1), status: 'IN_PROGRESS' });
 
     const list = await scheduled();
     const byNumber = new Map(list.map((entry) => [entry.number, entry.subtitled]));

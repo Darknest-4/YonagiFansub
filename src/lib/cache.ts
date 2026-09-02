@@ -18,8 +18,6 @@ export const CACHE_TAGS = {
   projects: 'projects',
   project: (slug: string) => `project:${slug}`,
   episodes: (projectId: string) => `episodes:${projectId}`,
-  releases: 'releases',
-  release: (id: string) => `release:${id}`,
   news: 'news',
   newsPost: (slug: string) => `news:${slug}`,
   team: 'team',
@@ -120,16 +118,7 @@ export function invalidate(...tags: string[]): void {
 
 /** Convenience bundles for the common mutation shapes. */
 export const invalidateProject = (slug: string) =>
-  invalidate(CACHE_TAGS.projects, CACHE_TAGS.project(slug), CACHE_TAGS.releases, CACHE_TAGS.stats);
-
-export const invalidateRelease = (projectSlug: string, releaseId: string) =>
-  invalidate(
-    CACHE_TAGS.releases,
-    CACHE_TAGS.release(releaseId),
-    CACHE_TAGS.project(projectSlug),
-    CACHE_TAGS.projects,
-    CACHE_TAGS.stats,
-  );
+  invalidate(CACHE_TAGS.projects, CACHE_TAGS.project(slug), CACHE_TAGS.stats);
 
 export const invalidateNews = (slug?: string) =>
   invalidate(CACHE_TAGS.news, ...(slug ? [CACHE_TAGS.newsPost(slug)] : []));

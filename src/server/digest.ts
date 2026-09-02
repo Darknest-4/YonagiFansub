@@ -1,9 +1,9 @@
 import 'server-only';
 import { db } from '@/lib/db';
-import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { mailTemplates, sendMail } from '@/lib/mail';
 import { getSettings } from '@/server/settings';
+import { mailSiteUrl } from '@/lib/site-url';
 
 /**
  * The email digest.
@@ -172,7 +172,7 @@ export async function sendDigests(now = new Date()): Promise<DigestOutcome> {
 
     await sendMail({
       to: user.email,
-      ...mailTemplates.digest(user.displayName, period, items, `${env.NEXT_PUBLIC_SITE_URL}/profil/ertesitesek`),
+      ...mailTemplates.digest(user.displayName, period, items, `${mailSiteUrl()}/profil/ertesitesek`),
     });
 
     await db.user.update({ where: { id: user.id }, data: { digestSentAt: now } });

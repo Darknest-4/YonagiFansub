@@ -174,7 +174,7 @@ export function PreferencesForm({ initial }: { initial: PreferenceValues }) {
           checked={values.notifyNewRelease}
           onChange={(checked) => save({ ...values, notifyNewRelease: checked })}
           disabled={pending}
-          label="Új kiadás a követett projektekből"
+          label="Új rész a követett projektekből"
           description="E-mail és in-app értesítés, amint megjelenik egy új rész."
         />
 

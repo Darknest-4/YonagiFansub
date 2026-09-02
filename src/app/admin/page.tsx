@@ -6,14 +6,13 @@ import {
   ArrowRight,
   Clapperboard,
   Database,
-  Download,
   FilePlus2,
   HardDrive,
   Images,
   MessageSquare,
   Newspaper,
   Package,
-  PackagePlus,
+  Play,
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -23,10 +22,10 @@ import { toActor } from '@/lib/auth/session';
 import {
   getDashboardStats,
   getDashboardTrends,
-  getDownloadTrend,
+  getWatchTrend,
   getProjectProgressBoard,
   getRecentActivity,
-  getTopReleases,
+  getTopEpisodes,
   periodDelta,
 } from '@/server/stats';
 import { db } from '@/lib/db';
@@ -80,7 +79,7 @@ export default async function AdminDashboard() {
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Suspense fallback={<Skeleton className="h-72 rounded-xl" />}>
-          <DownloadTrendPanel />
+          <WatchTrendPanel />
         </Suspense>
 
         <Suspense fallback={<Skeleton className="h-72 rounded-xl" />}>
@@ -98,7 +97,7 @@ export default async function AdminDashboard() {
           row collapses to one column without it rather than leaving a hole. */}
       <div className={cn('grid gap-5', canReadAudit && 'lg:grid-cols-2')}>
         <Suspense fallback={<TableSkeleton rows={5} columns={3} />}>
-          <TopReleasesPanel />
+          <TopEpisodesPanel />
         </Suspense>
 
         {canReadAudit && (
@@ -122,7 +121,6 @@ const QUICK_ACTIONS: Array<{
   icon: LucideIcon;
 }> = [
   { href: '/admin/projektek/uj', label: 'Új projekt', permission: 'project:write', icon: FilePlus2 },
-  { href: '/admin/kiadasok/uj', label: 'Új kiadás', permission: 'release:write', icon: PackagePlus },
   { href: '/admin/hirek/uj', label: 'Új hír', permission: 'news:write', icon: Newspaper },
   { href: '/admin/media', label: 'Médiatár', permission: 'media:write', icon: Images },
 ];
@@ -173,14 +171,13 @@ async function StatGrid() {
         delta={periodDelta(trends.projects)}
       />
       <StatTile
-        label="Kiadások"
-        value={stats.releases.published}
-        detail={`${stats.releases.thisMonth} ebben a hónapban`}
+        label="Megjelent részek"
+        value={stats.episodes.released}
+        detail={`${stats.episodes.releasedThisMonth} ebben a hónapban`}
         icon={<Package className="size-4" aria-hidden />}
-        href="/admin/kiadasok"
         tone="orchid"
-        trend={trends.releases}
-        delta={periodDelta(trends.releases)}
+        trend={trends.episodes}
+        delta={periodDelta(trends.episodes)}
       />
       <StatTile
         label="Epizódok"
@@ -192,13 +189,13 @@ async function StatGrid() {
         delta={periodDelta(trends.episodes)}
       />
       <StatTile
-        label="Letöltés (30 nap)"
-        value={stats.downloads.last30Days}
-        detail={`${formatCount(stats.downloads.total)} összesen`}
-        icon={<Download className="size-4" aria-hidden />}
+        label="Nézés (30 nap)"
+        value={stats.watches.last30Days}
+        detail={`${formatCount(stats.watches.total)} összesen`}
+        icon={<Play className="size-4" aria-hidden />}
         tone="warm"
-        trend={trends.downloads}
-        delta={periodDelta(trends.downloads)}
+        trend={trends.watches}
+        delta={periodDelta(trends.watches)}
       />
       <StatTile
         label="Felhasználók"
@@ -226,19 +223,19 @@ function StatGridSkeleton() {
 
 /* ── Panels ────────────────────────────────────────────────────────────────── */
 
-async function DownloadTrendPanel() {
-  const trend = await getDownloadTrend(30);
+async function WatchTrendPanel() {
+  const trend = await getWatchTrend(30);
   const total = trend.reduce((sum, point) => sum + point.count, 0);
   const peak = trend.reduce((max, point) => Math.max(max, point.count), 0);
 
   return (
     <Card>
       <CardHeader
-        title="Letöltések – utolsó 30 nap"
+        title="Megkezdett nézések – utolsó 30 nap"
         description={`Összesen ${formatCount(total)}, csúcsnap ${formatCount(peak)}`}
       />
       <CardBody>
-        <Sparkline data={trend} id="downloads" />
+        <Sparkline data={trend} id="watches" />
       </CardBody>
     </Card>
   );
@@ -265,11 +262,11 @@ async function NeedsAttentionPanel({ canReadContact }: { canReadContact: boolean
           href: '/admin/hozzaszolasok',
         }
       : null,
-    stats.releases.scheduled > 0
+    stats.episodes.inProgress > 0
       ? {
-          label: 'Ütemezett kiadás',
-          count: stats.releases.scheduled,
-          href: '/admin/kiadasok?status=SCHEDULED',
+          label: 'Munkában lévő epizód',
+          count: stats.episodes.inProgress,
+          href: '/admin/projektek?status=ONGOING',
         }
       : null,
     drafts > 0
@@ -405,44 +402,42 @@ async function ProjectBoardPanel() {
   );
 }
 
-async function TopReleasesPanel() {
-  const releases = await getTopReleases(6);
+async function TopEpisodesPanel() {
+  const episodes = await getTopEpisodes(6);
 
   return (
     <Card>
       <CardHeader
-        title="Legtöbbet letöltött kiadások"
+        title="Legtöbbet nézett részek"
         action={
           <Link
-            href="/admin/kiadasok?sort=-downloadCount"
+            href="/admin/videok"
             className="text-xs font-medium text-bloom-300 underline-offset-4 hover:underline"
           >
-            Összes
+            Videóforrások
           </Link>
         }
       />
       <CardBody>
-        {releases.length === 0 ? (
-          <p className="py-6 text-center text-sm text-mist-500">Még nincs publikált kiadás.</p>
+        {episodes.length === 0 ? (
+          <p className="py-6 text-center text-sm text-mist-500">Még nincs megjelent rész.</p>
         ) : (
           <ol className="space-y-1">
-            {releases.map((release, index) => (
-              <li key={release.id}>
+            {episodes.map((episode, index) => (
+              <li key={episode.id}>
                 <Link
-                  href={`/admin/kiadasok/${release.id}`}
+                  href={`/projektek/${episode.project.slug}/${episode.number.replace(/\.00$/, '')}`}
                   className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-ink-850"
                 >
                   <span className="nums w-5 shrink-0 text-2xs text-mist-600">{index + 1}.</span>
                   <span className="min-w-0 flex-1 truncate text-sm text-mist-200">
-                    {release.project.title}
-                    {release.episode && (
-                      <span className="nums ml-1.5 text-mist-500">
-                        {release.episode.number.toString().replace(/\.00$/, '')}. rész
-                      </span>
-                    )}
+                    {episode.project.title}
+                    <span className="nums ml-1.5 text-mist-500">
+                      {episode.number.replace(/\.00$/, '')}. rész
+                    </span>
                   </span>
                   <span className="nums shrink-0 text-2xs text-mist-400">
-                    {formatCount(release.downloadCount)}
+                    {formatCount(episode.views)}
                   </span>
                 </Link>
               </li>

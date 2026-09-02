@@ -78,11 +78,9 @@ model User {
   favorites         Favorite[]
   watchProgress     WatchProgress[]
   ratings           Rating[]
-  downloadEvents    DownloadEvent[]
   auditLogs         AuditLog[]               @relation("AuditActor")
   authoredNews      NewsPost[]               @relation("NewsAuthor")
   createdProjects   Project[]                @relation("ProjectCreator")
-  createdReleases   Release[]                @relation("ReleaseCreator")
   createdVideos     VideoSource[]            @relation("VideoCreator")
   uploadedMedia     MediaAsset[]
   teamMember        TeamMember?
@@ -332,7 +330,6 @@ model Project {
 
   genres    ProjectGenre[]
   episodes  Episode[]
-  releases  Release[]
   staff     ProjectStaff[]
   favorites Favorite[]
   ratings   Rating[]
@@ -396,6 +393,13 @@ model Episode {
   durationSec  Int?
   airedAt      DateTime?
 
+  /// Amikor a mi feliratunk megjelent — nem az, amikor Japánban leadták.
+  ///
+  /// Korábban a kiadás sorában élt. A kiadás fogalma megszűnt, ez az egy adat
+  /// viszont nem volt pótolható belőle: enélkül nincs válasz arra, hogy „mi
+  /// jelent meg a héten”, amire a hírfolyam és a kezdőlap is épül.
+  releasedAt DateTime?
+
   /// Flags carried over from the upstream episode list. Viewers skip filler and
   /// recaps, and a fansub decides whether to even work on them, so both are
   /// worth knowing before opening the episode.
@@ -422,7 +426,6 @@ model Episode {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  releases Release[]
   comments Comment[]
   videos   VideoSource[]
   progress WatchProgress[]
@@ -431,15 +434,8 @@ model Episode {
   @@index([projectId, status])
   @@index([airedAt])
   @@index([status, updatedAt])
+  @@index([status, releasedAt])
   @@map("episodes")
-}
-
-enum ReleaseKind {
-  EPISODE
-  BATCH
-  MOVIE
-  SPECIAL
-  PATCH
 }
 
 enum Resolution {
@@ -448,155 +444,6 @@ enum Resolution {
   FHD_1080P
   QHD_1440P
   UHD_2160P
-}
-
-model ReleaseFormat {
-  id          String  @id @default(cuid())
-  key         String  @unique // "mkv-softsub", "mp4-hardsub", "mkv-remux"
-  label       String
-  container   String // mkv, mp4
-  description String?
-  isSoftsub   Boolean @default(true)
-  sortOrder   Int     @default(0)
-
-  releases Release[]
-
-  @@map("release_formats")
-}
-
-model Release {
-  id        String  @id @default(cuid())
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  /// Null for batch/movie releases that are not tied to a single episode.
-  episodeId String?
-  episode   Episode? @relation(fields: [episodeId], references: [id], onDelete: SetNull)
-
-  kind    ReleaseKind @default(EPISODE)
-  /// Incremented on re-releases (v2, v3…). Unique per episode+format.
-  version Int         @default(1)
-
-  formatId String?
-  format   ReleaseFormat? @relation(fields: [formatId], references: [id], onDelete: SetNull)
-
-  resolution     Resolution @default(FHD_1080P)
-  videoCodec     String? // H.264, HEVC, AV1
-  audioCodec     String? // AAC 2.0, FLAC, Opus
-  subtitleFormat String? // ASS, SRT
-  fileSizeBytes  BigInt?
-  durationSec    Int?
-  crc32          String?    @db.VarChar(8)
-  sha256         String?    @db.VarChar(64)
-
-  /// Short changelog shown on v2+ releases ("javított időzítés, új karaoke").
-  changelog String? @db.Text
-  notes     String? @db.Text
-
-  status        PublishStatus @default(DRAFT)
-  releasedAt    DateTime?
-  downloadCount Int           @default(0)
-
-  createdById String?
-  createdBy   User?   @relation("ReleaseCreator", fields: [createdById], references: [id], onDelete: SetNull)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  links          DownloadLink[]
-  downloadEvents DownloadEvent[]
-
-  @@unique([episodeId, formatId, resolution, version])
-  @@index([projectId, status, releasedAt])
-  @@index([status, releasedAt])
-  @@index([episodeId])
-  @@index([downloadCount])
-  @@map("releases")
-}
-
-enum LinkKind {
-  DIRECT
-  TORRENT
-  MAGNET
-  STREAM
-}
-
-enum LinkAvailability {
-  ONLINE
-  DEGRADED
-  OFFLINE
-  UNCHECKED
-}
-
-/// External storage providers (Nyaa, Google Drive, Mega, own CDN…). Kept as data
-/// so a dead host can be swapped or hidden site-wide from the admin panel.
-model StorageHost {
-  id        String  @id @default(cuid())
-  key       String  @unique
-  name      String
-  iconUrl   String?
-  baseUrl   String?
-  isActive  Boolean @default(true)
-  sortOrder Int     @default(0)
-
-  links DownloadLink[]
-
-  @@map("storage_hosts")
-}
-
-model DownloadLink {
-  id        String  @id @default(cuid())
-  releaseId String
-  release   Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
-
-  hostId String?
-  host   StorageHost? @relation(fields: [hostId], references: [id], onDelete: SetNull)
-
-  kind  LinkKind @default(DIRECT)
-  label String?
-  /// The actual target. Never rendered directly into the page: the client hits
-  /// `/api/v1/downloads/:id/resolve`, which records the event and 302s onward.
-  url   String   @db.Text
-
-  isMirror Boolean @default(false)
-  priority Int     @default(0) // lower = preferred
-
-  availability  LinkAvailability @default(UNCHECKED)
-  lastCheckedAt DateTime?
-  downloadCount Int              @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  events DownloadEvent[]
-
-  @@index([releaseId, priority])
-  @@index([hostId])
-  @@map("download_links")
-}
-
-/// One row per resolved download. Powers the statistics dashboard. IPs are stored
-/// as salted hashes only, and rows are pruned by the retention job (see runbook).
-model DownloadEvent {
-  id        String  @id @default(cuid())
-  releaseId String
-  release   Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
-
-  linkId String?
-  link   DownloadLink? @relation(fields: [linkId], references: [id], onDelete: SetNull)
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  ipHash    String?
-  userAgent String?  @db.VarChar(400)
-  country   String?  @db.VarChar(2)
-  createdAt DateTime @default(now())
-
-  @@index([releaseId, createdAt])
-  @@index([createdAt])
-  @@map("download_events")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

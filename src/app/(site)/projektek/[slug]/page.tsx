@@ -13,7 +13,6 @@ import {
   Timer,
   Users,
 } from 'lucide-react';
-import { env } from '@/lib/env';
 import { ogImages, twitterImages } from '@/lib/seo';
 import { formatCount, formatDate, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
 import { db } from '@/lib/db';
@@ -48,10 +47,12 @@ import { Avatar } from '@/components/ui/avatar';
 import { ReleaseListSkeleton } from '@/components/ui/feedback';
 import { ButtonLink } from '@/components/ui/button';
 import { getSettings } from '@/server/settings';
+import { siteUrl } from '@/lib/site-url';
 
 type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const base = await siteUrl();
   const { slug } = await params;
   const project = await getPublicProjectBySlug(slug);
 
@@ -73,7 +74,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: 'video.tv_show',
       title: project.title,
       description,
-      url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${project.slug}`,
+      url: `${base}/projektek/${project.slug}`,
       ...ogImages(images, project.title),
     },
     twitter: {
@@ -93,6 +94,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
  * at the same cost, without a rebuild on every publish.
  */
 export default async function ProjectPage({ params }: { params: Params }) {
+  const base = await siteUrl();
   const { slug } = await params;
   const project = await getPublicProjectBySlug(slug);
 
@@ -178,7 +180,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
             ),
             description: project.synopsis ?? undefined,
             image: project.coverImageUrl ?? undefined,
-            url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${project.slug}`,
+            url: `${base}/projektek/${project.slug}`,
             numberOfEpisodes: project.totalEpisodes ?? undefined,
             genre: project.genres.map(({ genre }) => genre.name),
             keywords: project.tags.length > 0 ? project.tags.join(', ') : undefined,

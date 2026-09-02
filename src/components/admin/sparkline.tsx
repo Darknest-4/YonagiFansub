@@ -117,11 +117,11 @@ export function Sparkline({
       {/* The same data, available to assistive technology. */}
       <figcaption className="sr-only">
         <table>
-          <caption>Napi letöltésszám az elmúlt {data.length} napban</caption>
+          <caption>Napi megkezdett nézések az elmúlt {data.length} napban</caption>
           <thead>
             <tr>
               <th scope="col">Dátum</th>
-              <th scope="col">Letöltés</th>
+              <th scope="col">Nézés</th>
             </tr>
           </thead>
           <tbody>

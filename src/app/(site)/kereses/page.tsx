@@ -11,7 +11,7 @@ import { getSearchSuggestions } from '@/server/search';
 
 export const metadata: Metadata = {
   title: 'Keresés',
-  description: 'Keress a Yonagi Fansub projektjei, epizódjai, kiadásai és hírei között.',
+  description: 'Keress a Yonagi Fansub projektjei, epizódjai és hírei között.',
   // A search results page has no business in an index.
   robots: { index: false, follow: true },
 };
@@ -68,7 +68,7 @@ async function Results({ query }: { query: string }) {
         title={`Nincs találat erre: „${query}”`}
         description="Próbálj rövidebb vagy általánosabb kifejezést. A japán és angol címekre is keresünk."
         action={{ label: 'Teljes katalógus', href: '/projektek' }}
-        secondaryAction={{ label: 'Legújabb kiadások', href: '/kiadasok' }}
+        secondaryAction={{ label: 'Összes projekt', href: '/projektek' }}
       />
     );
   }

@@ -262,7 +262,6 @@ function Breadcrumb({ pathname }: { pathname: string }) {
   const labels: Record<string, string> = {
     admin: 'Vezérlőpult',
     projektek: 'Projektek',
-    kiadasok: 'Kiadások',
     hirek: 'Hírek',
     csapat: 'Csapat',
     uzenetek: 'Üzenetek',

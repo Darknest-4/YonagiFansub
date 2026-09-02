@@ -65,6 +65,69 @@ export const CHANGE_KIND_LABELS: Record<ChangeKind, string> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-02',
+    title: 'A kiadások megszűntek, a hírfolyam kinyílt',
+    summary:
+      'A „kiadás” mint külön fogalom eltűnt az oldalról: mostantól az epizód maga a megjelenés. Az oldal megtanulta, hogy melyik domainen fut, a hírfolyam pedig új címre költözött, olvashatóvá vált, és már az új részekről is szól.',
+    changes: [
+      {
+        kind: 'improved',
+        title: 'Nincs többé külön „Kiadások”',
+        body:
+          'Eddig két nyilvántartás volt ugyanarról az eseményről: az epizód, ami elkészült, és a hozzá tartozó „kiadás”, saját állapottal, saját dátummal, saját publikálási folyamattal. A kettő az első alkalommal elcsúszott, amikor valaki epizódot jelölt késznek kiadássor nélkül. Innentől egy nyilvántartás van, az epizód. A /kiadasok oldal, az admin kiadásszerkesztő, a letöltési linkek, a tükör-ellenőrző és a letöltésszámláló mind megszűnt — adatbázisostól.',
+      },
+      {
+        kind: 'new',
+        title: 'Az epizód megkapta a saját megjelenési dátumát',
+        body:
+          'Ez az egyetlen adat, amit a kiadásokból át kellett menteni: enélkül nincs válasz arra, hogy „mi jelent meg a héten”. A migráció minden epizódnak a legkorábbi publikált kiadása dátumát adja — a v2 javítás nem új megjelenés —, a törölt és vázlat sorokat figyelmen kívül hagyva; aminek nem volt kiadása, az a saját utolsó módosítását kapja. Kipróbálva valódi adaton, mielőtt bármit eldobtunk volna.',
+      },
+      {
+        kind: 'fixed',
+        title: 'Az oldal megtanulta, melyik domainen fut',
+        body:
+          'Eddig minden abszolút cím — kanonikus link, megosztási kártya, sitemap, hírfolyam — egy környezeti változóból jött, aminek az alapértéke localhost:3000. Ha nem volt beállítva, az oldal tökéletesen működött, miközben a Google-nek és minden hírolvasónak azt mondta, hogy a látogató saját gépén lakik. Mostantól, ha nincs beállítva, a kérésből olvassa ki a valódi hosztot.',
+      },
+      {
+        kind: 'security',
+        title: 'A levelekbe kerülő cím nem a kérésből jön',
+        body:
+          'A Host fejlécet a hívó adja meg. A saját oldalunkba visszaírt címnél ez rendben van — aki meghamisítja, a saját nézetét rontja el. Egy jelszó-visszaállító levélbe kerülő hamis cím viszont működő adathalász link, amit mi kézbesítünk az áldozat postafiókjába. A levelek ezért kizárólag a beállított értéket használják, és ez a kódban külön, nevesített döntés.',
+      },
+      {
+        kind: 'fixed',
+        title: 'A beállítás futásidőben is érvényre jut',
+        body:
+          'A Next a NEXT_PUBLIC_ előtagú változókat fordításkor beégeti a kódba, tehát a telepítés után beállított érték nem érvényesült — se hibaüzenet, se magyarázat. Pontosan ez volt a csapda. A kód mostantól futásidőben olvassa ki, így mindegy, hogy fordításkor vagy utána állítod be.',
+      },
+      {
+        kind: 'improved',
+        title: 'A hírfolyam /rss lett, és böngészőben is olvasható',
+        body:
+          'Az .xml végződés semmit nem mondott, amit a Content-Type fejléc ne mondana el pontosabban. A régi cím állandó átirányítással él tovább, hogy senki feliratkozása ne szakadjon meg. Aki böngészővel nyitja meg, rendes oldalt kap a szögletes zárójelek fala helyett — ugyanaz a cím, ugyanaz a dokumentum, a hírolvasónak érvényes RSS.',
+      },
+      {
+        kind: 'new',
+        title: 'A hírfolyamban már új részek is vannak',
+        body:
+          'Eddig csak hírek és kiadások voltak benne. Most három forrásból áll: megjelent epizódok, hírek és a fejlesztési napló bejegyzései, dátum szerint összefésülve.',
+      },
+      {
+        kind: 'security',
+        title: 'A hírfolyam saját, szűkebb biztonsági szabályt kapott',
+        body:
+          'A Chrome az XSLT-stíluslapot a script-src alá sorolja, az oldal fő szabálya pedig strict-dynamic-ot használ, ami kikapcsolja a hosztlistát — így a stíluslap betöltése tiltott volt, egyetlen konzolsorral magyarázva. A megoldás nem a fő szabály lazítása: a hírfolyam és a stíluslapja saját, szigorúbb szabályt kapott, amiben semmi nincs a saját stíluslapon kívül.',
+      },
+      {
+        kind: 'improved',
+        title: 'Ami a letöltésszámláló helyére lépett',
+        body:
+          'Az admin irányítópulton és a nyilvános számokban a letöltés helyett a megkezdett nézések és a lejátszások száma áll. Ez most az őszinte mérték: letöltés nincs, egy megállt számláló pedig halott oldalnak látszana, nem megváltozottnak.',
+      },
+    ],
+  },
+
+  {
+    date: '2026-09-02',
     title: 'Béta mód, sokkal több beállítás, és ez a napló',
     summary:
       'Az oldal mostantól meg tudja mondani magáról, hogy még épül. Az admin felületen a beállítások száma tizennyolcról harmincötre nőtt, és mindegyik mögött valódi viselkedés áll — kapcsoló, ami nem csinál semmit, rosszabb, mintha ott sem lenne.',
@@ -72,36 +135,42 @@ export const CHANGELOG: ChangelogEntry[] = [
       {
         kind: 'new',
         title: 'Béta mód',
+        commit: '771cbaf',
         body:
           'Bekapcsolva sáv jelenik meg az oldal tetején, ami közli a látogatóval, hogy a Yonagi Fansub még fejlesztés alatt áll, és odaad egy „Hibát találtál?” hivatkozást. A sáv szövege és a hivatkozás célja is beállítható; ha nincs megadva cél, a kapcsolati oldalra visz. A láblécben egy kis „Béta” címke marad, mert a felső sáv elgörgethető, és aki középen érkezik egy oldalra, az sosem látná. A mód alapból ki van kapcsolva, és egyetlen kattintással kikapcsolható, amikor az oldal kinőtte.',
       },
       {
         kind: 'new',
         title: 'Fejlesztési napló',
+        commit: '771cbaf',
         body:
           'Ez az oldal. Az összes eddigi munka, dátum szerint, magyarul, a commitok azonosítójával együtt. Külön beállítással kikapcsolható — ilyenkor eltűnik a menüből, kikerül a sitemapból, és a címe 404-et ad.',
       },
       {
         kind: 'new',
         title: 'Tizenhét új beállítás',
+        commit: '771cbaf',
         body:
           'Kikapcsolható az adásnaptár, a fejlesztési napló, a nyilvános felhasználói profilok, a toborzás, az összefoglaló e-mailek, a letöltési hivatkozások, az online lejátszás, a nézési előrehaladás mentése és az értékelés. Számmal állítható, hány percig szerkesztheti valaki a saját hozzászólását, hány projekt fér egy lapra, és hogy a naptár hány napra lásson előre és vissza. A lábléchez tartozik egy szabad szöveges sor is.',
       },
       {
         kind: 'security',
         title: 'A kapcsolók a szerveren is érvényesek, nem csak a felületen',
+        commit: '771cbaf',
         body:
           'Egy elrejtett gomb udvariasság, nem szabály: a végpontok böngésző nélkül is elérhetők. Ezért az értékelés, a letöltés-feloldás, a nézési előrehaladás és a lejátszás mind a kiszolgálón is ellenőrzi a saját kapcsolóját, és 403-mal, magyar indoklással utasít vissza. A lejátszásnál ez egyetlen közös ponton történik, amin mind a négy útvonal (manifest, lejátszási lista, szegmens, közvetlen fájl) átmegy — különben a lejátszó ugyan nem indulna el, de a már kiadott szegmens-címek tovább élnének.',
       },
       {
         kind: 'fixed',
         title: 'A számbeállítások nem vehetnek fel értelmetlen értéket',
+        commit: '771cbaf',
         body:
           'Minden számnak van alsó és felső határa, és a korlátozás azon a ponton történik, amin minden olvasás és írás átmegy — így az űrlapon, az API-n és az adatbázisban közvetlenül szerkesztett soron át is ugyanaz érvényes. Egy régebbi, tartományon kívüli érték már olvasáskor helyre áll, tehát nem ülhet ott csendben, amíg valakinek fel nem tűnik.',
       },
       {
         kind: 'improved',
         title: 'A kikapcsolt oldalak eltűnnek a menükből is',
+        commit: '771cbaf',
         body:
           'Nem elég 404-et adni: egy szándékosan kikapcsolt oldalra mutató menüpont rosszabb, mint egy elrontott hivatkozás. A fejléc, az alsó tab sáv, a „Több” lap, a lábléc és a sitemap mind ugyanabból a listából dolgozik, és mind ugyanazt a szűrést végzi.',
       },

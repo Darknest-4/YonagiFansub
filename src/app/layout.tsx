@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Noto_Sans_JP, Sora } from 'next/font/google';
-import { env } from '@/lib/env';
 import { getPublicSettings } from '@/server/settings';
 import { AppProviders } from '@/components/providers';
 import { cn } from '@/lib/utils';
 import '@/styles/globals.css';
+import { siteUrl } from '@/lib/site-url';
 
 /**
  * Root layout.
@@ -72,17 +72,19 @@ export const viewport: Viewport = {
  * strictly worse — stale from the first release, refreshable only by redeploying.
  *
  * Route handlers do not inherit layout config, so `app/api/**`, `sitemap.ts`,
- * `robots.ts`, `rss.xml` and `opengraph-image.tsx` each carry their own marker.
+ * `robots.ts`, `rss` and `opengraph-image.tsx` each carry their own marker.
  */
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
+  // A valódi hoszt, ha nincs kézzel megadva — lásd `lib/site-url.ts`.
+  const base = await siteUrl();
   const settings = await getPublicSettings();
   const siteName = settings.siteName ?? 'Yonagi Fansub';
   const description = settings.siteDescription ?? '';
 
   return {
-    metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+    metadataBase: new URL(base),
     title: {
       default: `${siteName} — ${settings.siteTagline ?? 'Magyar anime feliratok'}`,
       template: `%s · ${siteName}`,
@@ -98,18 +100,18 @@ export async function generateMetadata(): Promise<Metadata> {
       'yonagi',
       'anime letöltés',
     ],
-    authors: [{ name: siteName, url: env.NEXT_PUBLIC_SITE_URL }],
+    authors: [{ name: siteName, url: base }],
     creator: siteName,
     publisher: siteName,
     formatDetection: { email: false, address: false, telephone: false },
     alternates: {
       canonical: '/',
-      types: { 'application/rss+xml': `${env.NEXT_PUBLIC_SITE_URL}/rss.xml` },
+      types: { 'application/rss+xml': `${base}/rss` },
     },
     openGraph: {
       type: 'website',
       locale: 'hu_HU',
-      url: env.NEXT_PUBLIC_SITE_URL,
+      url: base,
       siteName,
       title: `${siteName} — ${settings.siteTagline ?? ''}`.trim(),
       description,

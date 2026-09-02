@@ -1,4 +1,3 @@
-import { env } from '@/lib/env';
 
 /**
  * Search and social metadata helpers.
@@ -32,7 +31,16 @@ import { env } from '@/lib/env';
  * convention does not survive a page declaring its own `openGraph` block.
  */
 export function defaultOgImage(): string {
-  return `${env.NEXT_PUBLIC_SITE_URL}/opengraph-image`;
+  /*
+    Relative on purpose.
+
+    Next resolves a relative `openGraph.images` entry against `metadataBase`,
+    which the root layout now derives from the request — so this needs no origin
+    of its own, and cannot go stale against one. An absolute URL built here from
+    `NEXT_PUBLIC_SITE_URL` was exactly the bug: unset the variable and every
+    share card pointed at `localhost:3000/opengraph-image`.
+  */
+  return '/opengraph-image';
 }
 
 /**
@@ -59,10 +67,6 @@ export function twitterImages(url: string | null | undefined): { images: string[
   return { images: [url || defaultOgImage()] };
 }
 
-export function absoluteUrl(path: string): string {
-  return `${env.NEXT_PUBLIC_SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
-}
-
 export interface BreadcrumbEntry {
   name: string;
   /**
@@ -81,7 +85,7 @@ export interface BreadcrumbEntry {
  * is worse than none: search engines treat the mismatch as a reason to distrust
  * the rest of the page's structured data.
  */
-export function breadcrumbJsonLd(entries: BreadcrumbEntry[]): string {
+export function breadcrumbJsonLd(entries: BreadcrumbEntry[], base: string): string {
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -89,7 +93,7 @@ export function breadcrumbJsonLd(entries: BreadcrumbEntry[]): string {
       '@type': 'ListItem',
       position: index + 1,
       name: entry.name,
-      ...(entry.path ? { item: absoluteUrl(entry.path) } : {}),
+      ...(entry.path ? { item: `${base}${entry.path.startsWith('/') ? entry.path : `/${entry.path}`}` } : {}),
     })),
   });
 }
@@ -106,8 +110,7 @@ export function breadcrumbJsonLd(entries: BreadcrumbEntry[]): string {
  *   the result listing. The site already has `/kereses?q=` — this is only
  *   telling anyone about it.
  */
-export function siteJsonLd(siteName: string, description: string): string {
-  const url = env.NEXT_PUBLIC_SITE_URL;
+export function siteJsonLd(siteName: string, description: string, url: string): string {
 
   return JSON.stringify({
     '@context': 'https://schema.org',

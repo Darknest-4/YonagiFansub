@@ -88,12 +88,12 @@ export default async function ChangelogPage({ searchParams }: { searchParams: Se
         <Info className="mt-0.5 size-4 shrink-0 text-info-400" aria-hidden />
         <p className="text-2xs leading-relaxed text-mist-300 sm:text-xs">
           Ez a napló <strong className="text-mist-100">az oldalról</strong> szól, nem a
-          feliratokról. A kiadásokat a{' '}
-          <Link href="/kiadasok" className="text-info-400 underline-offset-4 hover:underline">
-            Kiadások
+          feliratokról. A megjelent részeket a{' '}
+          <Link href="/projektek" className="text-info-400 underline-offset-4 hover:underline">
+            projektek
           </Link>{' '}
-          oldalon találod, a projektek állását pedig az adott projekt oldalán. Ide az kerül, ami a
-          weboldal működésén változott — új funkció, javítás, biztonsági munka.
+          oldalán találod. Ide az kerül, ami a weboldal működésén változott — új funkció, javítás,
+          biztonsági munka.
         </p>
       </aside>
 

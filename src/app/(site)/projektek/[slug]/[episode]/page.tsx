@@ -3,13 +3,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarDays, Clock } from 'lucide-react';
-import { env } from '@/lib/env';
 import { ogImages } from '@/lib/seo';
 import { formatDate, formatDuration, formatEpisodeNumber, toIsoString, truncate } from '@/lib/utils';
 import { getEpisode, getEpisodeNeighbours } from '@/server/projects';
 import { Breadcrumbs } from '@/components/site/page-header';
 import { EpisodeStatusBadge } from '@/components/ui/badge';
-import { DownloadPanel, type ReleaseView } from '@/components/site/download-panel';
 import { VideoPlayer } from '@/components/site/video-player';
 import { Comments } from '@/components/site/comments';
 import { listEpisodeVideos } from '@/server/video';
@@ -17,6 +15,7 @@ import { getCurrentUser } from '@/lib/auth/guards';
 import { db } from '@/lib/db';
 import { WorkflowProgress, buildWorkflowStages } from '@/components/ui/progress';
 import { getSettings } from '@/server/settings';
+import { siteUrl } from '@/lib/site-url';
 
 type Params = Promise<{ slug: string; episode: string }>;
 
@@ -27,6 +26,7 @@ function parseEpisodeNumber(raw: string): number | null {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const base = await siteUrl();
   const { slug, episode: rawNumber } = await params;
   const number = parseEpisodeNumber(rawNumber);
   if (number === null) return { title: 'Epizód nem található', robots: { index: false } };
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: 'video.episode',
       title,
       description,
-      url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`,
+      url: `${base}/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`,
       // A rész saját képe, ha van; különben a sorozat borítója. Ha egyik sincs,
       // a kulcs elmarad, és az oldal a site-szintű OG-képet örökli.
       ...ogImages(episode.thumbnailUrl ?? episode.project.coverImageUrl, title),
@@ -59,6 +59,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function EpisodePage({ params }: { params: Params }) {
+  const base = await siteUrl();
   const { slug, episode: rawNumber } = await params;
   const number = parseEpisodeNumber(rawNumber);
   if (number === null) notFound();
@@ -94,26 +95,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
   const accent = episode.project.accentColor ?? '#f761a8';
   const stages = buildWorkflowStages(episode);
-  const released = episode.status === 'RELEASED' && episode.releases.length > 0;
-
-  const releases: ReleaseView[] = episode.releases.map((release) => ({
-    id: release.id,
-    kind: release.kind,
-    version: release.version,
-    resolution: release.resolution,
-    videoCodec: release.videoCodec,
-    audioCodec: release.audioCodec,
-    subtitleFormat: release.subtitleFormat,
-    // BigInt cannot cross the server/client boundary; the panel parses it back.
-    fileSizeBytes: release.fileSizeBytes?.toString() ?? null,
-    durationSec: release.durationSec,
-    crc32: release.crc32,
-    sha256: release.sha256,
-    changelog: release.changelog,
-    notes: release.notes,
-    format: release.format,
-    links: release.links,
-  }));
+  const released = episode.status === 'RELEASED';
 
   return (
     <div className="relative isolate">
@@ -134,7 +116,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
             episodeNumber: Number(episode.number),
             description: episode.synopsis ?? undefined,
             image: episode.thumbnailUrl ?? episode.project.coverImageUrl ?? undefined,
-            url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`,
+            url: `${base}/projektek/${slug}/${formatEpisodeNumber(episode.number.toString())}`,
             datePublished: toIsoString(episode.airedAt),
             timeRequired: episode.durationSec
               ? `PT${Math.round(episode.durationSec / 60)}M`
@@ -142,7 +124,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
             partOfSeries: {
               '@type': 'TVSeries',
               name: episode.project.title,
-              url: `${env.NEXT_PUBLIC_SITE_URL}/projektek/${slug}`,
+              url: `${base}/projektek/${slug}`,
             },
             inLanguage: 'ja',
             subtitleLanguage: 'hu',
@@ -275,20 +257,24 @@ export default async function EpisodePage({ params }: { params: Params }) {
             )}
 
             <div className="mt-8">
-              {released && settings.downloadsEnabled ? (
-                <DownloadPanel releases={releases} />
-              ) : released ? (
-                /* Released, but the links are switched off site-wide. Saying so
-                   is the point: the alternative is an episode page that looks
-                   identical to one whose release never happened. */
+              {released && videos.length === 0 ? (
+                /*
+                  Marked released, but nothing to play.
+
+                  It happens: a source is pulled, or the episode was flagged
+                  finished before anything was uploaded. Saying so is the point
+                  — the alternative is a page that looks identical to one whose
+                  episode never came out, and a viewer who concludes the site is
+                  broken.
+                */
                 <section className="rounded-2xl border border-ink-800 bg-ink-900/50 p-5 text-sm text-content-muted sm:p-6">
-                  <h2 className="text-base font-semibold text-mist-50">Letöltés</h2>
+                  <h2 className="text-base font-semibold text-mist-50">Épp nem elérhető</h2>
                   <p className="mt-2 leading-relaxed">
-                    A letöltési hivatkozások jelenleg nem érhetők el. A rész elkészült — amint a
-                    tükrök újra elérhetők, itt fognak megjelenni.
+                    Ez a rész elkészült, de jelenleg nincs hozzá működő forrás. Dolgozunk rajta —
+                    nézz vissza később, vagy kövesd a projektet, és szólunk.
                   </p>
                 </section>
-              ) : (
+              ) : released ? null : (
                 <section
                   aria-labelledby="progress"
                   className="rounded-2xl border border-ink-800 bg-ink-900/50 p-5 sm:p-6"
@@ -376,9 +362,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
                   <h2 className="mb-2 text-2xs font-bold tracking-[0.18em] text-mist-500 uppercase">
                     Megjelent
                   </h2>
-                  <p className="text-sm text-mist-200">
-                    {formatDate(episode.releases[0]?.releasedAt)}
-                  </p>
+                  <p className="text-sm text-mist-200">{formatDate(episode.releasedAt)}</p>
                 </section>
               )}
             </div>

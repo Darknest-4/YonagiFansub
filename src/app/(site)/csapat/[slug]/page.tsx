@@ -3,7 +3,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, ExternalLink } from 'lucide-react';
-import { env } from '@/lib/env';
 import { ogImages } from '@/lib/seo';
 import { formatDate, truncate } from '@/lib/utils';
 import { renderMarkdown } from '@/lib/markdown';
@@ -12,6 +11,7 @@ import { Breadcrumbs } from '@/components/site/page-header';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/feedback';
+import { siteUrl } from '@/lib/site-url';
 
 type Params = Promise<{ slug: string }>;
 
@@ -28,6 +28,7 @@ const SOCIAL_LINKS: Record<string, { label: string; url: (handle: string) => str
 };
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const base = await siteUrl();
   const { slug } = await params;
   const member = await getPublicTeamMember(slug);
 
@@ -44,13 +45,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: 'profile',
       title: `${member.name} · Yonagi Fansub`,
       description,
-      url: `${env.NEXT_PUBLIC_SITE_URL}/csapat/${member.slug}`,
+      url: `${base}/csapat/${member.slug}`,
       ...ogImages(member.avatarUrl, member.name),
     },
   };
 }
 
 export default async function TeamMemberPage({ params }: { params: Params }) {
+  const base = await siteUrl();
   const { slug } = await params;
   const member = await getPublicTeamMember(slug);
 
@@ -90,11 +92,11 @@ export default async function TeamMemberPage({ params }: { params: Params }) {
             name: member.name,
             description: member.tagline ?? undefined,
             image: member.avatarUrl ?? undefined,
-            url: `${env.NEXT_PUBLIC_SITE_URL}/csapat/${member.slug}`,
+            url: `${base}/csapat/${member.slug}`,
             memberOf: {
               '@type': 'Organization',
               name: 'Yonagi Fansub',
-              url: env.NEXT_PUBLIC_SITE_URL,
+              url: base,
             },
           }),
         }}

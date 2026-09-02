@@ -5,13 +5,9 @@ import {
   ContactCategory,
   ContactStatus,
   EpisodeStatus,
-  LinkAvailability,
-  LinkKind,
   ProjectStatus,
   ProjectType,
   PublishStatus,
-  ReleaseKind,
-  Resolution,
   UserStatus,
 } from '@prisma/client';
 import {
@@ -107,6 +103,8 @@ export const updateProfileSchema = z.object({
 });
 
 export const updatePreferencesSchema = z.object({
+  // A kulcs neve a régi, hogy a már elmentett beállítások érvényben maradjanak;
+  // a jelentése „új rész jelent meg”. Lásd `notifyNewEpisode` a szerveroldalon.
   notifyNewRelease: z.boolean(),
   notifyNewsPost: z.boolean(),
   notifyCommentReply: z.boolean(),
@@ -191,73 +189,6 @@ export const episodeWriteSchema = z.object({
 export const episodeQuerySchema = paginationSchema.extend({
   projectId: cuid.optional(),
   status: z.nativeEnum(EpisodeStatus).optional(),
-  sort: z.string().max(40).optional(),
-});
-
-// ── Releases ─────────────────────────────────────────────────────────────────
-
-export const downloadLinkSchema = z.object({
-  id: cuid.optional(),
-  hostId: cuid.nullable().optional(),
-  kind: z.nativeEnum(LinkKind),
-  label: optionalText(80),
-  url: z
-    .string()
-    .trim()
-    .min(1, 'Kötelező mező.')
-    .max(2048)
-    .refine(
-      (value) => /^(https?:\/\/|magnet:\?)/i.test(value),
-      'Csak http(s) vagy magnet link adható meg.',
-    ),
-  isMirror: z.boolean().default(false),
-  priority: z.coerce.number().int().min(0).max(999).default(0),
-  availability: z.nativeEnum(LinkAvailability).default('UNCHECKED'),
-});
-
-export const releaseWriteSchema = z.object({
-  projectId: cuid,
-  episodeId: cuid.nullable().optional(),
-  kind: z.nativeEnum(ReleaseKind),
-  version: z.coerce.number().int().min(1).max(99).default(1),
-  formatId: cuid.nullable().optional(),
-  resolution: z.nativeEnum(Resolution),
-  videoCodec: optionalText(40),
-  audioCodec: optionalText(40),
-  subtitleFormat: optionalText(20),
-  fileSizeBytes: z
-    .union([z.coerce.number().int().min(0), z.literal('')])
-    .nullable()
-    .optional()
-    .transform((value) => (value === '' || value === null || value === undefined ? null : BigInt(value))),
-  durationSec: z.coerce.number().int().min(0).max(86_400).nullable().optional(),
-  crc32: z
-    .string()
-    .regex(/^[0-9A-Fa-f]{8}$/, 'A CRC32 8 hexadecimális karakter.')
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
-  sha256: z
-    .string()
-    .regex(/^[0-9A-Fa-f]{64}$/, 'A SHA-256 64 hexadecimális karakter.')
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
-  changelog: optionalText(2000),
-  notes: optionalText(2000),
-  status: z.nativeEnum(PublishStatus),
-  releasedAt: nullableDate,
-  links: z.array(downloadLinkSchema).max(24).default([]),
-});
-
-export const RELEASE_SORTS = ['releasedAt', 'downloadCount', 'createdAt'] as const;
-
-export const releaseQuerySchema = paginationSchema.extend({
-  projectId: cuid.optional(),
-  projectSlug: z.string().max(96).optional(),
-  resolution: z.nativeEnum(Resolution).optional(),
-  kind: z.nativeEnum(ReleaseKind).optional(),
-  status: z.nativeEnum(PublishStatus).optional(),
   sort: z.string().max(40).optional(),
 });
 
@@ -563,7 +494,6 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProjectWriteInput = z.infer<typeof projectWriteSchema>;
 export type EpisodeWriteInput = z.infer<typeof episodeWriteSchema>;
-export type ReleaseWriteInput = z.infer<typeof releaseWriteSchema>;
 export type NewsWriteInput = z.infer<typeof newsWriteSchema>;
 export type TeamMemberWriteInput = z.infer<typeof teamMemberWriteSchema>;
 export type VideoWriteInput = z.infer<typeof videoWriteSchema>;

@@ -70,7 +70,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     shortcuts: [
       // Long-press the installed icon. These are the two things somebody opens
       // the app to do; anything else is a browse, and a browse starts at home.
-      { name: 'Legújabb kiadások', url: '/kiadasok' },
+      { name: 'Adásnaptár', url: '/naptar' },
       { name: 'Projektek', url: '/projektek' },
     ],
   };

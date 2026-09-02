@@ -53,7 +53,7 @@ export function FollowButton({
           method: 'PUT',
           body: { notify: true },
         });
-        toast.success('Követed a projektet', 'Szólunk, amint új kiadás érkezik.');
+        toast.success('Követed a projektet', 'Szólunk, amint új rész érkezik.');
       } else {
         await apiFetch(`/api/v1/favorites/${projectId}`, { method: 'DELETE' });
         toast.info('Követés visszavonva');

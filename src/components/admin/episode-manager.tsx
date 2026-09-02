@@ -22,7 +22,8 @@ export interface EpisodeRow {
   title: string | null;
   status: EpisodeStatus;
   airedAt: string | null;
-  releaseCount: number;
+  /** Published video sources on this episode — what the viewer can actually play. */
+  videoCount: number;
   progressTranslation: number;
   progressTiming: number;
   progressTypesetting: number;
@@ -143,9 +144,9 @@ export function EpisodeManager({
                             {episode.title ?? `${formatEpisodeNumber(episode.number)}. rész`}
                           </span>
                           <EpisodeStatusBadge status={episode.status} />
-                          {episode.releaseCount > 0 && (
+                          {episode.videoCount > 0 && (
                             <span className="nums text-2xs text-mist-500">
-                              {episode.releaseCount} kiadás
+                              {episode.videoCount} forrás
                             </span>
                           )}
                         </div>
@@ -234,8 +235,8 @@ export function EpisodeManager({
         onConfirm={handleDelete}
         title="Epizód törlése"
         description={
-          deleting?.releaseCount
-            ? `Ehhez az epizódhoz ${deleting.releaseCount} kiadás tartozik. A törlés után azok is elérhetetlenné válnak.`
+          deleting?.videoCount
+            ? `Ehhez az epizódhoz ${deleting.videoCount} videóforrás tartozik. A törlés után azok is elérhetetlenné válnak.`
             : 'Az epizód eltűnik a nyilvános oldalról.'
         }
         confirmLabel="Törlés"

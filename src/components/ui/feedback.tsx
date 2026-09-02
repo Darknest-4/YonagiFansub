@@ -77,7 +77,7 @@ export function ReleaseRowSkeleton() {
 
 export function ReleaseListSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Kiadások betöltése">
+    <div className="space-y-3" aria-busy="true" aria-label="Részek betöltése">
       {Array.from({ length: count }, (_, index) => (
         <ReleaseRowSkeleton key={index} />
       ))}

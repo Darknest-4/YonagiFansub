@@ -3,17 +3,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, MessageSquare } from 'lucide-react';
-import { env } from '@/lib/env';
 import { formatDate, formatEpisodeNumber, formatRelative, truncate } from '@/lib/utils';
 import { getPublicProfile } from '@/server/profiles';
 import { getSettings } from '@/server/settings';
 import { ogImages } from '@/lib/seo';
 import { Breadcrumbs } from '@/components/site/page-header';
 import { Avatar } from '@/components/ui/avatar';
+import { siteUrl } from '@/lib/site-url';
 
 type Params = Promise<{ username: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const base = await siteUrl();
   const { username } = await params;
   const [settings, profile] = await Promise.all([getSettings(), getPublicProfile(username)]);
 
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: 'profile',
       title: profile.displayName,
       description,
-      url: `${env.NEXT_PUBLIC_SITE_URL}/felhasznalo/${profile.username}`,
+      url: `${base}/felhasznalo/${profile.username}`,
       ...ogImages(profile.avatarUrl, profile.displayName),
     },
   };

@@ -57,7 +57,16 @@ export interface ScheduledEpisode {
    */
   airedAt: string;
   status: 'RELEASED' | 'PLANNED' | 'IN_PROGRESS' | 'QC' | 'CANCELLED';
-  /** True once our own release is out — the difference between "aired" and "done". */
+  /**
+   * True once our own subtitle is out — the difference between "aired" and
+   * "done".
+   *
+   * Read straight off the episode's status. It used to count published releases
+   * hanging off the episode, which was a second record of the same fact and
+   * therefore a second chance to be wrong: an episode marked RELEASED with no
+   * release row read as unsubtitled, and a stray draft row read the other way.
+   * One field, one answer.
+   */
   subtitled: boolean;
   project: {
     id: string;
@@ -119,7 +128,6 @@ export async function loadSchedule(
       title: true,
       airedAt: true,
       status: true,
-      _count: { select: { releases: { where: { status: 'PUBLISHED', deletedAt: null } } } },
       project: {
         select: {
           id: true,
@@ -147,7 +155,7 @@ export async function loadSchedule(
       title: episode.title,
       airedAt: episode.airedAt.toISOString(),
       status: episode.status,
-      subtitled: episode._count.releases > 0,
+      subtitled: episode.status === 'RELEASED',
       project: episode.project,
     };
 
@@ -167,7 +175,7 @@ export async function loadSchedule(
  * hour of staleness on that is the one thing a reader would notice.
  */
 export const getSchedule = cached(loadSchedule, ['schedule'], {
-  tags: [CACHE_TAGS.projects, CACHE_TAGS.releases],
+  tags: [CACHE_TAGS.projects],
   revalidate: CACHE_TTL.short,
 });
 

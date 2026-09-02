@@ -27,7 +27,7 @@ export default async function FavoritesPage() {
       <EmptyState
         icon={<Star className="size-6" aria-hidden />}
         title="Nincs követett projekted"
-        description="A projektoldalon a „Követem” gombbal tudsz feliratkozni. Új kiadásnál értesítünk."
+        description="A projektoldalon a „Követem” gombbal tudsz feliratkozni. Új résznél értesítünk."
         action={{ label: 'Projektek böngészése', href: '/projektek' }}
       />
     );

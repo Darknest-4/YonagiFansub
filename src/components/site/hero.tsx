@@ -44,7 +44,7 @@ export function Hero({
   stats: _stats,
 }: {
   projects: HeroProject[];
-  stats: { projects: number; episodes: number; downloads: number };
+  stats: { projects: number; episodes: number; views: number };
 }) {
   const slides = projects.slice(0, 3);
   const [index, setIndex] = useState(0);
@@ -176,13 +176,13 @@ export function Hero({
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <ButtonLink
-              href="/kiadasok"
+              href="/projektek"
               variant="primary"
               size="lg"
               className="text-2xs tracking-[0.14em] uppercase"
               trailingIcon={<ArrowRight className="size-4" aria-hidden />}
             >
-              Megnézem a kiadásokat
+              Megnézem a projekteket
             </ButtonLink>
 
             <ButtonLink

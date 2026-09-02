@@ -145,6 +145,15 @@ const nextConfig: NextConfig = {
       { source: '/news', destination: '/hirek', permanent: true },
       { source: '/team', destination: '/csapat', permanent: true },
       { source: '/login', destination: '/belepes', permanent: true },
+      /*
+        A hírfolyam elvesztette az `.xml` végét: a kiterjesztés semmit nem
+        mondott, amit a `Content-Type` fejléc ne mondana el pontosabban.
+
+        Állandó átirányítás, nem törlés. Egy hírolvasó a 301-re eltárolja az új
+        címet; a régi cím puszta megszüntetése minden feliratkozót némán
+        leejtett volna.
+      */
+      { source: '/rss.xml', destination: '/rss', permanent: true },
     ];
   },
 };

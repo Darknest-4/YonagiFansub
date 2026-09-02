@@ -4,11 +4,9 @@ import { logger } from '@/lib/logger';
 import { pruneAuditLogs } from '@/lib/api/audit';
 import { pruneExpiredSessions } from '@/lib/auth/session';
 import { pruneNotifications } from '@/server/notifications';
-import { publishDueReleases } from '@/server/releases';
 import { publishDueNews } from '@/server/news';
 import { sendDigests } from '@/server/digest';
 import { resendMissedVerifications } from '@/server/auth-service';
-import { checkDownloadLinks } from '@/server/link-check';
 import { runScheduledSync } from '@/server/admin/metadata-sync';
 import { env } from '@/lib/env';
 import { db } from '@/lib/db';
@@ -66,20 +64,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  await step('publishedReleases', publishDueReleases);
   await step('publishedNews', publishDueNews);
   await step('prunedSessions', pruneExpiredSessions);
   await step('prunedNotifications', () => pruneNotifications(90));
   await step('prunedAuditLogs', () => pruneAuditLogs(365));
-
-  await step('prunedDownloadEvents', async () => {
-    // Retention promised in the privacy policy: 12 months.
-    const cutoff = new Date(Date.now() - 365 * 86_400_000);
-    const { count } = await db.downloadEvent.deleteMany({
-      where: { createdAt: { lt: cutoff } },
-    });
-    return count;
-  });
 
   await step('prunedContactMessages', async () => {
     const cutoff = new Date(Date.now() - 730 * 86_400_000);
@@ -96,22 +84,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       db.emailVerificationToken.deleteMany({ where: { expiresAt: { lt: now } } }),
     ]);
     return reset.count + verify.count;
-  });
-
-  /*
-    Mirror check, before the metadata sync.
-
-    Ordered here on purpose: it is the step whose result the team acts on
-    tomorrow morning, so it should not be behind the one step that depends on
-    somebody else's API being up. `checkDownloadLinks` takes the stalest links,
-    so the whole catalogue comes round over a few nights.
-  */
-  await step('checkedLinks', async () => {
-    const outcome = await checkDownloadLinks();
-    if (outcome.offline > 0) {
-      logger.warn('Halott letöltési linkek', { offline: outcome.offline, checked: outcome.checked });
-    }
-    return outcome.checked;
   });
 
   /*
@@ -151,8 +123,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   });
 
   // Anything published above is now visible; drop the cached feeds.
-  if (results.publishedReleases || results.publishedNews) {
-    invalidate(CACHE_TAGS.releases, CACHE_TAGS.news, CACHE_TAGS.projects, CACHE_TAGS.stats);
+  if (results.publishedNews) {
+    invalidate(CACHE_TAGS.news, CACHE_TAGS.projects, CACHE_TAGS.stats);
   }
 
   const durationMs = Math.round(performance.now() - startedAt);

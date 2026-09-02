@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 import { HelpCircle } from 'lucide-react';
-import { env } from '@/lib/env';
 import { renderMarkdown } from '@/lib/markdown';
 import { FAQ_CATEGORY_LABELS, listFaq } from '@/server/team';
 import { PageHeader } from '@/components/site/page-header';
 import { EmptyState } from '@/components/ui/feedback';
 import { ButtonLink } from '@/components/ui/button';
+import { siteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
   title: 'Gyakori kérdések',
   description:
-    'Válaszok a leggyakoribb kérdésekre a Yonagi Fansub kiadásairól, letöltésekről, projektekről és a csatlakozásról.',
+    'Válaszok a leggyakoribb kérdésekre a Yonagi Fansub részeiről, projektjeiről és a csatlakozásról.',
   alternates: { canonical: '/gyik' },
 };
 
@@ -25,6 +25,7 @@ export const revalidate = 3600;
  * div-based accordion cannot do.
  */
 export default async function FaqPage() {
+  const base = await siteUrl();
   const entries = await listFaq();
 
   const grouped = entries.reduce<Map<string, typeof entries>>((map, entry) => {
@@ -43,7 +44,7 @@ export default async function FaqPage() {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'FAQPage',
-              url: `${env.NEXT_PUBLIC_SITE_URL}/gyik`,
+              url: `${base}/gyik`,
               mainEntity: entries.map((entry) => ({
                 '@type': 'Question',
                 name: entry.question,

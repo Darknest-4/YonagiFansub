@@ -1,13 +1,9 @@
 import type {
   AgeRating,
   AnimeSeason,
-  LinkAvailability,
-  LinkKind,
   ProjectStatus,
   ProjectType,
   PublishStatus,
-  ReleaseKind,
-  Resolution,
 } from '@prisma/client';
 
 /**
@@ -84,62 +80,6 @@ export const EMPTY_PROJECT: ProjectFormValues = {
   anilistId: '',
   isFeatured: false,
   genreIds: [],
-};
-
-// ── Release ──────────────────────────────────────────────────────────────────
-
-export interface LinkFormValue {
-  /** Present for existing links; new rows carry a temporary local key instead. */
-  id?: string;
-  localKey: string;
-  hostId: string;
-  kind: LinkKind;
-  label: string;
-  url: string;
-  isMirror: boolean;
-  priority: number;
-  availability: LinkAvailability;
-}
-
-export interface ReleaseFormValues {
-  projectId: string;
-  episodeId: string;
-  kind: ReleaseKind;
-  version: string;
-  formatId: string;
-  resolution: Resolution;
-  videoCodec: string;
-  audioCodec: string;
-  subtitleFormat: string;
-  fileSizeBytes: string;
-  durationSec: string;
-  crc32: string;
-  changelog: string;
-  notes: string;
-  status: PublishStatus;
-  releasedAt: string;
-  links: LinkFormValue[];
-}
-
-export const EMPTY_RELEASE: ReleaseFormValues = {
-  projectId: '',
-  episodeId: '',
-  kind: 'EPISODE',
-  version: '1',
-  formatId: '',
-  resolution: 'FHD_1080P',
-  // Sensible defaults for our usual encode; the editor overrides per release.
-  videoCodec: 'H.264',
-  audioCodec: 'AAC 2.0',
-  subtitleFormat: 'ASS',
-  fileSizeBytes: '',
-  durationSec: '',
-  crc32: '',
-  changelog: '',
-  notes: '',
-  status: 'DRAFT',
-  releasedAt: '',
-  links: [],
 };
 
 // ── News ─────────────────────────────────────────────────────────────────────

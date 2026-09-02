@@ -234,48 +234,21 @@ export const episodeListArgs = Prisma.validator<Prisma.EpisodeDefaultArgs>()({
     progressEncoding: true,
     progressQc: true,
     updatedAt: true,
-    releases: {
-      where: { status: 'PUBLISHED', deletedAt: null },
-      orderBy: { version: 'desc' },
-      select: {
-        id: true,
-        version: true,
-        resolution: true,
-        fileSizeBytes: true,
-        releasedAt: true,
-        downloadCount: true,
-        format: { select: { key: true, label: true, container: true } },
-      },
-    },
+    releasedAt: true,
+    /*
+      Whether anything is actually playable.
+
+      This used to be the list of published releases hanging off the episode.
+      With the release layer gone, what a reader wants to know is the same
+      question in the terms that are left: is there a source, and does it need
+      an account. The count is enough for the list; the sources themselves are
+      loaded on the episode page, which is the only place they are played.
+    */
+    _count: { select: { videos: { where: { status: 'PUBLISHED', deletedAt: null } } } },
   },
 });
 
-type EpisodeListRow = Prisma.EpisodeGetPayload<typeof episodeListArgs>;
-
-/**
- * The shape callers actually receive.
- *
- * Same rule as `ReleaseFeedItem`: `Release.fileSizeBytes` is a `BigInt` in the
- * database and a **string** everywhere above the service layer. BigInt is not
- * JSON-serialisable, so it survives neither Next's data cache nor the
- * server→client boundary — and it fails at runtime, not at compile time.
- * `formatBytes()` reads the string form.
- */
-export type EpisodeListItem = Omit<EpisodeListRow, 'releases'> & {
-  releases: Array<Omit<EpisodeListRow['releases'][number], 'fileSizeBytes'> & {
-    fileSizeBytes: string | null;
-  }>;
-};
-
-function toEpisodeListItem(row: EpisodeListRow): EpisodeListItem {
-  return {
-    ...row,
-    releases: row.releases.map((release) => ({
-      ...release,
-      fileSizeBytes: release.fileSizeBytes?.toString() ?? null,
-    })),
-  };
-}
+export type EpisodeListItem = Prisma.EpisodeGetPayload<typeof episodeListArgs>;
 
 export async function listEpisodes(
   projectId: string,
@@ -291,16 +264,16 @@ export async function listEpisodes(
     orderBy: { number: 'asc' },
   });
 
-  return rows.map(toEpisodeListItem);
+  return rows;
 }
 
 export const getPublicEpisodes = cached(
   async (projectId: string) => listEpisodes(projectId, true),
   ['public-episodes'],
-  { tags: [CACHE_TAGS.projects, CACHE_TAGS.releases], revalidate: CACHE_TTL.short },
+  { tags: [CACHE_TAGS.projects], revalidate: CACHE_TTL.short },
 );
 
-/** Full episode payload for the episode page, including resolvable download links. */
+/** Full episode payload for the episode page. */
 export const episodeDetailArgs = Prisma.validator<Prisma.EpisodeDefaultArgs>()({
   select: {
     id: true,
@@ -331,40 +304,7 @@ export const episodeDetailArgs = Prisma.validator<Prisma.EpisodeDefaultArgs>()({
         totalEpisodes: true,
       },
     },
-    releases: {
-      where: { status: 'PUBLISHED', deletedAt: null },
-      orderBy: [{ version: 'desc' }, { resolution: 'desc' }],
-      select: {
-        id: true,
-        kind: true,
-        version: true,
-        resolution: true,
-        videoCodec: true,
-        audioCodec: true,
-        subtitleFormat: true,
-        fileSizeBytes: true,
-        durationSec: true,
-        crc32: true,
-        sha256: true,
-        changelog: true,
-        notes: true,
-        releasedAt: true,
-        downloadCount: true,
-        format: { select: { key: true, label: true, container: true, isSoftsub: true } },
-        links: {
-          orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
-          select: {
-            id: true,
-            kind: true,
-            label: true,
-            isMirror: true,
-            availability: true,
-            downloadCount: true,
-            host: { select: { key: true, name: true, iconUrl: true } },
-          },
-        },
-      },
-    },
+    releasedAt: true,
   },
 });
 

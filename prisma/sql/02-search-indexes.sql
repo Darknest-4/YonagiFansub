@@ -29,12 +29,19 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS news_posts_title_trgm_idx
 CREATE INDEX CONCURRENTLY IF NOT EXISTS team_members_name_trgm_idx
   ON team_members USING gin (name gin_trgm_ops);
 
--- Partial index for the busiest query on the site: the public release feed.
--- Only published, non-deleted rows are ever read there, so only those are
--- indexed — a fraction of the size of a full index on releasedAt.
-CREATE INDEX CONCURRENTLY IF NOT EXISTS releases_public_feed_idx
-  ON releases ("releasedAt" DESC)
-  WHERE status = 'PUBLISHED' AND "deletedAt" IS NULL;
+-- Partial index for the busiest query on the site: the public episode feed —
+-- the home page's "latest" row and the RSS feed both order by this.
+--
+-- It used to index the `releases` table; that table is gone, and the same
+-- question is now answered from `episodes."releasedAt"`. Only released,
+-- non-deleted rows are ever read there, so only those are indexed — a fraction
+-- of the size of a full index on the column.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS episodes_public_feed_idx
+  ON episodes ("releasedAt" DESC)
+  WHERE status = 'RELEASED' AND "deletedAt" IS NULL;
+
+-- És a régi, ha egy korábbi telepítésből még ott van.
+DROP INDEX CONCURRENTLY IF EXISTS releases_public_feed_idx;
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS projects_public_catalogue_idx
   ON projects ("publishedAt" DESC)

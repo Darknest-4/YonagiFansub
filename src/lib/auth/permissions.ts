@@ -20,9 +20,6 @@ export const PERMISSIONS = {
   'episode:write': { group: 'Epizódok', description: 'Epizódok és munkafolyamat kezelése' },
   'episode:delete': { group: 'Epizódok', description: 'Epizódok törlése' },
 
-  'release:write': { group: 'Kiadások', description: 'Kiadások és letöltési linkek kezelése' },
-  'release:publish': { group: 'Kiadások', description: 'Kiadások publikálása' },
-  'release:delete': { group: 'Kiadások', description: 'Kiadások törlése' },
 
   // Editorial
   'news:write': { group: 'Hírek', description: 'Hírek írása és szerkesztése' },
@@ -79,7 +76,6 @@ const STAFF_PERMISSIONS: Permission[] = [
   'project:read',
   'project:write',
   'episode:write',
-  'release:write',
   'media:write',
   'stats:read',
 ];
@@ -87,7 +83,6 @@ const STAFF_PERMISSIONS: Permission[] = [
 const EDITOR_PERMISSIONS: Permission[] = [
   ...STAFF_PERMISSIONS,
   'project:publish',
-  'release:publish',
   'news:write',
   'news:publish',
   'faq:write',
@@ -110,7 +105,6 @@ const ADMIN_PERMISSIONS: Permission[] = [
     ...MODERATOR_PERMISSIONS,
     'project:delete',
     'episode:delete',
-    'release:delete',
     'news:delete',
     'media:delete',
     'team:delete',

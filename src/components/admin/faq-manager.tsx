@@ -24,7 +24,7 @@ export interface FaqEntryView {
 
 export const FAQ_CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'general', label: 'Általános' },
-  { value: 'download', label: 'Letöltés' },
+  { value: 'download', label: 'Nézés' },
   { value: 'projects', label: 'Projektek' },
   { value: 'team', label: 'Csapat' },
   { value: 'technical', label: 'Technikai' },

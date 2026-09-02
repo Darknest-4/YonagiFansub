@@ -3,7 +3,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock, Eye } from 'lucide-react';
-import { env } from '@/lib/env';
 import { ogImages, twitterImages } from '@/lib/seo';
 import { formatDate, formatCount, truncate, stripMarkdown, toIsoString } from '@/lib/utils';
 import { renderMarkdown } from '@/lib/markdown';
@@ -12,10 +11,12 @@ import { Breadcrumbs } from '@/components/site/page-header';
 import { NewsCard } from '@/components/site/news-card';
 import { Comments } from '@/components/site/comments';
 import { Avatar } from '@/components/ui/avatar';
+import { siteUrl } from '@/lib/site-url';
 
 type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const base = await siteUrl();
   const { slug } = await params;
   const post = await getPublicNewsBySlug(slug);
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: 'article',
       title: post.title,
       description,
-      url: `${env.NEXT_PUBLIC_SITE_URL}/hirek/${post.slug}`,
+      url: `${base}/hirek/${post.slug}`,
       publishedTime: toIsoString(post.publishedAt),
       modifiedTime: toIsoString(post.updatedAt),
       authors: post.author ? [post.author.displayName] : undefined,
@@ -54,6 +55,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
  * only HTML in that string is HTML the renderer itself emitted.
  */
 export default async function NewsPostPage({ params }: { params: Params }) {
+  const base = await siteUrl();
   const { slug } = await params;
   const post = await getPublicNewsBySlug(slug);
 
@@ -88,9 +90,9 @@ export default async function NewsPostPage({ params }: { params: Params }) {
             publisher: {
               '@type': 'Organization',
               name: 'Yonagi Fansub',
-              url: env.NEXT_PUBLIC_SITE_URL,
+              url: base,
             },
-            mainEntityOfPage: `${env.NEXT_PUBLIC_SITE_URL}/hirek/${post.slug}`,
+            mainEntityOfPage: `${base}/hirek/${post.slug}`,
             inLanguage: 'hu-HU',
           }),
         }}

@@ -1,7 +1,6 @@
 import 'server-only';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { mailTemplates, sendMail } from '@/lib/mail';
 import { recordAudit } from '@/lib/api/audit';
@@ -23,6 +22,13 @@ import {
   ValidationError,
 } from '@/lib/errors';
 import { getSettings } from '@/server/settings';
+/*
+  A levelekbe kerülő cím soha nem a kérés `Host` fejlécéből jön: az a hívó
+  által megadott érték, és egy hamisított hoszttal épített jelszó-visszaállító
+  link működő adathalász link, amit mi kézbesítünk az áldozat postafiókjába.
+  Lásd `lib/site-url.ts`.
+*/
+import { mailSiteUrl } from '@/lib/site-url';
 
 /**
  * Authentication flows.
@@ -301,7 +307,7 @@ export async function issueVerificationEmail(
     to: email,
     ...mailTemplates.verifyEmail(
       displayName,
-      `${env.NEXT_PUBLIC_SITE_URL}/email-megerosites?token=${token}`,
+      `${mailSiteUrl()}/email-megerosites?token=${token}`,
     ),
   });
 }
@@ -468,7 +474,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
     to: user.email,
     ...mailTemplates.resetPassword(
       user.displayName,
-      `${env.NEXT_PUBLIC_SITE_URL}/jelszo-visszaallitas/${token}`,
+      `${mailSiteUrl()}/jelszo-visszaallitas/${token}`,
     ),
   });
 }

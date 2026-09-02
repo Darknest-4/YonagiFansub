@@ -641,7 +641,7 @@ export function ProjectForm({
         onClose={() => setConfirmDelete(false)}
         onConfirm={handleDelete}
         title="Projekt törlése"
-        description="A projekt eltűnik a nyilvános oldalról, az epizódjai és kiadásai vele együtt. Az adat nem vész el véglegesen — később visszaállítható."
+        description="A projekt eltűnik a nyilvános oldalról, az epizódjai vele együtt. Az adat nem vész el véglegesen — később visszaállítható."
         confirmLabel="Törlés"
         requireTyped={values.slug}
       />

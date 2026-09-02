@@ -57,7 +57,7 @@ export const SETTING_DEFINITIONS = {
     type: 'text',
     isPublic: true,
     default:
-      'A Yonagi Fansub magyar feliratokat készít anime sorozatokhoz és filmekhez. Friss kiadások, projektállapotok és letöltések egy helyen.',
+      'A Yonagi Fansub magyar feliratokat készít anime sorozatokhoz és filmekhez. Friss részek, projektállapotok és adásnaptár egy helyen.',
   }),
   announcement: define({
     key: 'announcement',
@@ -287,22 +287,13 @@ export const SETTING_DEFINITIONS = {
     max: 96,
   }),
 
-  // ── Nézés és letöltés ──────────────────────────────────────────────────────
+  // ── Nézés ──────────────────────────────────────────────────────────────────
 
-  downloadsEnabled: define({
-    key: 'downloadsEnabled',
-    group: 'playback',
-    label: 'Letöltési linkek',
-    description: 'Kikapcsolva a kiadásoknál nem jelennek meg a letöltési hivatkozások.',
-    type: 'boolean',
-    isPublic: true,
-    default: true,
-  }),
   watchEnabled: define({
     key: 'watchEnabled',
     group: 'playback',
     label: 'Online nézés',
-    description: 'A beépített lejátszó. Kikapcsolva csak letölteni lehet.',
+    description: 'A beépített lejátszó. Kikapcsolva a részek oldalain nem indul el semmi.',
     type: 'boolean',
     isPublic: true,
     default: true,
@@ -510,7 +501,7 @@ export const SETTING_GROUP_LABELS: Record<SettingDefinition<unknown>['group'], s
   general: 'Általános',
   beta: 'Béta állapot',
   features: 'Funkciók',
-  playback: 'Nézés és letöltés',
+  playback: 'Nézés',
   seo: 'SEO',
   social: 'Közösségi felületek',
   legal: 'Jogi',

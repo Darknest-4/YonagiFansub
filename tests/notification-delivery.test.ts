@@ -1,17 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { digestPeriod, digestWindowStart, isDigestDue } from '@/server/digest';
-import { classifyStatus } from '@/server/link-check';
 
 /**
- * The two rules behind the delivery jobs.
+ * The rule behind the digest job.
  *
- * Both jobs are mostly database work, but each turns on one decision that has to
- * be right, and neither decision needs a database to check:
+ * The job is mostly database work, but it turns on one decision that has to be
+ * right and needs no database to check: who gets a digest, and covering what
+ * window. Get it wrong and people are either spammed or silently skipped, and
+ * both are discovered late.
  *
- *   • who gets a digest, and covering what window — get this wrong and people
- *     are either spammed or silently skipped, and both are discovered late;
- *   • what an HTTP status means about a download mirror — get this wrong and
- *     working mirrors disappear from the site on their own.
+ * The mirror-status rules that used to live here went with the download layer.
  */
 
 const HOUR = 3_600_000;
@@ -84,30 +82,5 @@ describe('összefoglaló időablaka', () => {
     const ancient = new Date(now.getTime() - 400 * DAY);
     const start = digestWindowStart('weekly', ancient, now);
     expect(start.getTime()).toBe(now.getTime() - 8 * DAY);
-  });
-});
-
-describe('letöltési link állapota HTTP-válasz alapján', () => {
-  it('a sikeres és az átirányító válasz is elérhetőnek számít', () => {
-    // Egy filehost, ami a letöltőoldalára irányít, pontosan úgy működik, ahogy kell.
-    for (const status of [200, 204, 206, 301, 302, 307, 308]) {
-      expect(classifyStatus(status)).toBe('ONLINE');
-    }
-  });
-
-  it('csak a „nincs meg” minősít halottnak', () => {
-    expect(classifyStatus(404)).toBe('OFFLINE');
-    expect(classifyStatus(410)).toBe('OFFLINE');
-  });
-
-  /*
-    Ez az aszimmetria a lényeg: egy élő tükör tévesen halottnak jelölése valódi
-    letöltésbe kerül, egy halott tükör meghagyása egyetlen félrekattintásba.
-    A botvédelem és a szerverhiba tehát NEM halál.
-  */
-  it('a kapuőrködés és a szerverhiba nem halál, csak akadozás', () => {
-    for (const status of [401, 403, 429, 500, 502, 503, 504]) {
-      expect(classifyStatus(status)).toBe('DEGRADED');
-    }
   });
 });
