@@ -2,10 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 import {
   CalendarDays,
-  ChevronDown,
   ChevronUp,
   Clapperboard,
   HelpCircle,
@@ -20,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TAB_NAV, isActive, type NavItem } from '@/components/site/nav-config';
+import { scrollToY, useScrollState } from '@/components/site/use-scroll-state';
 
 const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
   Home,
@@ -66,22 +65,22 @@ const ICONS: Record<NonNullable<NavItem['icon']>, LucideIcon> = {
  * All above the 44px a thumb reliably hits, no label truncated. A seventh tab
  * would put the smallest screen under that floor, so anything more belongs in
  * the sheet.
+ *
+ * ## Shrinking on scroll
+ *
+ * A bar that floats over the content covers the last rows of it, and the cost
+ * of that is worst exactly when somebody is reading — which is to say, while
+ * scrolling. So past 80px the labels collapse and the padding tightens: the
+ * island keeps every target reachable while giving back about a fifth of its
+ * height, and the labels come back the moment you return to the top.
+ *
+ * The measured widths above are unaffected — compacting changes height, not the
+ * horizontal split.
  */
 export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {
   const pathname = usePathname();
 
-  /**
-   * Collapsed state.
-   *
-   * A bar that floats over the content covers the last few rows of it. Most of
-   * the time that is a fair trade; while reading a long episode list it is not,
-   * so it can be tucked away to a handle and pulled back.
-   *
-   * Deliberately not persisted: the next page load starts with navigation
-   * visible, because a person who hid the bar and forgot has no way to guess
-   * where it went.
-   */
-  const [collapsed, setCollapsed] = useState(false);
+  const { compact, scrolled } = useScrollState();
 
   // The sheet holds the routes that did not get a tab, so "Több" should look
   // active while you are on one of them — otherwise the bar claims you are
@@ -100,30 +99,45 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
         'pointer-events-none',
       )}
     >
+      {/*
+        Jump to the far end of the page.
+
+        The direction follows where you already are — down while the page is
+        still near the top, back to the top once you have moved. A button that
+        always meant "bottom" would be dead weight for the whole second half of
+        every page, and one that always meant "top" would be dead weight for the
+        first screen.
+      */}
       <button
         type="button"
-        onClick={() => setCollapsed((value) => !value)}
-        aria-expanded={!collapsed}
-        aria-label={collapsed ? 'Navigáció megjelenítése' : 'Navigáció elrejtése'}
+        onClick={() =>
+          scrollToY(scrolled ? 0 : document.documentElement.scrollHeight)
+        }
+        aria-label={scrolled ? 'Ugrás az oldal tetejére' : 'Ugrás az oldal aljára'}
         className={cn(
           'pointer-events-auto mb-1.5 grid h-7 w-14 place-items-center rounded-full',
           'border border-ink-700/70 bg-ink-900/85 text-mist-400 backdrop-blur-xl',
-          'transition-colors duration-fast active:bg-ink-850',
+          'transition-[background-color,transform,opacity] duration-base ease-out-expo',
+          'active:bg-ink-850',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-400',
+          // Shrinks with the bar, so the whole island reads as one object
+          // rather than a handle that stayed behind.
+          compact && 'h-6 w-11 opacity-80',
         )}
       >
-        {collapsed ? (
-          <ChevronUp className="size-4" aria-hidden />
-        ) : (
-          <ChevronDown className="size-4" aria-hidden />
-        )}
+        <ChevronUp
+          className={cn(
+            'size-4 transition-transform duration-base ease-out-expo',
+            // One icon, rotated. A swap between two elements cannot be
+            // animated; a rotation shows which way the button now points.
+            !scrolled && 'rotate-180',
+          )}
+          aria-hidden
+        />
       </button>
 
       <nav
         aria-label="Mobil navigáció"
-        // `hidden` rather than unmounted: the bar keeps its place in the tab
-        // order and a screen reader can still reach it while it is tucked away.
-        aria-hidden={collapsed}
         className={cn(
           // Narrower inset on the smallest phones. At 320px the six targets come
           // out at 45px with a 12px margin — over the 44px floor, but only just;
@@ -131,9 +145,12 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
           // rather than borderline.
           'pointer-events-auto mx-2 w-[calc(100%-1rem)] max-w-md origin-bottom',
           '[@media(width>=360px)]:mx-3 [@media(width>=360px)]:w-[calc(100%-1.5rem)]',
-          'rounded-[1.75rem] border border-ink-700/60 bg-ink-950/80 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-2xl',
-          'transition-[transform,opacity] duration-base ease-out-expo',
-          collapsed && 'pointer-events-none translate-y-6 scale-95 opacity-0',
+          'rounded-[1.75rem] border border-ink-700/60 bg-ink-950/80 shadow-2xl shadow-black/50 backdrop-blur-2xl',
+          // The shrink itself: padding and corner radius, both animated. Scale
+          // would be cheaper to composite but blurs the text on the way, and a
+          // navigation bar is not a place to trade legibility for a frame.
+          'transition-[padding,border-radius] duration-base ease-out-expo',
+          compact ? 'p-1 rounded-[1.5rem]' : 'p-1.5',
         )}
       >
         <ul className="flex items-stretch gap-0.5">
@@ -145,11 +162,11 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
               <li key={item.href} className="min-w-0 flex-1">
                 <Link
                   href={item.href}
-                  tabIndex={collapsed ? -1 : undefined}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-13 flex-col items-center justify-center gap-1 rounded-[1.375rem] px-0.5 py-2',
-                    'transition-colors duration-fast',
+                    'flex flex-col items-center justify-center rounded-[1.375rem] px-0.5',
+                    'transition-[padding,gap,min-height,background-color,color] duration-base ease-out-expo',
+                    compact ? 'min-h-10 gap-0 py-1.5' : 'min-h-13 gap-1 py-2',
                     'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-bloom-400',
                     active
                       ? 'bg-mist-50 text-ink-950 shadow-lg shadow-black/30'
@@ -160,10 +177,17 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
                     className={cn('size-[1.15rem] shrink-0', active && 'stroke-[2.25]')}
                     aria-hidden
                   />
+                  {/*
+                    Collapsed to nothing rather than removed. `max-height` and
+                    `opacity` animate; a node that unmounts snaps, and the bar
+                    would jump every time somebody scrolled past the threshold.
+                  */}
                   <span
                     className={cn(
                       'max-w-full truncate text-[10px] leading-none',
+                      'transition-[max-height,opacity,margin] duration-base ease-out-expo',
                       active ? 'font-bold' : 'font-medium',
+                      compact ? 'max-h-0 opacity-0' : 'mt-0 max-h-4 opacity-100',
                     )}
                   >
                     {item.label}
@@ -184,12 +208,12 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
             <button
               type="button"
               onClick={onMore}
-              tabIndex={collapsed ? -1 : undefined}
               aria-expanded={moreOpen}
               aria-haspopup="dialog"
               className={cn(
-                'flex min-h-13 w-full flex-col items-center justify-center gap-1 rounded-[1.375rem] px-0.5 py-2',
-                'transition-colors duration-fast',
+                'flex w-full flex-col items-center justify-center rounded-[1.375rem] px-0.5',
+                'transition-[padding,gap,min-height,background-color,color] duration-base ease-out-expo',
+                compact ? 'min-h-10 gap-0 py-1.5' : 'min-h-13 gap-1 py-2',
                 'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-bloom-400',
                 moreActive
                   ? 'bg-mist-50 text-ink-950 shadow-lg shadow-black/30'
@@ -203,7 +227,9 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
               <span
                 className={cn(
                   'text-[10px] leading-none',
+                  'transition-[max-height,opacity] duration-base ease-out-expo',
                   moreActive ? 'font-bold' : 'font-medium',
+                  compact ? 'max-h-0 opacity-0' : 'max-h-4 opacity-100',
                 )}
               >
                 Több
