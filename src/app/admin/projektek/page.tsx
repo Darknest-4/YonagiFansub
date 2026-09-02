@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { ensurePermission } from '@/shared/auth/guards';
 import { listProjects } from '@/features/projects/queries';
 import { paginationSchema, parseList } from '@/shared/api/pagination';
-import { projectQuerySchema } from '@/lib/validation/schemas';
+import { projectQuerySchema } from '@/features/projects/schemas';
 import { ButtonLink } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { AdminProjectTable } from '@/features/projects/components/project-table';

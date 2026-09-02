@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { projectQuerySchema, projectWriteSchema } from '@/lib/validation/schemas';
+import { projectQuerySchema, projectWriteSchema } from '@/features/projects/schemas';
 import { parseList } from '@/shared/api/pagination';
 import { listProjects } from '@/features/projects/queries';
 import { createProject } from '@/features/projects/admin-service';

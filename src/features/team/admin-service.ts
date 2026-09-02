@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { db } from '@/infrastructure/db';
 import { ConflictError, NotFoundError } from '@/shared/lib/errors';
 import { invalidateTeam } from '@/infrastructure/cache';
-import type { TeamMemberWriteInput } from '@/lib/validation/schemas';
+import type { TeamMemberWriteInput } from '@/features/team/schemas';
 import { nullable, type MutationContext } from '@/shared/api/mutation-context';
 
 /**

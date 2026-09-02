@@ -7,7 +7,7 @@ import { ProjectCard } from '@/features/projects/components/project-card';
 import { ProjectFilters } from '@/features/projects/components/project-filters';
 import { listGenres, listPublicProjects, listSeasons } from '@/features/projects/queries';
 import { paginationSchema, parseList } from '@/shared/api/pagination';
-import { projectQuerySchema } from '@/lib/validation/schemas';
+import { projectQuerySchema } from '@/features/projects/schemas';
 import { PageHeader } from '@/shared/layout/page-header';
 import { getSettings } from '@/features/settings/service';
 

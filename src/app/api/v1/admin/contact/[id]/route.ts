@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { contactUpdateSchema } from '@/lib/validation/schemas';
+import { contactUpdateSchema } from '@/features/contact/schemas';
 import { db } from '@/infrastructure/db';
 import { NotFoundError } from '@/shared/lib/errors';
 import { recordAudit } from '@/shared/api/audit';

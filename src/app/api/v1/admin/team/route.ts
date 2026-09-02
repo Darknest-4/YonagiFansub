@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { teamMemberWriteSchema } from '@/lib/validation/schemas';
+import { teamMemberWriteSchema } from '@/features/team/schemas';
 import { createTeamMember, listAdminTeam } from '@/features/team/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

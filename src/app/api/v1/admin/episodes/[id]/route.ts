@@ -1,6 +1,6 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { episodeWriteSchema } from '@/lib/validation/schemas';
-import { softDeleteEpisode, updateEpisode } from '@/features/projects/admin-service';
+import { episodeWriteSchema } from '@/features/projects/schemas';
+import { softDeleteEpisode, updateEpisode } from '@/features/projects/episode-admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';

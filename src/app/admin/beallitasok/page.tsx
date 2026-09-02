@@ -4,8 +4,8 @@ import {
   SETTING_DEFINITIONS,
   SETTING_GROUP_LABELS,
   SETTING_GROUP_ORDER,
-  getSettings,
-} from '@/features/settings/service';
+} from '@/features/settings/definitions';
+import { getSettings } from '@/features/settings/service';
 import { SettingsForm } from '@/features/settings/components/settings-form';
 
 export const metadata: Metadata = { title: 'Beállítások' };

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
-import { videoWriteSchema } from '@/lib/validation/schemas';
+import { videoWriteSchema } from '@/features/video/schemas';
 import { createVideoSource, listEpisodeVideosAdmin } from '@/features/video/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

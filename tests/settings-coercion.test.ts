@@ -3,9 +3,9 @@ import {
   SETTING_DEFINITIONS,
   SETTING_GROUP_LABELS,
   SETTING_GROUP_ORDER,
-  coerceSettingValue,
   type SettingDefinition,
-} from '@/features/settings/service';
+} from '@/features/settings/definitions';
+import { coerceSettingValue } from '@/features/settings/service';
 
 /**
  * What a setting turns into on the way in and out.

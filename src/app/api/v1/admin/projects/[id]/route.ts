@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { projectWriteSchema } from '@/lib/validation/schemas';
+import { projectWriteSchema } from '@/features/projects/schemas';
 import { getAdminProject, softDeleteProject, updateProject } from '@/features/projects/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

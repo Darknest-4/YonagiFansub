@@ -11,7 +11,7 @@ import {
   slug,
   text,
 } from '@/shared/validation/common';
-import { teamMemberWriteSchema } from '@/lib/validation/schemas';
+import { teamMemberWriteSchema } from '@/features/team/schemas';
 
 /**
  * Validation messages.

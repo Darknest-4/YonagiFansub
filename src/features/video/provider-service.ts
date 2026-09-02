@@ -2,7 +2,7 @@ import 'server-only';
 import { db } from '@/infrastructure/db';
 import { ConflictError, NotFoundError } from '@/shared/lib/errors';
 import { nullable, type MutationContext } from '@/shared/api/mutation-context';
-import type { VideoProviderWriteInput } from '@/lib/validation/schemas';
+import type { VideoProviderWriteInput } from '@/features/video/schemas';
 
 /**
  * Video provider registry.

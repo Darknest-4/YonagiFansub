@@ -1,6 +1,7 @@
 import { defineRoute, slugParams } from '@/shared/api/handler';
 import { NotFoundError } from '@/shared/lib/errors';
-import { getPublicEpisodes, getPublicProjectBySlug } from '@/features/projects/queries';
+import { getPublicProjectBySlug } from '@/features/projects/queries';
+import { getPublicEpisodes } from '@/features/projects/episode-queries';
 
 // Rendered per request: the response depends on the database, which is not
 // reachable during `next build`. See `(site)/layout.tsx` for the full reasoning.

@@ -2,7 +2,7 @@ import 'server-only';
 import { db } from '@/infrastructure/db';
 import { ConflictError, NotFoundError } from '@/shared/lib/errors';
 import { invalidateProject } from '@/infrastructure/cache';
-import type { VideoWriteInput } from '@/lib/validation/schemas';
+import type { VideoWriteInput } from '@/features/video/schemas';
 import { extractExternalId } from '@/features/video/provider';
 import { nullable, type MutationContext } from '@/shared/api/mutation-context';
 

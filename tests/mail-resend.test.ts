@@ -27,7 +27,7 @@ function stubEnv(): void {
 async function loadMail() {
   vi.resetModules();
   stubEnv();
-  return import('@/lib/mail');
+  return import('@/infrastructure/mail/transport');
 }
 
 let calls: Array<{ url: string; init: RequestInit }>;

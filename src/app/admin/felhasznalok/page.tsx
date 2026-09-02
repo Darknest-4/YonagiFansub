@@ -4,7 +4,7 @@ import { canManageRole, hasPermission } from '@/shared/auth/permissions';
 import { toActor } from '@/shared/auth/session';
 import { listRoles, listUsers } from '@/features/users/admin-service';
 import { paginationSchema } from '@/shared/api/pagination';
-import { userQuerySchema } from '@/lib/validation/schemas';
+import { userQuerySchema } from '@/features/users/schemas';
 import { EmptyState } from '@/shared/ui/feedback';
 import { AdminUserTable } from '@/features/users/components/user-table';
 

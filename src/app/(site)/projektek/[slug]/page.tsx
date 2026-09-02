@@ -16,11 +16,8 @@ import {
 import { ogImages, twitterImages } from '@/shared/lib/seo';
 import { formatCount, formatDate, formatEpisodeNumber, toIsoString, truncate } from '@/shared/lib/utils';
 import { db } from '@/infrastructure/db';
-import {
-  getPublicEpisodes,
-  getPublicProjectBySlug,
-  incrementProjectView,
-} from '@/features/projects/queries';
+import { getPublicProjectBySlug, incrementProjectView } from '@/features/projects/queries';
+import { getPublicEpisodes } from '@/features/projects/episode-queries';
 import { getCurrentUser } from '@/shared/auth/guards';
 import { getProjectProgress, getRatingSummary } from '@/features/watch/service';
 import {

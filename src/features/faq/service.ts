@@ -2,7 +2,7 @@ import 'server-only';
 import { db } from '@/infrastructure/db';
 import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
 import { NotFoundError } from '@/shared/lib/errors';
-import type { FaqWriteInput } from '@/lib/validation/schemas';
+import type { FaqWriteInput } from '@/features/faq/schemas';
 import { nullable, type MutationContext } from '@/shared/api/mutation-context';
 
 /**

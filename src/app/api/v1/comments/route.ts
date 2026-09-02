@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
-import { commentCreateSchema } from '@/lib/validation/schemas';
+import { commentCreateSchema } from '@/features/comments/schemas';
 import { db } from '@/infrastructure/db';
 import { ForbiddenError, NotFoundError } from '@/shared/lib/errors';
 import { getSettings } from '@/features/settings/service';

@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { newsQuerySchema, newsWriteSchema } from '@/lib/validation/schemas';
+import { newsQuerySchema, newsWriteSchema } from '@/features/news/schemas';
 import { listNews } from '@/features/news/queries';
 import { createNews } from '@/features/news/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';

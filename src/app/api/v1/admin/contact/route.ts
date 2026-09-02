@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { contactQuerySchema } from '@/lib/validation/schemas';
+import { contactQuerySchema } from '@/features/contact/schemas';
 import { db } from '@/infrastructure/db';
 import { paginationMeta, toSkipTake } from '@/shared/api/pagination';
 import type { Prisma } from '@prisma/client';

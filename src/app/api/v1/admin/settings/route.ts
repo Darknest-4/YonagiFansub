@@ -1,7 +1,8 @@
 import { defineRoute } from '@/shared/api/handler';
-import { settingsWriteSchema } from '@/lib/validation/schemas';
+import { settingsWriteSchema } from '@/features/settings/schemas';
 import { CACHE_TAGS, invalidate } from '@/infrastructure/cache';
-import { SETTING_DEFINITIONS, getSettings, writeSettings } from '@/features/settings/service';
+import { SETTING_DEFINITIONS } from '@/features/settings/definitions';
+import { getSettings, writeSettings } from '@/features/settings/service';
 import { recordAudit } from '@/shared/api/audit';
 
 export const runtime = 'nodejs';

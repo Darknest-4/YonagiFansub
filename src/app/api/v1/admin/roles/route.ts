@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { roleWriteSchema } from '@/lib/validation/schemas';
+import { roleWriteSchema } from '@/features/users/schemas';
 import { listPermissions, listRoles, upsertRole } from '@/features/users/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

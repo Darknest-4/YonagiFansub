@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { registerSchema } from '@/lib/validation/schemas';
+import { registerSchema } from '@/features/auth/schemas';
 import { registerUser } from '@/features/auth/service';
 import { logger } from '@/infrastructure/logger';
 

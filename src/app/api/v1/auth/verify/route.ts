@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { verifyEmailSchema } from '@/lib/validation/schemas';
+import { verifyEmailSchema } from '@/features/auth/schemas';
 import { verifyEmail } from '@/features/auth/service';
 
 export const runtime = 'nodejs';

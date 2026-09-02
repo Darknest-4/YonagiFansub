@@ -4,7 +4,7 @@ import { Pin, Plus } from 'lucide-react';
 import { ensurePermission } from '@/shared/auth/guards';
 import { listNews } from '@/features/news/queries';
 import { paginationSchema } from '@/shared/api/pagination';
-import { newsQuerySchema } from '@/lib/validation/schemas';
+import { newsQuerySchema } from '@/features/news/schemas';
 import { formatDate } from '@/shared/lib/utils';
 import { ButtonLink } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';

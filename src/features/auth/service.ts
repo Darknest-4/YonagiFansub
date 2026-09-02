@@ -2,7 +2,8 @@ import 'server-only';
 import { Prisma } from '@prisma/client';
 import { db } from '@/infrastructure/db';
 import { logger } from '@/infrastructure/logger';
-import { mailTemplates, sendMail } from '@/lib/mail';
+import { sendMail } from '@/infrastructure/mail/transport';
+import { authMail } from '@/features/auth/mail';
 import { recordAudit } from '@/shared/api/audit';
 import { clearRateLimit } from '@/shared/api/rate-limit';
 import {
@@ -305,7 +306,7 @@ export async function issueVerificationEmail(
 
   await sendMail({
     to: email,
-    ...mailTemplates.verifyEmail(
+    ...authMail.verifyEmail(
       displayName,
       `${mailSiteUrl()}/email-megerosites?token=${token}`,
     ),
@@ -472,7 +473,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
 
   await sendMail({
     to: user.email,
-    ...mailTemplates.resetPassword(
+    ...authMail.resetPassword(
       user.displayName,
       `${mailSiteUrl()}/jelszo-visszaallitas/${token}`,
     ),
@@ -518,7 +519,7 @@ export async function resetPassword(
 
   await sendMail({
     to: record.user.email,
-    ...mailTemplates.passwordChanged(record.user.displayName),
+    ...authMail.passwordChanged(record.user.displayName),
   });
 
   await recordAudit({
@@ -563,7 +564,7 @@ export async function changePassword(
   // Keep the current device signed in; drop everything else.
   await revokeAllSessions(userId, context.sessionId);
 
-  await sendMail({ to: user.email, ...mailTemplates.passwordChanged(user.displayName) });
+  await sendMail({ to: user.email, ...authMail.passwordChanged(user.displayName) });
 
   await recordAudit({
     actorId: userId,

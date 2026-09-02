@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { userUpdateSchema } from '@/lib/validation/schemas';
+import { userUpdateSchema } from '@/features/users/schemas';
 import { getAdminUser, softDeleteUser, updateUser } from '@/features/users/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

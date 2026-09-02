@@ -2,7 +2,8 @@ import 'server-only';
 import type { NotificationType, ProjectStatus } from '@prisma/client';
 import { db } from '@/infrastructure/db';
 import { logger } from '@/infrastructure/logger';
-import { mailTemplates, sendMail } from '@/lib/mail';
+import { sendMail } from '@/infrastructure/mail/transport';
+import { notificationMail } from '@/features/notifications/mail';
 import { mailSiteUrl } from '@/shared/lib/site-url';
 
 /**
@@ -174,7 +175,7 @@ async function dispatchReleaseEmails(
       chunk.map((user) =>
         sendMail({
           to: user.email,
-          ...mailTemplates.newRelease(user.displayName, projectTitle, label, url),
+          ...notificationMail.newRelease(user.displayName, projectTitle, label, url),
         }),
       ),
     );
@@ -276,7 +277,7 @@ async function dispatchNewsEmails(
     const chunk = users.slice(index, index + EMAIL_CHUNK_SIZE);
     await Promise.all(
       chunk.map((user) =>
-        sendMail({ to: user.email, ...mailTemplates.newsPost(user.displayName, title, excerpt, url) }),
+        sendMail({ to: user.email, ...notificationMail.newsPost(user.displayName, title, excerpt, url) }),
       ),
     );
   }

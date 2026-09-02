@@ -19,7 +19,7 @@ import {
 import type { MutationContext } from '@/shared/api/mutation-context';
 import { notifySystem } from '@/features/notifications/service';
 import { nullable } from '@/shared/api/mutation-context';
-import type { RoleWriteInput, UserWriteInput } from '@/shared/api/mutation-types';
+import type { RoleWriteInput, UserWriteInput } from '@/features/users/schemas';
 
 /**
  * User and role administration.

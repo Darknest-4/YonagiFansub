@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { commentEditSchema } from '@/lib/validation/schemas';
+import { commentEditSchema } from '@/features/comments/schemas';
 import { getSettings } from '@/features/settings/service';
 import { deleteOwnComment, editOwnComment } from '@/features/comments/queries';
 

@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { changePasswordSchema } from '@/lib/validation/schemas';
+import { changePasswordSchema } from '@/features/auth/schemas';
 import { changePassword } from '@/features/auth/service';
 import { getSession } from '@/shared/auth/session';
 

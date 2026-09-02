@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { videoWriteSchema } from '@/lib/validation/schemas';
+import { videoWriteSchema } from '@/features/video/schemas';
 import { deleteVideoSource, updateVideoSource } from '@/features/video/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

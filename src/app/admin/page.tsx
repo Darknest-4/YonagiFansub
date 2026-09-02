@@ -30,7 +30,7 @@ import {
 } from '@/features/stats/service';
 import { db } from '@/infrastructure/db';
 import { env } from '@/infrastructure/env';
-import { getMailStatus } from '@/lib/mail';
+import { getMailStatus } from '@/infrastructure/mail/transport';
 import { cn, formatCount, formatRelative } from '@/shared/lib/utils';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
 import { Skeleton, TableSkeleton } from '@/shared/ui/feedback';

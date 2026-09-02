@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { faqWriteSchema } from '@/lib/validation/schemas';
+import { faqWriteSchema } from '@/features/faq/schemas';
 import { mutationContext } from '@/shared/api/mutation-context';
 import { createFaqEntry, listAdminFaq } from '@/features/faq/service';
 

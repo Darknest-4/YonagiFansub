@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { userQuerySchema } from '@/lib/validation/schemas';
+import { userQuerySchema } from '@/features/users/schemas';
 import { listUsers } from '@/features/users/admin-service';
 
 export const runtime = 'nodejs';

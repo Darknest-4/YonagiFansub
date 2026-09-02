@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { newsWriteSchema } from '@/lib/validation/schemas';
+import { newsWriteSchema } from '@/features/news/schemas';
 import { getAdminNews, softDeleteNews, updateNews } from '@/features/news/admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 

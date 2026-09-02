@@ -8,7 +8,7 @@ import { EmptyState, Skeleton } from '@/shared/ui/feedback';
 import { Pagination } from '@/shared/ui/pagination';
 import { listNewsCategories, listPublicNews } from '@/features/news/queries';
 import { paginationSchema } from '@/shared/api/pagination';
-import { newsQuerySchema } from '@/lib/validation/schemas';
+import { newsQuerySchema } from '@/features/news/schemas';
 import { cn } from '@/shared/lib/utils';
 
 export const metadata: Metadata = {

@@ -1,7 +1,8 @@
 import 'server-only';
 import { db } from '@/infrastructure/db';
 import { logger } from '@/infrastructure/logger';
-import { mailTemplates, sendMail } from '@/lib/mail';
+import { sendMail } from '@/infrastructure/mail/transport';
+import { notificationMail } from '@/features/notifications/mail';
 import { getSettings } from '@/features/settings/service';
 import { mailSiteUrl } from '@/shared/lib/site-url';
 
@@ -172,7 +173,7 @@ export async function sendDigests(now = new Date()): Promise<DigestOutcome> {
 
     await sendMail({
       to: user.email,
-      ...mailTemplates.digest(user.displayName, period, items, `${mailSiteUrl()}/profil/ertesitesek`),
+      ...notificationMail.digest(user.displayName, period, items, `${mailSiteUrl()}/profil/ertesitesek`),
     });
 
     await db.user.update({ where: { id: user.id }, data: { digestSentAt: now } });

@@ -1,5 +1,5 @@
 import { defineRoute, idParams } from '@/shared/api/handler';
-import { teamMemberWriteSchema } from '@/lib/validation/schemas';
+import { teamMemberWriteSchema } from '@/features/team/schemas';
 import {
   getAdminTeamMember,
   softDeleteTeamMember,

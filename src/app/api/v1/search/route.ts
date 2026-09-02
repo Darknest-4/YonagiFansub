@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { searchQuerySchema } from '@/lib/validation/schemas';
+import { searchQuerySchema } from '@/features/search/schemas';
 import { search } from '@/features/search/service';
 
 // Rendered per request: the response depends on the database, which is not

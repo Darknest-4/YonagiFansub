@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { updateProfileSchema } from '@/lib/validation/schemas';
+import { updateProfileSchema } from '@/features/users/schemas';
 import { db } from '@/infrastructure/db';
 import { recordAudit } from '@/shared/api/audit';
 

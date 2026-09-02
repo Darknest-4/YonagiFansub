@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarDays, Clock } from 'lucide-react';
 import { ogImages } from '@/shared/lib/seo';
 import { formatDate, formatDuration, formatEpisodeNumber, toIsoString, truncate } from '@/shared/lib/utils';
-import { getEpisode, getEpisodeNeighbours } from '@/features/projects/queries';
+import { getEpisode, getEpisodeNeighbours } from '@/features/projects/episode-queries';
 import { Breadcrumbs } from '@/shared/layout/page-header';
 import { EpisodeStatusBadge } from '@/shared/ui/badge';
 import { VideoPlayer } from '@/features/video/components/video-player';

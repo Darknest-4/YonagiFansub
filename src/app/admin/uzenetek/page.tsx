@@ -4,7 +4,7 @@ import { hasPermission } from '@/shared/auth/permissions';
 import { toActor } from '@/shared/auth/session';
 import { db } from '@/infrastructure/db';
 import { paginationMeta, paginationSchema, toSkipTake } from '@/shared/api/pagination';
-import { contactQuerySchema } from '@/lib/validation/schemas';
+import { contactQuerySchema } from '@/features/contact/schemas';
 import { EmptyState } from '@/shared/ui/feedback';
 import { ContactInbox } from '@/features/contact/components/contact-inbox';
 import type { Prisma } from '@prisma/client';

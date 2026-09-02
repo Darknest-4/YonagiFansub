@@ -1,9 +1,10 @@
 import { defineRoute } from '@/shared/api/handler';
-import { contactSchema } from '@/lib/validation/schemas';
+import { contactSchema } from '@/features/contact/schemas';
 import { db } from '@/infrastructure/db';
 import { logger } from '@/infrastructure/logger';
 import { ForbiddenError } from '@/shared/lib/errors';
-import { mailTemplates, sendMail } from '@/lib/mail';
+import { sendMail } from '@/infrastructure/mail/transport';
+import { contactMail } from '@/features/contact/mail';
 import { getSettings } from '@/features/settings/service';
 
 export const runtime = 'nodejs';
@@ -46,7 +47,7 @@ export const POST = defineRoute({
     });
 
     // Receipt only – the message itself stays in the admin queue.
-    void sendMail({ to: body.email, ...mailTemplates.contactReceipt(body.name) });
+    void sendMail({ to: body.email, ...contactMail.contactReceipt(body.name) });
 
     logger.info('Contact message received', { messageId: message.id, category: body.category });
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { db } from '@/infrastructure/db';
 import { listCommentThreads } from '@/features/comments/queries';
-import { getProjectBySlug, listEpisodes, listProjects } from '@/features/projects/queries';
+import { getProjectBySlug, listProjects } from '@/features/projects/queries';
+import { listEpisodes } from '@/features/projects/episode-queries';
 import { search } from '@/features/search/service';
 import * as make from './factories';
 

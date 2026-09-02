@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { updatePreferencesSchema } from '@/lib/validation/schemas';
+import { updatePreferencesSchema } from '@/features/users/schemas';
 import { db } from '@/infrastructure/db';
 import type { Prisma } from '@prisma/client';
 

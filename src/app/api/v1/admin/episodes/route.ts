@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
 import { NotFoundError } from '@/shared/lib/errors';
-import { episodeWriteSchema } from '@/lib/validation/schemas';
-import { createEpisode, lookupEpisode } from '@/features/projects/admin-service';
+import { episodeWriteSchema } from '@/features/projects/schemas';
+import { createEpisode, lookupEpisode } from '@/features/projects/episode-admin-service';
 import { mutationContext } from '@/shared/api/mutation-context';
 
 export const runtime = 'nodejs';

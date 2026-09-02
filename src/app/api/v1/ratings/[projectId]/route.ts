@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
-import { ratingSchema } from '@/lib/validation/schemas';
+import { ratingSchema } from '@/features/watch/schemas';
 import { clearRating, getRatingSummary, setRating } from '@/features/watch/service';
 import { db } from '@/infrastructure/db';
 import { NotFoundError } from '@/shared/lib/errors';

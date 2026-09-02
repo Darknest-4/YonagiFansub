@@ -1,5 +1,5 @@
 import { defineRoute } from '@/shared/api/handler';
-import { resetPasswordSchema } from '@/lib/validation/schemas';
+import { resetPasswordSchema } from '@/features/auth/schemas';
 import { resetPassword } from '@/features/auth/service';
 
 export const runtime = 'nodejs';

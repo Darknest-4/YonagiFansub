@@ -5,7 +5,7 @@ import { cn, formatDate, formatDuration, formatEpisodeNumber } from '@/shared/li
 import { Badge, EpisodeStatusBadge } from '@/shared/ui/badge';
 import { WorkflowProgress, buildWorkflowStages, overallProgress } from '@/shared/ui/progress';
 import { EmptyState } from '@/shared/ui/feedback';
-import type { EpisodeListItem } from '@/features/projects/queries';
+import type { EpisodeListItem } from '@/features/projects/episode-queries';
 
 /**
  * Episode list.

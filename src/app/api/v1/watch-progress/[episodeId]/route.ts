@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineRoute } from '@/shared/api/handler';
-import { watchProgressSchema } from '@/lib/validation/schemas';
+import { watchProgressSchema } from '@/features/watch/schemas';
 import { recordProgress } from '@/features/watch/service';
 import { db } from '@/infrastructure/db';
 import { NotFoundError } from '@/shared/lib/errors';

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { ToastProvider } from '@/shared/ui/toast';
-import type { PublicSettings } from '@/features/settings/service';
+import type { PublicSettings } from '@/features/settings/definitions';
 
 /**
  * Client-side application context.

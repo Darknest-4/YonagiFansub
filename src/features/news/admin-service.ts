@@ -6,7 +6,7 @@ import { invalidateNews } from '@/infrastructure/cache';
 import { logger } from '@/infrastructure/logger';
 import { notifyNewsPost } from '@/features/notifications/service';
 import { readingMinutes, stripMarkdown, truncate } from '@/shared/lib/utils';
-import type { NewsWriteInput } from '@/lib/validation/schemas';
+import type { NewsWriteInput } from '@/features/news/schemas';
 import { assertPublishAllowed, nullable, type MutationContext } from '@/shared/api/mutation-context';
 
 /**
