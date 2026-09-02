@@ -137,7 +137,7 @@ export function MemberCard({
         <p className="nums text-2xs text-mist-600">
           {member._count.projects} projekt
           {extra > 0 && (
-            <span className="text-mist-700"> · +{extra} pozíció</span>
+            <span className="text-mist-600"> · +{extra} pozíció</span>
           )}
         </p>
 

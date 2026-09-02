@@ -85,8 +85,10 @@ export function EpisodeTile({
             className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-ink-900 to-transparent"
           />
 
+          {/* Sötét szöveg a rózsaszínen, nem fehér: a fehér 3.69:1-et ad ezen a
+              háttéren, a sötét 5.42:1-et — a WCAG AA küszöbe 4.5:1. */}
           {isFresh && (
-            <span className="absolute top-2.5 left-2.5 rounded-md bg-bloom-500 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+            <span className="absolute top-2.5 left-2.5 rounded-md bg-bloom-500 px-2 py-0.5 text-[10px] font-bold tracking-wide text-ink-950 uppercase">
               Új
             </span>
           )}

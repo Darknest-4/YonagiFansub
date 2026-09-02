@@ -293,7 +293,7 @@ function Breadcrumb({ pathname }: { pathname: string }) {
           return (
             <li key={href} className="flex min-w-0 items-center gap-1.5">
               {index > 0 && (
-                <span aria-hidden className="text-mist-700">
+                <span aria-hidden className="text-mist-600">
                   /
                 </span>
               )}

@@ -31,7 +31,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="w-full max-w-sm">{children}</div>
         </main>
 
-        <footer className="text-center text-2xs text-mist-700">
+        <footer className="text-center text-2xs text-mist-600">
           © {new Date().getFullYear()} Yonagi Fansub ·{' '}
           <Link href="/adatkezeles" className="underline-offset-4 hover:text-mist-500 hover:underline">
             Adatkezelés

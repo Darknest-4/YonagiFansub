@@ -187,7 +187,7 @@ export default async function ProfilePage() {
         </CardBody>
       </Card>
 
-      <p className="text-2xs text-mist-700">
+      <p className="text-2xs text-mist-600">
         Fiók létrehozva: {formatDate(user.emailVerifiedAt ?? new Date())} ·{' '}
         <Link href="/adatkezeles" className="underline-offset-4 hover:text-mist-500 hover:underline">
           Mit tárolunk rólad?

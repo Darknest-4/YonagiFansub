@@ -2,6 +2,7 @@ import 'server-only';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
+import { cache as reactCache } from 'react';
 
 /**
  * Team read model.
@@ -102,7 +103,8 @@ export function groupByPosition(
     .map(({ sortOrder: _sortOrder, ...group }) => group);
 }
 
-export async function getTeamMember(slug: string) {
+/** One member, memoised per request — metadata, the 404 gate and the page all want it. */
+export const getTeamMember = reactCache(async (slug: string) => {
   return db.teamMember.findFirst({
     where: { slug, deletedAt: null },
     select: {
@@ -131,7 +133,7 @@ export async function getTeamMember(slug: string) {
       },
     },
   });
-}
+});
 
 export const getPublicTeamMember = cached(
   async (slug: string) => {

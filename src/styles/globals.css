@@ -78,8 +78,23 @@
   --color-mist-200: #ccd6f5;
   --color-mist-300: #aab8dd;
   --color-mist-400: #8f9bbd;
-  --color-mist-500: #6f7c9e;
-  --color-mist-600: #556182;
+  /*
+    Kontrasztra hangolva, nem szemre.
+
+    A régi 500 (#6f7c9e) és 600 (#556182) a WCAG AA 4.5:1 küszöböt az oldal
+    sötét hátterei felett 4.89, illetve 3.31 aránnyal érte el — a 600-as tehát
+    megbukott, és 105 helyen hordozott valódi szöveget (időbélyegek, aláírások,
+    segédszövegek). Mindkettő egy lépcsőt feljebb került: az új 600 a régi 500,
+    az új 500 pedig annál egy fokkal világosabb, így a skála monoton marad.
+
+    Mért arányok az ink-950 / ink-900 / ink-850 felett:
+      mist-400  7.35 / 7.13 / 6.91
+      mist-500  5.88 / 5.70 / 5.52
+      mist-600  4.89 / 4.74 / 4.60
+      mist-700  2.25 / 2.18 / 2.11  ← ez marad dekoratív, szöveget nem hordoz
+  */
+  --color-mist-500: #7d8aa8;
+  --color-mist-600: #6f7c9e;
   --color-mist-700: #3e4866;
 
   /* Status */

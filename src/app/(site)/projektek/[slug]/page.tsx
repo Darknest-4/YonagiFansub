@@ -7,7 +7,7 @@ import {
   Building2,
   CalendarDays,
   Clapperboard,
-  Download,
+  Play,
   ExternalLink,
   Star,
   Timer,
@@ -273,7 +273,8 @@ export default async function ProjectPage({ params }: { params: Params }) {
                 A borító alatti gomb a leggyakoribb szándékot rövidíti le: aki
                 egy projektoldalra érkezik, jellemzően a legfrissebb részt
                 keresi, és ehhez eddig végig kellett görgetnie az epizódlistát.
-                Csak akkor jelenik meg, ha van mit letölteni.
+                Csak akkor jelenik meg, ha van megjelent rész. Az ikon lejátszás,
+                nem letöltés: a gomb az epizód oldalára visz, ahol nézni lehet.
               */}
               {latestRelease && (
                 <ButtonLink
@@ -282,7 +283,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
                   size="md"
                   fullWidth
                   className="mt-4 text-2xs tracking-[0.1em] uppercase"
-                  leadingIcon={<Download className="size-4" aria-hidden />}
+                  leadingIcon={<Play className="size-4" aria-hidden />}
                 >
                   Legújabb rész
                 </ButtonLink>

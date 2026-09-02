@@ -527,7 +527,7 @@ export function VideoPlayer({
                   isCurrent
                     ? 'border-bloom-500/50 bg-bloom-500/15 text-bloom-300'
                     : isDead
-                      ? 'border-ink-800 text-mist-700 line-through'
+                      ? 'border-ink-800 text-mist-600 line-through'
                       : 'border-ink-700 text-mist-400 hover:border-ink-600 hover:text-mist-100',
                 )}
               >

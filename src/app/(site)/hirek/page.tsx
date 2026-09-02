@@ -120,6 +120,9 @@ async function NewsResults({
 
   return (
     <>
+      {/* Ugyanaz a kihagyott címsorszint, mint a katalógusban — lásd ott. */}
+      <h2 className="sr-only">Bejegyzések</h2>
+
       {featureLead && lead && <NewsCard post={lead} featured priority className="mb-6" />}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

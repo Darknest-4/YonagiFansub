@@ -289,7 +289,7 @@ function Gate({ viewer, returnTo }: { viewer: Viewer | null; returnTo: string })
       {viewer ? (
         <>
           A hozzászóláshoz erősítsd meg az e-mail-címed. A megerősítő levelet a{' '}
-          <Link href="/profil/beallitasok" className="text-bloom-300 underline-offset-4 hover:underline">
+          <Link href="/profil/beallitasok" className="text-bloom-300 underline decoration-bloom-300/40 underline-offset-4 hover:decoration-bloom-300">
             fiókbeállításokban
           </Link>{' '}
           kérheted újra.
@@ -298,12 +298,12 @@ function Gate({ viewer, returnTo }: { viewer: Viewer | null; returnTo: string })
         <>
           <Link
             href={`/belepes?next=${encodeURIComponent(returnTo)}`}
-            className="text-bloom-300 underline-offset-4 hover:underline"
+            className="text-bloom-300 underline decoration-bloom-300/40 underline-offset-4 hover:decoration-bloom-300"
           >
             Lépj be
           </Link>{' '}
           a hozzászóláshoz. Ha még nincs fiókod,{' '}
-          <Link href="/regisztracio" className="text-bloom-300 underline-offset-4 hover:underline">
+          <Link href="/regisztracio" className="text-bloom-300 underline decoration-bloom-300/40 underline-offset-4 hover:decoration-bloom-300">
             regisztrálj
           </Link>{' '}
           — pár másodperc.

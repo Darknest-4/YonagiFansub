@@ -56,7 +56,7 @@ export default function NotFound() {
           </ButtonLink>
         </div>
 
-        <p className="mt-10 text-2xs text-mist-700">
+        <p className="mt-10 text-2xs text-mist-600">
           Ha szerinted hibás link vezetett ide,{' '}
           <Link href="/kapcsolat" className="underline-offset-4 hover:text-mist-500 hover:underline">
             szólj nekünk

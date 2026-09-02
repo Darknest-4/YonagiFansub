@@ -131,7 +131,10 @@ export async function SiteFooter() {
           <p className="max-w-xl leading-relaxed sm:text-right">
             A feliratok szabadon, díjmentesen érhetők el. A jogtulajdonosok
             megkeresését a{' '}
-            <Link href="/dmca" className="text-mist-300 underline-offset-4 hover:underline">
+            {/* Aláhúzva, nem csak elszínezve: a körülötte lévő szöveggel szemben a
+                kontrasztja 2.09:1, ami alatta van a 3:1-es küszöbnek — színvakon
+                és halvány kijelzőn a link észrevehetetlen lenne. */}
+            <Link href="/dmca" className="text-mist-300 underline underline-offset-4 decoration-mist-500 hover:decoration-mist-300">
               jogi nyilatkozatban
             </Link>{' '}
             leírt módon várjuk.

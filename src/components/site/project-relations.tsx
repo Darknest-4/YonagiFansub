@@ -92,7 +92,7 @@ export async function ProjectRelations({
               {entry.ours ? (
                 <ArrowRight className="size-3.5 shrink-0 text-bloom-400" aria-hidden />
               ) : (
-                <ExternalLink className="size-3.5 shrink-0 text-mist-700" aria-hidden />
+                <ExternalLink className="size-3.5 shrink-0 text-mist-600" aria-hidden />
               )}
             </>
           );

@@ -159,7 +159,7 @@ export function RatingWidget({
                 Az értékeléshez erősítsd meg az e-mail-címed a{' '}
                 <Link
                   href="/profil/beallitasok"
-                  className="text-bloom-300 underline-offset-4 hover:underline"
+                  className="text-bloom-300 underline decoration-bloom-300/40 underline-offset-4 hover:decoration-bloom-300"
                 >
                   fiókbeállításokban
                 </Link>
@@ -169,7 +169,7 @@ export function RatingWidget({
               <>
                 <Link
                   href={`/belepes?next=${encodeURIComponent(`/projektek/${projectSlug}`)}`}
-                  className="text-bloom-300 underline-offset-4 hover:underline"
+                  className="text-bloom-300 underline decoration-bloom-300/40 underline-offset-4 hover:decoration-bloom-300"
                 >
                   Lépj be
                 </Link>{' '}

@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache as reactCache } from 'react';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { CACHE_TAGS, CACHE_TTL, cached } from '@/lib/cache';
@@ -310,7 +311,16 @@ export const episodeDetailArgs = Prisma.validator<Prisma.EpisodeDefaultArgs>()({
 
 export type EpisodeDetail = Prisma.EpisodeGetPayload<typeof episodeDetailArgs>;
 
-export async function getEpisode(projectSlug: string, episodeNumber: number) {
+/**
+ * One episode, memoised for the duration of the request.
+ *
+ * React's `cache()` rather than the data cache: the row is not worth holding
+ * between requests (it changes the moment the team edits it), but it *is*
+ * fetched more than once inside a single render — `generateMetadata`, the
+ * segment layout that answers 404, and the page body all need it. Without this
+ * that is three identical queries per page view.
+ */
+export const getEpisode = reactCache(async (projectSlug: string, episodeNumber: number) => {
   return db.episode.findFirst({
     where: {
       deletedAt: null,
@@ -319,7 +329,7 @@ export async function getEpisode(projectSlug: string, episodeNumber: number) {
     },
     ...episodeDetailArgs,
   });
-}
+});
 
 /** Adjacent episodes, for the prev/next navigation on the episode page. */
 export async function getEpisodeNeighbours(projectId: string, number: number) {

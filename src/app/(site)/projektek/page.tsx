@@ -146,6 +146,17 @@ async function ProjectResults({
           : ''}
       </p>
 
+      {/*
+        Rejtett <h2> a rács fölött.
+
+        A kártyák <h3>-mal írják ki a projekt címét, az oldalon viszont a
+        <h1> után semmi nem állt köztük — egy felolvasóban ez kihagyott szint,
+        és a címsor-navigáció (az oldal átfutásának leggyorsabb módja vakon)
+        elveszíti a fogódzót. A kártya szintje nem változhat: a kezdőlapon egy
+        <h2>-es szekciócím alatt ül, ott a <h3> a helyes.
+      */}
+      <h2 className="sr-only">Találatok</h2>
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-5">
         {items.map((project, index) => (
           <ProjectCard key={project.id} project={project} priority={index < 10} />

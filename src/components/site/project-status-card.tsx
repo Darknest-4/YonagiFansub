@@ -68,6 +68,14 @@ export function ProjectStatusCard({
         <ProjectStatusBadge status={status} />
       </div>
 
+      {/*
+        A magyarázó mondat kikerült a <dl>-ből.
+
+        A <dl> közvetlenül csak <dt>/<dd> párokat és az őket csoportosító
+        <div>-eket tartalmazhat — egy <p> ott érvénytelen, és a felolvasó
+        számára a lista szerkezete borul tőle. Kívülre téve ugyanazt mondja,
+        érvényes szerkezettel.
+      */}
       <dl className="space-y-3">
         <div className="flex items-baseline justify-between gap-3 border-b border-ink-800 pb-3">
           <dt className="text-2xs text-mist-500">Megjelent rész</dt>
@@ -77,16 +85,18 @@ export function ProjectStatusCard({
           </dd>
         </div>
 
-        {progress ? (
-          STEPS.map((step) => (
-            <ProgressRow key={step.key} label={step.label} value={progress[step.key]} />
-          ))
-        ) : (
-          <p className="text-2xs leading-relaxed text-mist-500">
-            Minden felvett rész megjelent — nincs folyamatban lévő munka.
-          </p>
-        )}
+        {progress
+          ? STEPS.map((step) => (
+              <ProgressRow key={step.key} label={step.label} value={progress[step.key]} />
+            ))
+          : null}
       </dl>
+
+      {!progress && (
+        <p className="mt-3 text-2xs leading-relaxed text-mist-500">
+          Minden felvett rész megjelent — nincs folyamatban lévő munka.
+        </p>
+      )}
 
       <p className="mt-4 border-t border-ink-800 pt-3 text-2xs text-mist-600">
         Utolsó frissítés:{' '}
@@ -101,19 +111,26 @@ export function ProjectStatusCard({
 function ProgressRow({ label, value }: { label: string; value: number }) {
   const clamped = Math.max(0, Math.min(100, Math.round(value)));
 
+  /*
+    Egyetlen <div> a <dl>-en belül, nem kettő egymásban.
+
+    A HTML pontosan egy csoportosító <div>-et enged meg a <dt>/<dd> köré; a
+    második szint után a felolvasó már nem tekinti őket a listához tartozónak
+    („Description list item does not have a <dl> parent element”). A rács
+    ugyanazt a látványt adja — címke balra, százalék jobbra, csík alattuk —,
+    miközben mindhárom elem közvetlenül ebben az egy <div>-ben ül.
+  */
   return (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between gap-3">
-        <dt className="text-2xs text-mist-400">{label}</dt>
-        <dd className="nums text-2xs font-medium text-mist-200">{clamped}%</dd>
-      </div>
+    <div className="grid grid-cols-[1fr_auto] items-baseline gap-x-3">
+      <dt className="text-2xs text-mist-400">{label}</dt>
+      <dd className="nums text-2xs font-medium text-mist-200">{clamped}%</dd>
 
       {/*
         `aria-hidden` on the rail: the percentage is already read out as the
         definition above it, so exposing the bar too would make a screen reader
         announce the same number twice.
       */}
-      <div aria-hidden className="h-1 overflow-hidden rounded-full bg-ink-800">
+      <div aria-hidden className="col-span-2 mt-1.5 h-1 overflow-hidden rounded-full bg-ink-800">
         <div
           className="h-full rounded-full bg-linear-to-r from-bloom-500 to-orchid-500 transition-[width] duration-slow ease-out-quint"
           style={{ width: `${clamped}%` }}

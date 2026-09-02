@@ -89,7 +89,7 @@ export default async function ChangelogPage({ searchParams }: { searchParams: Se
         <p className="text-2xs leading-relaxed text-mist-300 sm:text-xs">
           Ez a napló <strong className="text-mist-100">az oldalról</strong> szól, nem a
           feliratokról. A megjelent részeket a{' '}
-          <Link href="/projektek" className="text-info-400 underline-offset-4 hover:underline">
+          <Link href="/projektek" className="text-info-400 underline decoration-info-400/40 underline-offset-4 hover:decoration-info-400">
             projektek
           </Link>{' '}
           oldalán találod. Ide az kerül, ami a weboldal működésén változott — új funkció, javítás,

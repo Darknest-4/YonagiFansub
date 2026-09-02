@@ -99,7 +99,7 @@ export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
           const last = index === crumbs.length - 1;
           return (
             <li key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
-              <ChevronRight className="size-3 shrink-0 text-mist-700" aria-hidden />
+              <ChevronRight className="size-3 shrink-0 text-mist-600" aria-hidden />
               {crumb.href && !last ? (
                 <Link href={crumb.href} className="transition-colors hover:text-bloom-300">
                   {crumb.label}

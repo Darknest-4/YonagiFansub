@@ -203,7 +203,7 @@ export function LoginForm() {
         Nem jött meg a megerősítő e-mail?{' '}
         <Link
           href="/megerosites-ujrakuldes"
-          className="text-mist-400 underline-offset-4 hover:text-bloom-300 hover:underline"
+          className="text-mist-400 underline decoration-mist-600 underline-offset-4 hover:text-bloom-300 hover:decoration-bloom-300"
         >
           Küldjük újra
         </Link>

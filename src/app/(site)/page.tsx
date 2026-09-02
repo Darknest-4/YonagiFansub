@@ -256,18 +256,32 @@ async function StatsStrip() {
       <div className="grid gap-6 rounded-2xl border border-ink-800 bg-ink-900/50 p-6 sm:p-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10">
         <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {items.map((item) => (
-            <div key={item.label} className="flex items-center gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-bloom-500/25 bg-bloom-500/10 text-bloom-400">
+            /*
+              Egy réteg <div>, és a <dt> a <dd> előtt.
+
+              A HTML a <dl>-en belül pontosan egy <div>-nyi csoportosítást enged
+              meg, és a <dt>-t várja elöl. Itt két egymásba ágyazott <div> volt,
+              fordított sorrendű elemekkel — a felolvasó számára ez nem
+              „fogalom és értéke”, hanem négy gazdátlan elem. A rácsos elrendezés
+              megtartja a látványt (szám felül, címke alatta), miközben a
+              forrás sorrendje helyes.
+            */
+            <div
+              key={item.label}
+              className="grid grid-cols-[2.5rem_1fr] items-center gap-x-3"
+            >
+              <span
+                aria-hidden
+                className="row-span-2 grid size-10 shrink-0 place-items-center rounded-lg border border-bloom-500/25 bg-bloom-500/10 text-bloom-400"
+              >
                 {item.icon}
               </span>
-              <div className="min-w-0">
-                <dd className="nums font-display text-xl font-bold text-mist-50">
-                  {formatCount(item.value)}+
-                </dd>
-                <dt className="truncate text-2xs tracking-wide text-mist-500 uppercase">
-                  {item.label}
-                </dt>
-              </div>
+              <dt className="col-start-2 row-start-2 truncate text-2xs tracking-wide text-mist-500 uppercase">
+                {item.label}
+              </dt>
+              <dd className="col-start-2 row-start-1 nums font-display text-xl font-bold text-mist-50">
+                {formatCount(item.value)}+
+              </dd>
             </div>
           ))}
         </dl>

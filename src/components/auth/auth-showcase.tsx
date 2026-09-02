@@ -43,7 +43,7 @@ export async function AuthShowcase() {
           </dl>
         </div>
 
-        <p className="text-2xs text-mist-700">
+        <p className="text-2xs text-mist-600">
           Nincs hirdetés. Nincs követés. Nincs fizetős tartalom.
         </p>
       </div>

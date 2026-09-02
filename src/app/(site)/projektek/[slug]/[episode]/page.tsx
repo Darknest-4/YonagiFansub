@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const title = `${episode.project.title} – ${label}`;
   const description = episode.synopsis
     ? truncate(episode.synopsis, 155)
-    : `${title}. Magyar felirat a Yonagi Fansubtól, letöltési linkekkel.`;
+    : `${title}. Magyar felirat a Yonagi Fansubtól.`;
 
   return {
     title,
@@ -174,7 +174,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
                 <span className="nums text-mist-500">{label}</span>
                 {episode.title && (
                   <>
-                    <span aria-hidden className="mx-2.5 text-mist-700">
+                    <span aria-hidden className="mx-2.5 text-mist-600">
                       ·
                     </span>
                     {episode.title}
