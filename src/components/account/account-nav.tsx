@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Settings, Star, User } from 'lucide-react';
+import { Bell, ListChecks, Settings, Star, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -15,6 +15,7 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { href: '/profil', label: 'Áttekintés', icon: User, exact: true },
+  { href: '/profil/nezesi-lista', label: 'Nézési lista', icon: ListChecks },
   { href: '/profil/kedvencek', label: 'Kedvencek', icon: Star },
   { href: '/profil/ertesitesek', label: 'Értesítések', icon: Bell },
   { href: '/profil/beallitasok', label: 'Beállítások', icon: Settings },

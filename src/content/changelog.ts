@@ -65,6 +65,69 @@ export const CHANGE_KIND_LABELS: Record<ChangeKind, string> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-02',
+    title: 'Nézési lista',
+    summary:
+      'Mostantól minden bejelentkezett néző saját listát kap arról, mit néz, mit tervez, mit fejezett be és mit hagyott abba. A négyből kettőt nem kell bejelölni: magától tudja, hol tartasz.',
+    changes: [
+      {
+        kind: 'new',
+        title: 'Négy állapot, ebből kettő magától áll be',
+        body:
+          'A „nézem” és a „befejezett” a nézési előrehaladásból következik: ha elkezdtél egy részt, nézed; ha minden megjelent részt végignéztél, befejezted. Ezt a kettőt szándékosan nem lehet kézzel átállítani — egy gomb, amit a következő megnézett rész úgyis felülír, hazugság lenne. A „tervezett” és az „elhagyott” marad kézi, mert ezt a kettőt semmilyen adatból nem lehet tisztességesen kitalálni: attól, hogy valaki egy hónapja nem nyitott meg egy sorozatot, még nem hagyta el.',
+      },
+      {
+        kind: 'new',
+        title: 'A lista a profilban, a kapcsoló a projektoldalon',
+        body:
+          'A /profil/nezesi-lista négy csoportban mutatja a sorozatokat, a „nézem” áll elöl — ezért nyitja meg az ember. Ahol van értelme, ott a haladás is látszik („8 / 12 rész · 67%”). A projektoldalon két gomb van, „Tervezett” és „Elhagytam”; ugyanarra koppintva a jelölés visszavonódik. A kiszámolt állapot ott is megjelenik, de jelzésként, gomb nélkül, egy mondattal arról, honnan tudjuk.',
+      },
+      {
+        kind: 'improved',
+        title: 'A válasz azt mondja meg, mi lett belőle — nem azt, amit kértél',
+        body:
+          'Aki egy már elkezdett sorozatot jelöl tervezettnek, azonnal azt látja, hogy „nézem”. Ez nem hiba, hanem a szabály: a felület nem tud eltérni attól, amit a lista mutatni fog, mert ugyanazt a kiszámolt állapotot kapja vissza a szervertől.',
+      },
+      {
+        kind: 'fixed',
+        title: 'A még el nem készült részek nem számítanak bele',
+        body:
+          'Egy futó sorozatnál a nevező csak a megjelent részekből áll. Enélkül soha semmit nem lehetne befejezettnek látni, pedig aki minden kint lévő részt megnézett, pontosan azt szeretné olvasni, hogy utolérte. Ugyanígy: a be nem jelentett, nulla részes projekt nem „befejezett” — a nulla nem azt jelenti, hogy mindet megnézted.',
+      },
+    ],
+  },
+
+  {
+    date: '2026-09-02',
+    title: 'Átvilágítás, és ami kijött belőle',
+    summary:
+      'Az oldal átment egy teljes akadálymentességi és üzemkészségi átvilágításon, valódi böngészőben, három képernyőméreten. Ami hibát talált, azt megjavítottuk; a mérés maga pedig bekerült a kódba, hogy legközelebb magától kibukjon.',
+    changes: [
+      {
+        kind: 'fixed',
+        title: 'A halvány szövegek olvashatóvá váltak',
+        commit: '3cb5a52',
+        body:
+          'A másodlagos szövegszín kontrasztja a háttérrel szemben nem érte el a WCAG AA küszöbét — napfényben, olcsó kijelzőn vagy gyengébb látással ezek a sorok elmosódtak. A paletta két árnyalata világosabb lett, és ahol a szám mellett álló címke még így is kevés volt, ott a címke kapott erősebb színt. A mérés 115 hibás elemről nullára ment le, 48 ellenőrzésen keresztül.',
+      },
+      {
+        kind: 'fixed',
+        title: 'A szövegbe ágyazott hivatkozások aláhúzva',
+        commit: '3cb5a52',
+        body:
+          'A láblécben és néhány leírásban a link csak színnel különbözött a körülötte lévő szövegtől, 2.09:1 kontraszttal — ez színtévesztéssel gyakorlatilag láthatatlan. Aláhúzást kaptak, ami minden látásmódnál működik.',
+      },
+      {
+        kind: 'infra',
+        title: 'A füstpróba mostantól őrzi az eredményt',
+        commit: 'ac2e98b',
+        body:
+          'Az átvilágítás mérései bekerültek a `npm run smoke` parancsba: minden fontos oldalt megnyit mobil, tablet és asztali méretben, és elbukik, ha bárhol vízszintes görgetés vagy akadálymentességi hiba jelenik meg. Ellenőriztük, hogy tényleg tud bukni — egy javítás visszavonása azonnal piros lett tőle.',
+      },
+    ],
+  },
+
+  {
+    date: '2026-09-02',
     title: 'A kiadások megszűntek, a hírfolyam kinyílt',
     summary:
       'A „kiadás” mint külön fogalom eltűnt az oldalról: mostantól az epizód maga a megjelenés. Az oldal megtanulta, hogy melyik domainen fut, a hírfolyam pedig új címre költözött, olvashatóvá vált, és már az új részekről is szól.',
@@ -72,54 +135,63 @@ export const CHANGELOG: ChangelogEntry[] = [
       {
         kind: 'improved',
         title: 'Nincs többé külön „Kiadások”',
+        commit: '6518313',
         body:
           'Eddig két nyilvántartás volt ugyanarról az eseményről: az epizód, ami elkészült, és a hozzá tartozó „kiadás”, saját állapottal, saját dátummal, saját publikálási folyamattal. A kettő az első alkalommal elcsúszott, amikor valaki epizódot jelölt késznek kiadássor nélkül. Innentől egy nyilvántartás van, az epizód. A /kiadasok oldal, az admin kiadásszerkesztő, a letöltési linkek, a tükör-ellenőrző és a letöltésszámláló mind megszűnt — adatbázisostól.',
       },
       {
         kind: 'new',
         title: 'Az epizód megkapta a saját megjelenési dátumát',
+        commit: '6518313',
         body:
           'Ez az egyetlen adat, amit a kiadásokból át kellett menteni: enélkül nincs válasz arra, hogy „mi jelent meg a héten”. A migráció minden epizódnak a legkorábbi publikált kiadása dátumát adja — a v2 javítás nem új megjelenés —, a törölt és vázlat sorokat figyelmen kívül hagyva; aminek nem volt kiadása, az a saját utolsó módosítását kapja. Kipróbálva valódi adaton, mielőtt bármit eldobtunk volna.',
       },
       {
         kind: 'fixed',
         title: 'Az oldal megtanulta, melyik domainen fut',
+        commit: '6518313',
         body:
           'Eddig minden abszolút cím — kanonikus link, megosztási kártya, sitemap, hírfolyam — egy környezeti változóból jött, aminek az alapértéke localhost:3000. Ha nem volt beállítva, az oldal tökéletesen működött, miközben a Google-nek és minden hírolvasónak azt mondta, hogy a látogató saját gépén lakik. Mostantól, ha nincs beállítva, a kérésből olvassa ki a valódi hosztot.',
       },
       {
         kind: 'security',
         title: 'A levelekbe kerülő cím nem a kérésből jön',
+        commit: '6518313',
         body:
           'A Host fejlécet a hívó adja meg. A saját oldalunkba visszaírt címnél ez rendben van — aki meghamisítja, a saját nézetét rontja el. Egy jelszó-visszaállító levélbe kerülő hamis cím viszont működő adathalász link, amit mi kézbesítünk az áldozat postafiókjába. A levelek ezért kizárólag a beállított értéket használják, és ez a kódban külön, nevesített döntés.',
       },
       {
         kind: 'fixed',
         title: 'A beállítás futásidőben is érvényre jut',
+        commit: '6518313',
         body:
           'A Next a NEXT_PUBLIC_ előtagú változókat fordításkor beégeti a kódba, tehát a telepítés után beállított érték nem érvényesült — se hibaüzenet, se magyarázat. Pontosan ez volt a csapda. A kód mostantól futásidőben olvassa ki, így mindegy, hogy fordításkor vagy utána állítod be.',
       },
       {
         kind: 'improved',
         title: 'A hírfolyam /rss lett, és böngészőben is olvasható',
+        commit: '6518313',
         body:
           'Az .xml végződés semmit nem mondott, amit a Content-Type fejléc ne mondana el pontosabban. A régi cím állandó átirányítással él tovább, hogy senki feliratkozása ne szakadjon meg. Aki böngészővel nyitja meg, rendes oldalt kap a szögletes zárójelek fala helyett — ugyanaz a cím, ugyanaz a dokumentum, a hírolvasónak érvényes RSS.',
       },
       {
         kind: 'new',
         title: 'A hírfolyamban már új részek is vannak',
+        commit: '6518313',
         body:
           'Eddig csak hírek és kiadások voltak benne. Most három forrásból áll: megjelent epizódok, hírek és a fejlesztési napló bejegyzései, dátum szerint összefésülve.',
       },
       {
         kind: 'security',
         title: 'A hírfolyam saját, szűkebb biztonsági szabályt kapott',
+        commit: '6518313',
         body:
           'A Chrome az XSLT-stíluslapot a script-src alá sorolja, az oldal fő szabálya pedig strict-dynamic-ot használ, ami kikapcsolja a hosztlistát — így a stíluslap betöltése tiltott volt, egyetlen konzolsorral magyarázva. A megoldás nem a fő szabály lazítása: a hírfolyam és a stíluslapja saját, szigorúbb szabályt kapott, amiben semmi nincs a saját stíluslapon kívül.',
       },
       {
         kind: 'improved',
         title: 'Ami a letöltésszámláló helyére lépett',
+        commit: '6518313',
         body:
           'Az admin irányítópulton és a nyilvános számokban a letöltés helyett a megkezdett nézések és a lejátszások száma áll. Ez most az őszinte mérték: letöltés nincs, egy megállt számláló pedig halott oldalnak látszana, nem megváltozottnak.',
       },

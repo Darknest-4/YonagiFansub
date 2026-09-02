@@ -48,6 +48,8 @@ import { ReleaseListSkeleton } from '@/components/ui/feedback';
 import { ButtonLink } from '@/components/ui/button';
 import { getSettings } from '@/server/settings';
 import { siteUrl } from '@/lib/site-url';
+import { getProjectWatchState } from '@/server/watchlist';
+import { WatchlistControl } from '@/components/site/watchlist-control';
 
 type Params = Promise<{ slug: string }>;
 
@@ -102,7 +104,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
 
   const user = await getCurrentUser();
 
-  const [settings, episodes, favourite, rating, watched] = await Promise.all([
+  const [settings, episodes, favourite, rating, watched, watchState] = await Promise.all([
     getSettings(),
     getPublicEpisodes(project.id),
     user
@@ -115,6 +117,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
     // pillanatban, ahogy leadták, és felhasználónként úgyis más.
     getRatingSummary(project.id, user?.id ?? null),
     user ? getProjectProgress(user.id, project.id) : null,
+    user ? getProjectWatchState(user.id, project.id) : null,
   ]);
 
   // Fire-and-forget: never awaited, never allowed to fail the render.
@@ -559,6 +562,18 @@ export default async function ProjectPage({ params }: { params: Params }) {
             can check — and the average shown would be frozen at whatever the
             last vote left it, which is worse information than none.
           */}
+          {/*
+            A nézési lista a pontozás fölött: „hol tartok" gyakoribb kérdés,
+            mint „hányast adok neki", és a lista a visszatérő látogató miatt van.
+          */}
+          <WatchlistControl
+            projectId={project.id}
+            projectSlug={project.slug}
+            initialStatus={watchState?.status ?? null}
+            initialMark={watchState?.mark ?? null}
+            isAuthenticated={Boolean(user)}
+          />
+
           {settings.ratingsEnabled && (
             <RatingWidget
               projectId={project.id}
