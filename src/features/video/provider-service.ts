@@ -23,6 +23,7 @@ const providerSelect = {
   domains: true,
   allowPopups: true,
   isEnabled: true,
+  priority: true,
   sortOrder: true,
   color: true,
   notes: true,
@@ -31,7 +32,7 @@ const providerSelect = {
 
 export async function listVideoProviders() {
   return db.videoProvider.findMany({
-    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+    orderBy: [{ priority: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
     select: providerSelect,
   });
 }
@@ -40,7 +41,7 @@ export async function listVideoProviders() {
 export async function listUsableProviders() {
   return db.videoProvider.findMany({
     where: { isEnabled: true },
-    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+    orderBy: [{ priority: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
     select: { id: true, slug: true, name: true, kind: true, domains: true, color: true },
   });
 }
@@ -65,6 +66,7 @@ export async function createVideoProvider(
       domains: input.domains,
       allowPopups: input.allowPopups,
       isEnabled: input.isEnabled,
+      priority: input.priority,
       sortOrder: input.sortOrder,
       color: nullable(input.color ?? null),
       notes: nullable(input.notes),
@@ -113,6 +115,7 @@ export async function updateVideoProvider(
       domains: input.domains,
       allowPopups: input.allowPopups,
       isEnabled: input.isEnabled,
+      priority: input.priority,
       sortOrder: input.sortOrder,
       color: nullable(input.color ?? null),
       notes: nullable(input.notes),

@@ -116,6 +116,7 @@ export const CONTACT_STATUS: Record<ContactStatus, { label: string; tone: BadgeT
 };
 
 export const RESOLUTION_LABEL: Record<Resolution, string> = {
+  SD_360P: '360p',
   SD_480P: '480p',
   HD_720P: '720p',
   FHD_1080P: '1080p',

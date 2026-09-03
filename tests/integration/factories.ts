@@ -93,3 +93,49 @@ export async function videoSource(
     },
   });
 }
+
+export async function videoProvider(
+  overrides: Partial<Prisma.VideoProviderUncheckedCreateInput> = {},
+) {
+  const id = unique();
+  return db.videoProvider.create({
+    data: {
+      slug: `szolgaltato-${id}`,
+      name: `Szolgáltató ${id}`,
+      kind: 'EMBED',
+      embedTemplate: 'https://pelda.hu/e/{id}',
+      domains: ['pelda.hu'],
+      isEnabled: true,
+      priority: 100,
+      ...overrides,
+    },
+  });
+}
+
+/** Állapotsor egy forráshoz vagy egy szolgáltatóhoz — pontosan az egyikhez. */
+export async function health(
+  target: { sourceId: string } | { providerId: string },
+  overrides: Partial<Prisma.VideoSourceHealthUncheckedCreateInput> = {},
+) {
+  return db.videoSourceHealth.create({
+    data: { status: 'ONLINE', ...target, ...overrides },
+  });
+}
+
+export async function subtitleTrack(
+  episodeId: string,
+  overrides: Partial<Prisma.SubtitleTrackUncheckedCreateInput> = {},
+) {
+  const id = unique();
+  return db.subtitleTrack.create({
+    data: {
+      episodeId,
+      language: 'hu',
+      label: `Magyar ${id}`,
+      format: 'ASS',
+      storageKey: `subs/${id}.ass`,
+      status: 'PUBLISHED',
+      ...overrides,
+    },
+  });
+}

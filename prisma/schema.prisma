@@ -83,6 +83,8 @@ model User {
   authoredNews      NewsPost[]               @relation("NewsAuthor")
   createdProjects   Project[]                @relation("ProjectCreator")
   createdVideos     VideoSource[]            @relation("VideoCreator")
+  createdSubtitles  SubtitleTrack[]          @relation("SubtitleCreator")
+  playbackEvents    PlaybackEvent[]
   uploadedMedia     MediaAsset[]
   teamMember        TeamMember?
   handledMessages   ContactMessage[]         @relation("ContactHandler")
@@ -412,6 +414,20 @@ model Episode {
   /// The importer uses it to leave hand-edited rows alone.
   metadataSyncedAt DateTime?
 
+  /// Az főcím és a végefőcím határai, másodpercben a rész elejétől.
+  ///
+  /// Az epizódon vannak, nem a videóforráson, mert a forrás cserélhető, az
+  /// időzítés viszont a **vágásé**: ugyanaz a rész ugyanott kezdi a főcímet
+  /// akármelyik szolgáltatótól jön. Egy forrás, ami más vágást hoz (reklámmal,
+  /// más felvezetéssel), amúgy sem ugyanaz a fájl — arra új sor való.
+  ///
+  /// Mind a négy külön nullázható: van sorozat, aminek nincs végefőcíme, és van
+  /// rész, aminél csak az egyiket sikerült bemérni.
+  introStartSec Int?
+  introEndSec   Int?
+  outroStartSec Int?
+  outroEndSec   Int?
+
   status EpisodeStatus @default(PLANNED)
 
   /// Fansub workflow progress, 0–100 per stage. Rendered as the progress bar on
@@ -428,9 +444,10 @@ model Episode {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  comments Comment[]
-  videos   VideoSource[]
-  progress WatchProgress[]
+  comments  Comment[]
+  videos    VideoSource[]
+  progress  WatchProgress[]
+  subtitles SubtitleTrack[]
 
   @@unique([projectId, number])
   @@index([projectId, status])
@@ -441,6 +458,7 @@ model Episode {
 }
 
 enum Resolution {
+  SD_360P
   SD_480P
   HD_720P
   FHD_1080P
@@ -566,11 +584,16 @@ model VideoProvider {
   notes     String? @db.Text
 
   sources VideoSource[]
+  health  VideoSourceHealth?
+
+  /// Alacsonyabb szám előbb. A feloldó ezt veszi elsődleges rendezésnek —
+  /// az állapot csak ezután szól bele.
+  priority Int @default(100)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([isEnabled, sortOrder])
+  @@index([isEnabled, priority, sortOrder])
   @@map("video_providers")
 }
 
@@ -611,6 +634,21 @@ model VideoSource {
   resolution  Resolution @default(FHD_1080P)
   durationSec Int?
 
+  /// Névleges bitráta kbps-ben, ha ismert.
+  ///
+  /// A feloldó ezzel dönt két azonos felbontású forrás között: azonos
+  /// minőségnél az alacsonyabb bitráta gyorsabban indul és ritkábban akad meg.
+  /// `null` esetén a rendezés a prioritásra esik vissza — nem tippelünk.
+  bitrateKbps Int?
+
+  /// Adaptív-e a stream, azaz maga a forrás vált-e minőséget.
+  ///
+  /// Egy HLS master playlist több változatot hordoz: ott az „Auto" valódi
+  /// adaptív bitrátát jelent, és a minőségválasztó a stream sávjait kínálja,
+  /// nem külön forrásokat. Egy MP4-nél nincs mit váltani — ott a minőségváltás
+  /// forrásváltás.
+  isAdaptive Boolean @default(false)
+
   /// Playback requires a signed-in account. Off by default: a fansub that wants
   /// an open stream should not have to work around a login wall.
   requiresAuth Boolean @default(false)
@@ -625,9 +663,187 @@ model VideoSource {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  health VideoSourceHealth?
+
   @@index([episodeId, status, sortOrder])
   @@index([providerId])
   @@map("video_sources")
+}
+
+/// Egy forrás vagy egy szolgáltató állapota.
+///
+/// A megbízhatóság mérésének két szintje van, és mindkettőre szükség van: egy
+/// **forrás** meghalhat úgy, hogy a szolgáltató jól van (törölt fájl), és egy
+/// **szolgáltató** kieshet úgy, hogy minden forrása érvényes (leállás). Ezért
+/// ugyanaz a tábla szolgálja ki mindkettőt, `sourceId` **vagy** `providerId`
+/// kitöltésével — a részleges egyedi index gondoskodik róla, hogy sorból
+/// mindkét szintre pontosan egy legyen.
+model VideoSourceHealth {
+  id String @id @default(cuid())
+
+  sourceId String?      @unique
+  source   VideoSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  providerId String?        @unique
+  provider   VideoProvider? @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  status VideoHealthStatus @default(UNKNOWN)
+
+  /// Egymás utáni sikertelen ellenőrzések száma. Sikerre nullázódik.
+  ///
+  /// Ez, és nem az összesített hibaszám: egy három hónapja egyszer elakadt
+  /// forrás ma ugyanolyan jó, mint bármelyik másik, és egy örökre növekvő
+  /// számláló ezt sosem engedné elfelejteni.
+  failureCount Int @default(0)
+
+  /// Gördülő átlagos válaszidő ezredmásodpercben.
+  averageLatencyMs Int?
+
+  /// A legutóbbi hiba rövid, ember által olvasható oka. Sosem tartalmaz
+  /// hitelesítő adatot vagy teljes URL-t — csak azt, hogy mi történt.
+  lastError String?
+
+  lastCheckedAt DateTime?
+  lastSuccessAt DateTime?
+  lastFailureAt DateTime?
+
+  /// Kézi felülbírálás: karbantartás alatt a forrás akkor sem kerül elő, ha
+  /// egyébként válaszol. Az automatika ezt nem írja felül.
+  isMaintenance Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, updatedAt])
+  @@map("video_source_health")
+}
+
+enum VideoHealthStatus {
+  /// Még nem ellenőriztük. Nem büntetjük: az ismeretlen nem ugyanaz, mint a rossz.
+  UNKNOWN
+
+  /// Válaszol, elfogadható időn belül.
+  ONLINE
+
+  /// Válaszol, de lassan vagy időnként hibázik. Használható, csak hátrébb sorolt.
+  DEGRADED
+
+  /// Nem válaszol, vagy tartósan hibázik.
+  OFFLINE
+
+  /// Kézzel kivett. Az automatika nem nyúl hozzá.
+  MAINTENANCE
+}
+
+/// Egy epizódhoz tartozó feliratsáv.
+///
+/// A fájl a médiatárban van (`storageKey`), nem az adatbázisban: egy ASS fájl
+/// simán megnő pár száz kilobájtra, azt soronként kiolvasni minden
+/// lejátszásnál pazarlás. A sor a **metaadat**, ami alapján a lejátszó
+/// eldönti, mit ajánljon fel.
+model SubtitleTrack {
+  id        String  @id @default(cuid())
+  episodeId String
+  episode   Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  /// BCP-47 nyelvi kód: `hu`, `en`, `ja`.
+  language String @default("hu")
+
+  /// Amit a lejátszó menüjében lát a néző: „Magyar", „Magyar (dalszöveg)".
+  label String
+
+  format SubtitleFormat @default(ASS)
+
+  /// A médiatár kulcsa. A tartalmat a felirat-végpont szolgálja ki, hogy a
+  /// tárhely-URL soha ne kerüljön a böngészőbe.
+  storageKey String
+
+  /// Alapértelmezett sáv: ez kapcsolódik be magától.
+  isDefault Boolean @default(false)
+
+  /// Hallássérülteknek készült változat (feliratozott hanghatásokkal).
+  isForced   Boolean @default(false)
+  isHearingImpaired Boolean @default(false)
+
+  sortOrder Int @default(0)
+
+  status PublishStatus @default(DRAFT)
+
+  createdById String?
+  createdBy   User?   @relation("SubtitleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([episodeId, status, sortOrder])
+  @@map("subtitle_tracks")
+}
+
+enum SubtitleFormat {
+  /// Advanced SubStation Alpha — a fansub alapértelmezése: stílusok, pozíció,
+  /// karaoke. Ez az, amit a formázók ténylegesen készítenek.
+  ASS
+
+  /// A régebbi SubStation Alpha. Ugyanaz a családfa, kevesebb címke.
+  SSA
+
+  /// Egyszerű időzített szöveg, formázás nélkül.
+  SRT
+
+  /// A böngésző natív formátuma. Korlátozott, de mindenhol megy.
+  VTT
+}
+
+/// Egy lejátszás közben történt esemény.
+///
+/// Nem a nézőről szól, hanem a **kiszolgálásról**: melyik forrás akadt meg,
+/// melyik szolgáltató hibázott, hol váltott minőséget. Ez az, amiből eldönthető,
+/// hogy egy panasz („akadozik") egyedi eset vagy rendszerhiba.
+///
+/// Nincs benne IP, user agent és pontos időbélyeg-lánc, amiből egy néző
+/// végigkövethető lenne. A `userId` opcionális, és csak azért van, hogy a
+/// „minden hiba ugyanattól az egy embertől jön" eset felismerhető legyen.
+model PlaybackEvent {
+  id String @id @default(cuid())
+
+  episodeId String
+  sourceId  String?
+  providerId String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  type PlaybackEventType
+
+  /// A kért vagy éppen aktív minőség (`AUTO`, `FHD_1080P`, …).
+  quality String?
+
+  /// Hibánál a besorolt hibatípus — sosem stack trace.
+  errorKind String?
+
+  /// Bufferelésnél a szünet hossza ezredmásodpercben; minőségváltásnál a
+  /// másodpercben mért pozíció. Eseményfüggő, ezért szám és nem szerkezet.
+  value Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([episodeId, createdAt])
+  @@index([sourceId, type, createdAt])
+  @@index([providerId, type, createdAt])
+  @@index([type, createdAt])
+  @@map("playback_events")
+}
+
+enum PlaybackEventType {
+  PLAY
+  PAUSE
+  SEEK
+  BUFFERING
+  QUALITY_CHANGE
+  SOURCE_CHANGE
+  ERROR
+  COMPLETED
 }
 
 model TeamMemberPosition {

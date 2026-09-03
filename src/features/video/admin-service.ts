@@ -37,6 +37,8 @@ export async function listEpisodeVideosAdmin(episodeId: string) {
       proxied: true,
       allowPopups: true,
       sortOrder: true,
+      bitrateKbps: true,
+      isAdaptive: true,
       label: true,
       resolution: true,
       durationSec: true,
@@ -64,6 +66,13 @@ async function toSourceData(input: VideoWriteInput) {
     label: nullable(input.label),
     resolution: input.resolution,
     durationSec: input.durationSec ?? null,
+    bitrateKbps: input.bitrateKbps ?? null,
+    /*
+      A saját HLS-csomag mindig adaptív: a master playlist több változatot
+      hordoz, és a minőségváltás magában a streamben történik. A többinél az
+      marad, amit a szerkesztő megadott.
+    */
+    isAdaptive: input.kind === 'HLS_PROXY' ? true : input.isAdaptive,
     requiresAuth: input.requiresAuth,
     proxied: input.proxied,
     allowPopups: input.allowPopups ?? null,

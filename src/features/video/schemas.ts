@@ -73,6 +73,8 @@ export const videoProviderWriteSchema = z.object({
     .default([]),
   allowPopups: z.boolean().default(false),
   isEnabled: z.boolean().default(true),
+  /** Alacsonyabb szám előbb; a feloldó elsődleges rendezése. */
+  priority: z.coerce.number().int().min(0).max(9999).default(100),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
   color: hexColor.nullish(),
   notes: optionalText(500),
@@ -93,8 +95,12 @@ export const videoWriteSchema = z
     allowPopups: z.boolean().nullish(),
     sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
     label: optionalText(60),
-    resolution: z.enum(['SD_480P', 'HD_720P', 'FHD_1080P', 'QHD_1440P', 'UHD_2160P']),
+    resolution: z.enum(['SD_360P', 'SD_480P', 'HD_720P', 'FHD_1080P', 'QHD_1440P', 'UHD_2160P']),
     durationSec: z.coerce.number().int().min(0).max(86_400).nullish(),
+    /** Névleges bitráta kbps-ben. Azonos minőségnél a feloldó ezzel dönt. */
+    bitrateKbps: z.coerce.number().int().min(1).max(200_000).nullish(),
+    /** Maga a stream vált-e minőséget (HLS master playlist). */
+    isAdaptive: z.boolean().default(false),
     requiresAuth: z.boolean().default(false),
     status: z.enum(['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
   })
@@ -138,3 +144,27 @@ export const videoWriteSchema = z
 
 export type VideoWriteInput = z.infer<typeof videoWriteSchema>;
 export type VideoProviderWriteInput = z.infer<typeof videoProviderWriteSchema>;
+
+/**
+ * A lejátszási terv kérésének alakja.
+ *
+ * A `exclude` a lejátszó saját kudarcait hozza: egy forrás lehet globálisan
+ * egészséges, miközben ennek az egy nézőnek nem megy. Korlátozott hosszú, hogy
+ * a lista ne váljon nyitott bemenetté.
+ */
+export const playbackQuerySchema = z.object({
+  quality: z.enum(['AUTO', '2160p', '1440p', '1080p', '720p', '480p', '360p']).default('AUTO'),
+  exclude: z
+    .string()
+    .max(600)
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(',')
+            .map((part) => part.trim())
+            .filter((part) => /^[a-z0-9]{20,32}$/i.test(part))
+            .slice(0, 12)
+        : [],
+    ),
+});
