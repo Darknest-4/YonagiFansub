@@ -10,9 +10,8 @@ import { Breadcrumbs } from '@/shared/ui/page-header';
 import { EpisodeStatusBadge } from '@/shared/ui/badge';
 import { VideoPlayer } from '@/features/video/components/video-player';
 import { Comments } from '@/features/comments/components/comments';
-import { listEpisodeVideos } from '@/features/video/queries';
+import { buildPlaybackManifest } from '@/features/video/playback-service';
 import { getCurrentUser } from '@/shared/auth/guards';
-import { db } from '@/infrastructure/db';
 import { WorkflowProgress, buildWorkflowStages } from '@/shared/ui/progress';
 import { getSettings } from '@/features/settings/service';
 import { siteUrl } from '@/shared/lib/site-url';
@@ -79,18 +78,22 @@ export default async function EpisodePage({ params }: { params: Params }) {
     decide whether to draw a player, and the endpoints behind it refuse anyway
     (see `gatePlayback`).
   */
-  const videos = settings.watchEnabled ? await listEpisodeVideos(episode.id) : [];
-
-  // Hol hagyta abba. Kijelentkezve nincs mit folytatni és nincs hova menteni —
-  // a lejátszó ilyenkor egyáltalán nem jelent semmit.
   const viewer = await getCurrentUser();
-  const watch =
-    viewer && settings.watchProgressEnabled
-      ? await db.watchProgress.findUnique({
-          where: { userId_episodeId: { userId: viewer.id, episodeId: episode.id } },
-          select: { positionSec: true },
-        })
-      : null;
+
+  /*
+    A lejátszási terv a szerveren áll össze, nem a kliensen.
+
+    Így a lejátszó az első képkockától tudja, mit játsszon: nincs kliensoldali
+    körbefordulás, mielőtt bármi elindulhatna. A kliens csak akkor kérdez újra,
+    ha a néző minőséget vagy forrást vált — vagyis a szokásos úton egyszer sem.
+  */
+  const manifest = settings.watchEnabled
+    ? await buildPlaybackManifest({
+        episodeId: episode.id,
+        quality: 'AUTO',
+        userId: settings.watchProgressEnabled ? (viewer?.id ?? null) : null,
+      }).catch(() => null)
+    : null;
 
   const label = `${formatEpisodeNumber(episode.number.toString())}. rész`;
   const accent = episode.project.accentColor ?? '#f761a8';
@@ -209,31 +212,15 @@ export default async function EpisodePage({ params }: { params: Params }) {
               play — the still is a stand-in for the video, so showing both would
               be showing the same frame twice.
             */}
-            {videos.length > 0 ? (
+            {manifest && manifest.chain.length > 0 ? (
               <div className="mt-6">
                 <VideoPlayer
-                  episodeId={episode.id}
-                  resumeAt={watch?.positionSec ?? 0}
-                  // Signed out, or the site has progress tracking off: the
-                  // player must not call the endpoint at all. It would answer
-                  // 403 on every tick, which is a stream of failed requests for
-                  // a feature nobody asked for.
+                  manifest={manifest}
+                  // Kijelentkezve, vagy ha a haladásmentés ki van kapcsolva: a
+                  // lejátszó ne is hívja a végpontot. Minden ütemre 403-at adna,
+                  // ami elbukó kérések folyama egy funkcióért, amit senki nem kért.
                   trackProgress={Boolean(viewer) && settings.watchProgressEnabled}
-                  sources={videos.map((source) => ({
-                    id: source.id,
-                    kind: source.kind,
-                    label: source.label,
-                    resolution: source.resolution,
-                    requiresAuth: source.requiresAuth,
-                    provider: source.provider,
-                  }))}
-                  poster={episode.thumbnailUrl}
                 />
-                {videos.some((source) => source.requiresAuth) && (
-                  <p className="mt-2 text-2xs text-mist-500">
-                    Egyes források lejátszásához bejelentkezés szükséges.
-                  </p>
-                )}
               </div>
             ) : (
               episode.thumbnailUrl && (
@@ -257,7 +244,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
             )}
 
             <div className="mt-8">
-              {released && videos.length === 0 ? (
+              {released && (manifest?.chain.length ?? 0) === 0 ? (
                 /*
                   Marked released, but nothing to play.
 
