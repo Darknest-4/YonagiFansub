@@ -10,6 +10,7 @@ import { pruneNotifications } from '@/features/notifications/service';
 import { sendDigests } from '@/features/notifications/digest';
 import { publishDueNews } from '@/features/news/queries';
 import { runScheduledSync } from '@/features/metadata/sync-service';
+import { runScheduledHealthChecks } from '@/features/video/health-service';
 
 /**
  * Az éjszakai karbantartás.
@@ -64,6 +65,17 @@ export async function runDailyMaintenance(): Promise<MaintenanceReport & { durat
     is due — a missed run delays a summary, it does not skip one.
   */
   await step('sentDigests', async () => (await sendDigests()).sent);
+
+  /*
+    Videóforrások állapota.
+
+    A metaadat-szinkron elé kerül, mert ez a fontosabb: egy elavult évadcím
+    kellemetlen, egy halott videóforrás viszont azt jelenti, hogy a néző nem
+    tudja megnézni a részt. Kötegelve, a legrégebben ellenőrzöttekkel kezdve —
+    így néhány éjszaka alatt minden sorra kerül anélkül, hogy bármelyik körben
+    az összes szolgáltatót végigkérdeznénk.
+  */
+  await step('checkedVideoSources', () => runScheduledHealthChecks(25));
 
   /*
     Metadata resync, last in the run and batched.
